@@ -1,0 +1,70 @@
+.custom-layout {
+	position: absolute;
+	inset: 0px;
+	pointer-events: none;
+}
+
+.custom-toolbar {
+	position: absolute;
+	top: 8px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px;
+	gap: 6px;
+	background-color: white;
+	border-radius: 12px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	pointer-events: all;
+}
+
+.custom-button {
+	pointer-events: all;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	background-color: white;
+	color: #454545;
+	transition: all 0.2s ease;
+}
+
+.custom-button:hover {
+	background-color: #f3f4f6;
+}
+
+.custom-button[data-isactive='true'] {
+	background-color: #2563eb;
+	color: white;
+	border-color: #2563eb;
+}
+
+.custom-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.action-button {
+	background-color: #f8fafc;
+}
+
+.clear-button {
+	color: #ef4444;
+}
+
+.clear-button:hover {
+	background-color: #fee2e2;
+}
+
+.send-button {
+	color: #2563eb;
+}
+
+.send-button:hover {
+	background-color: #dbeafe;
+}
