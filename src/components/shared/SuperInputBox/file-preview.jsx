@@ -1,122 +1,134 @@
-'use client';
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, X } from 'lucide-react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const FilePreview = ({ file, onRemove }) => {
-  // Animation variants for framer motion
+  const [isOpen, setIsOpen] = useState(false);
+  const [fileType, setFileType] = useState('');
+  const [fileUrl, setFileUrl] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      setFileType(file.isImage ? 'image' : 'pdf');
+      setFileUrl(file.isImage ? file.preview : URL.createObjectURL(file.file));
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isOpen, file]);
+
   const itemVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { 
-      opacity: 1, 
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+      opacity: 1,
       scale: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
+      transition: { duration: 0.3, ease: 'easeOut' },
     },
-    hover: { scale: 1.03 },
-    tap: { scale: 0.98 }
+    hover: { scale: 1.04 },
+    tap: { scale: 0.98 },
   };
 
   return (
-    <Dialog>
+    <>
       <motion.div
         initial="hidden"
         animate="visible"
         whileHover="hover"
         whileTap="tap"
         variants={itemVariants}
-        className="relative group bg-white border border-gray-300 rounded-lg overflow-hidden w-24 h-24 md:w-28 md:h-28 flex-shrink-0"
+        onClick={() => setIsOpen(true)}
+        className="relative group bg-white border rounded-xl shadow-md overflow-hidden w-28 h-28 flex-shrink-0 cursor-pointer"
       >
-        <DialogTrigger asChild>
-          <div className="w-full h-full cursor-pointer flex items-center justify-center">
-            {file.isImage ? (
-              <Image
-                src={file.preview}
-                alt={file.name}
-                fill
-                sizes="96px"
-                className="object-cover"
+        <div className="w-full h-full flex items-center justify-center">
+          {file.isImage ? (
+            <Image
+              src={file.preview}
+              alt={file.name}
+              fill
+              sizes="112px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 px-2 py-3">
+              <FileText
+                className={`w-8 h-8 ${
+                  file.type === 'application/pdf'
+                    ? 'text-red-600'
+                    : 'text-blue-600'
+                }`}
               />
-            ) : file.type === 'application/pdf' ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 p-2">
-                <FileText className="w-8 h-8 text-red-600" />
-                <span className="text-xs text-center text-gray-700 mt-1 truncate w-full">
-                  {file.name.split('.')[0]}
-                </span>
-              </div>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 p-2">
-                <FileText className="w-8 h-8 text-blue-600" />
-                <span className="text-xs text-center text-gray-700 mt-1 truncate w-full">
-                  {file.name.split('.')[0]}
-                </span>
-              </div>
-            )}
-          </div>
-        </DialogTrigger>
+              <span className="text-xs text-center text-gray-700 mt-1 truncate w-full">
+                {file.name.split('.')[0]}
+              </span>
+            </div>
+          )}
+        </div>
 
         <motion.button
-          whileHover={{ scale: 1.2 }}
+          whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
-          className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white group-hover:opacity-100 opacity-100 transition-opacity z-10"
+          className="absolute top-1 right-1 p-1 bg-red-600 rounded-full text-white z-10 shadow-md"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(file.id);
           }}
         >
-          <X className="w-3 h-3" />
+          <X className="w-4 h-4" />
         </motion.button>
 
-        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate z-10">
-          {file.name.length > 10 ? `${file.name.slice(0, 7)}...` : file.name}
+        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center truncate">
+          {file.name.length > 12 ? `${file.name.slice(0, 9)}...` : file.name}
         </div>
       </motion.div>
 
-      <DialogContent className="max-w-4xl w-full h-[80vh] overflow-hidden bg-white p-0">
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle className="truncate">{file.name}</DialogTitle>
-        </DialogHeader>
-        <div className="h-[calc(100%-72px)] w-full overflow-auto">
-          {file.isImage ? (
-            <div className="relative h-full w-full flex items-center justify-center">
-              <Image
-                src={file.preview}
-                alt={file.name}
-                fill
-                sizes="100vw"
-                className="object-contain"
-              />
-            </div>
-          ) : file.type === 'application/pdf' ? (
-            <div className="h-full w-full">
-              <iframe
-                src={file.preview}
-                title={file.name}
-                className="w-full h-full"
-                style={{ minHeight: '500px' }}
-              />
-            </div>
-          ) : (
-            <div className="h-full w-full flex items-center justify-center">
-              <p className="text-center text-gray-500">
-                Preview not supported for this file type
-              </p>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center p-4"
+            onClick={() => setIsOpen(false)}
+          >
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute top-2 right-2 z-50 bg-white bg-opacity-70 p-2 rounded-full"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-5xl bg-transparent max-h-[90vh] w-full overflow-hidden rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative h-[90vh] bg-transparent">
+                <div className="h-full flex items-center justify-center">
+                  {fileType === 'image' ? (
+                    <img
+                      src={fileUrl}
+                      alt="Preview"
+                      className="max-w-full max-h-full object-contain"
+                      loading="eager"
+                    />
+                  ) : (
+                    <embed
+                      src={fileUrl}
+                      type="application/pdf"
+                      width="100%"
+                      height="600px"
+                      style={{ border: '1px solid #ccc', marginTop: '20px' }}
+                    />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

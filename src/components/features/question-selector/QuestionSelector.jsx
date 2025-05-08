@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  Fullscreen,
+  LoaderCircle,
+} from 'lucide-react';
+import { useS3Asset } from '@/hooks/useS3Asset';
 
 export default function QuestionSelector({
   file,
@@ -11,13 +17,57 @@ export default function QuestionSelector({
   onNext,
   onPrevious,
   onDotClick,
+  onOpenPreview,
 }) {
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [isPdfLoading, setIsPdfLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
-  const handlePdfLoad = () => {
-    setIsPdfLoading(false);
+  const {
+    url: signedUrl,
+    loading: s3Loading,
+    error: s3Error,
+  } = useS3Asset(file.fileUrl);
+
+  useEffect(() => {
+    setIsImageLoading(true);
+    setImageError(false);
+  }, [file.id]);
+
+  const isLoading =
+    s3Loading || (file.fileType === 'image' ? isImageLoading : isPdfLoading);
+
+  const handleRetry = () => {
+    setIsImageLoading(true);
+    setImageError(false);
+    const imgElement = document.getElementById(`file-image-${file.id}`);
+    if (imgElement && signedUrl) {
+      imgElement.src = signedUrl + '&t=' + new Date().getTime();
+    }
   };
+
+  const handlePreviewClick = () => {
+    if (!imageError && signedUrl) {
+      onOpenPreview(signedUrl, file.fileType);
+    }
+  };
+
+  const Loader = (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+      <LoaderCircle className="animate-spin text-blue-500 w-10 h-10" />
+      <span className="ml-3 text-gray-700">Processing...</span>
+    </div>
+  );
+
+  const ErrorMessage = ({ message, onRetry }) => (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100">
+      <p className="text-red-500 mb-4">{message}</p>
+      <Button onClick={onRetry} className="flex items-center gap-2">
+        <RefreshCw className="h-4 w-4" />
+        Retry
+      </Button>
+    </div>
+  );
 
   return (
     <div className="w-full">
@@ -35,72 +85,105 @@ export default function QuestionSelector({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3 }}
-                className="relative w-full h-[600px] md:h-[500px]"
+                className="relative w-full h-[400px] md:h-[500px] cursor-pointer"
+                onClick={handlePreviewClick}
               >
-                {file.fileType === 'image' ? (
+                {s3Loading && Loader}
+
+                {s3Error && (
+                  <ErrorMessage
+                    message="Failed to load file from S3"
+                    onRetry={() => window.location.reload()}
+                  />
+                )}
+
+                {!s3Loading && !s3Error && file.fileType === 'image' && (
                   <>
-                    {isImageLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                      </div>
+                    {isImageLoading && !imageError && Loader}
+                    {imageError ? (
+                      <ErrorMessage
+                        message="Failed to load image"
+                        onRetry={handleRetry}
+                      />
+                    ) : (
+                      signedUrl && (
+                        <img
+                          id={`file-image-${file.id}`}
+                          src={signedUrl}
+                          alt={file.fileName}
+                          onLoad={() => setIsImageLoading(false)}
+                          onError={() => {
+                            setIsImageLoading(false);
+                            setImageError(true);
+                          }}
+                          className="w-full h-full object-contain"
+                          loading="eager"
+                        />
+                      )
                     )}
-                    <Image
-                      src={file.fileUrl}
-                      alt={file.fileName}
-                      fill
-                      priority
-                      onLoadingComplete={() => setIsImageLoading(false)}
-                      sizes="(max-width: 768px) 100vw, 600px"
-                    />
-                  </>
-                ) : (
-                  <>
-                    {isPdfLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                    <object
-                      data={file.fileUrl}
-                      type="application/pdf"
-                      className="w-full h-full"
-                      onLoad={handlePdfLoad}
-                    >
-                      <p>
-                        Your browser does not support PDFs.
-                        <a href={file.fileUrl}>Download the PDF</a>.
-                      </p>
-                    </object>
                   </>
                 )}
 
-                {/* Overlay text for image number */}
-                <div className="absolute bottom-0 left-0 right-0 font-semibold text-white py-2 px-4 text-center text-xl">
+                {!s3Loading && !s3Error && file.fileType === 'pdf' && (
+                  <>
+                    {isPdfLoading && Loader}
+                    {signedUrl && (
+                      <object
+                        data={signedUrl}
+                        type="application/pdf"
+                        className="w-full h-full"
+                        onLoad={() => setIsPdfLoading(false)}
+                        onError={() => {
+                          setIsPdfLoading(false);
+                          setImageError(true);
+                        }}
+                      >
+                        <p>
+                          Your browser does not support PDFs.
+                          <a href={signedUrl}>Download the PDF</a>.
+                        </p>
+                      </object>
+                    )}
+                  </>
+                )}
+
+                {!isLoading && !imageError && signedUrl && (
+                  <div className="absolute top-4 right-4 bg-white bg-opacity-70 p-2 rounded-full">
+                    <Fullscreen className="h-5 w-5 text-blue-600" />
+                  </div>
+                )}
+
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-600 bg-opacity-50 font-semibold text-white py-2 px-4 text-center text-xl">
                   Image {currentIndex + 1}/{totalFiles}
                 </div>
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation buttons styled according to screenshot */}
-            {currentIndex > 0 && (
+            {!isLoading && currentIndex > 0 && (
               <Button
                 variant="outline"
                 size="icon"
-                onClick={onPrevious}
-                className="absolute top-1/2 transform -translate-y-1/2 bg-white rounded-full w-10 h-10 shadow-md hover:bg-gray-50 border border-gray-200 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrevious();
+                }}
+                className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white rounded-full w-10 h-10 shadow-md hover:bg-gray-50 border border-gray-200"
               >
                 <ChevronLeft className="h-6 w-6 text-blue-600" />
               </Button>
             )}
 
-            {currentIndex < totalFiles - 1 && (
+            {!isLoading && currentIndex < totalFiles - 1 && (
               <Button
                 variant="outline"
                 size="icon"
-                onClick={onNext}
-                className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white rounded-full w-10 h-10 shadow-md hover:bg-gray-50 border border-gray-200 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNext();
+                }}
+                className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white rounded-full w-10 h-10 shadow-md hover:bg-gray-50 border border-gray-200"
               >
-                <ChevronRight className="h-40 w-40 text-blue-600" />
+                <ChevronRight className="h-6 w-6 text-blue-600" />
               </Button>
             )}
           </div>
@@ -112,13 +195,14 @@ export default function QuestionSelector({
               key={i}
               onClick={() => onDotClick(i)}
               className="focus:outline-none"
+              disabled={isLoading}
             >
               <div
-                className={`rounded-full transition-all ${
+                className={`rounded-full transition-all w-3 h-3 ${
                   i === currentIndex
-                    ? 'w-3 h-3 bg-black'
-                    : 'w-3 h-3 bg-gray-300 hover:bg-gray-400'
-                }`}
+                    ? 'bg-black'
+                    : 'bg-gray-300 hover:bg-gray-400'
+                } ${isLoading ? 'opacity-50' : ''}`}
               />
             </button>
           ))}

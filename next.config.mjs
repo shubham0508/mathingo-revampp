@@ -2,9 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['mathzai.com'],
+    domains: ['mathzai.com', 'img.youtube.com', 'mathingo-resources.s3.us-east-1.amazonaws.com'],
     formats: ['image/avif', 'image/webp'],
   },
+  // Uncomment and configure if/when you're ready to add security headers
   // async headers() {
   //   return [
   //     {

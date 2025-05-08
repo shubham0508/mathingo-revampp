@@ -26,7 +26,6 @@ import userProfileReducer from './reducers/userProfileReducer';
 import { authApi } from './slices/authApi';
 import { profileApi } from './slices/profile';
 import { paymentApi } from './slices/payment';
-import { youtubeVideoExtractApi } from './slices/HA/youtubeVideoExtract';
 import { homeworkAssistantApi } from './slices/HA';
 import { smartSolutionCheckApi } from './slices/SSC';
 import { aiMathTutorApi } from './slices/AMT';
@@ -57,7 +56,6 @@ const rootReducer = combineReducers({
   [authApi.reducerPath]: authApi.reducer,
   [profileApi.reducerPath]: profileApi.reducer,
   [paymentApi.reducerPath]: paymentApi.reducer,
-  [youtubeVideoExtractApi.reducerPath]: youtubeVideoExtractApi.reducer,
   [homeworkAssistantApi.reducerPath]: homeworkAssistantApi.reducer,
   [smartSolutionCheckApi.reducerPath]: smartSolutionCheckApi.reducer,
   [aiMathTutorApi.reducerPath]: aiMathTutorApi.reducer,
@@ -74,8 +72,15 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: 'root',
   storage: namespacedStorage,
-  whitelist: ['auth', 'userProfile'], // Only persist these reducers
-  blacklist: [baseApi.reducerPath], // Don't persist API cache
+  blacklist: [
+    baseApi.reducerPath, 
+    authApi.reducerPath,
+    profileApi.reducerPath,
+    paymentApi.reducerPath,
+    homeworkAssistantApi.reducerPath,
+    smartSolutionCheckApi.reducerPath,
+    aiMathTutorApi.reducerPath
+  ],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

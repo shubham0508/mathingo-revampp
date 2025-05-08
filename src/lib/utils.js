@@ -1,7 +1,5 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { toast } from 'react-hot-toast';
-import { FILE_TYPES, MAX_FILE_SIZE } from '@/config/constant';
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -58,4 +56,14 @@ export const loadMathQuill = async (callback) => {
 
     mathquillScript.onload = callback;
   };
+};
+
+export const getErrorMessage = (error) => {
+  if (error?.data?.error && error.data.error[0]) {
+    return error.data.error[0];
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return 'Something went wrong! Please try again later.';
 };

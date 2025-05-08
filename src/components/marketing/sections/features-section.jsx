@@ -25,7 +25,7 @@ export default function FeaturesSection() {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="text-3xl text-center font-semibold sm:text-4xl"
+          className="text-3xl text-center font-medium sm:text-4xl"
         >
           Mathz AI wears many hats,
         </motion.h1>
@@ -35,7 +35,7 @@ export default function FeaturesSection() {
           custom={1}
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="mt-2 text-3xl text-center font-semibold sm:text-4xl"
+          className="mt-2 text-3xl text-center font-medium sm:text-4xl"
         >
           depending on how you want to see it.
         </motion.h2>
@@ -49,15 +49,21 @@ export default function FeaturesSection() {
           className="mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-12 w-full px-4 md:px-12 lg:px-24"
         >
           <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold">AI Math Tutor</h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg text-gray-700">
-              Experience real-time tutoring support with an AI buddy who teaches interactively and understands your problems.
+            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
+              AI Math Tutor
+            </h3>
+            <p className="mt-4 max-w-md text-base sm:text-lg">
+              Experience real-time tutoring support with an AI buddy who teaches
+              interactively and understands your problems.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline">
+              <Button variant="outline" className="border-black">
                 <span>Know More</span>
               </Button>
-              <Button className="bg-gradient-button text-white font-medium">
+              <Button
+                variant="outline"
+                className="bg-gradient-button text-white border-button-order"
+              >
                 Start Learning
               </Button>
             </div>
@@ -101,15 +107,22 @@ export default function FeaturesSection() {
           </div>
 
           <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold">Homework Assignment</h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg text-gray-700">
-              Provide your math problems by uploading, typing, copy-pasting, or taking a picture. Filter out irrelevant questions and get precise hints, solutions, and relevant information.
+            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
+              Homework Assignment
+            </h3>
+            <p className="mt-4 max-w-md text-base sm:text-lg">
+              Provide your math problems by uploading, typing, copy-pasting, or
+              taking a picture. Filter out irrelevant questions and get precise
+              hints, solutions, and relevant information.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline">
+              <Button variant="outline" className="border-black">
                 <span>Know More</span>
               </Button>
-              <Button className="bg-gradient-button text-white font-medium">
+              <Button
+                variant="outline"
+                className="bg-gradient-button text-white border-button-order"
+              >
                 Get help on an assignment
               </Button>
             </div>
@@ -125,15 +138,22 @@ export default function FeaturesSection() {
           className="mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-12 w-full px-4 md:px-12 lg:px-24"
         >
           <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold">Smart Solution Check</h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg text-gray-700">
-              Submit questions with your answers (PDF or image). Let an AI homework helper check your solution, find mistakes, and provide optimized guidance.
+            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
+              Smart Solution Check
+            </h3>
+            <p className="mt-4 max-w-md text-base sm:text-lg">
+              Submit questions with your answers (PDF or image). Let an AI
+              homework helper check your solution, find mistakes, and provide
+              optimized guidance.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline">
+              <Button variant="outline" className="border-black">
                 <span>Know More</span>
               </Button>
-              <Button className="bg-gradient-button text-white font-medium">
+              <Button
+                variant="outline"
+                className="bg-gradient-button text-white border-button-order"
+              >
                 Check your Solution
               </Button>
             </div>

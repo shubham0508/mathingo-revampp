@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { usePathname } from 'next/navigation';
 
 const menuItems = [
   {
@@ -39,23 +40,33 @@ const menuItems = [
 
 export function AppSidebar() {
   const [activeItem, setActiveItem] = useState('Homework Assistant');
-  const { state } = useSidebar();
+  const { state , setOpen } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const shouldCollapse = pathname.includes('/select-questions');
+    if (shouldCollapse && state !== 'collapsed') {
+      setOpen(false);
+    } else if (!shouldCollapse && state !== 'expanded') {
+      setOpen(true);
+    }
+  }, [pathname, setOpen]);
 
   return (
     <nav aria-label="Main Sidebar Navigation">
-      <Sidebar side="left" className="bg-blue-50 h-screen" collapsible="icon">
+      <Sidebar side="left" className="h-screen" collapsible="icon">
         <SidebarContent className="mt-8">
           <div
-            className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-1.5 px-4'}`}
+            className={`flex ${isCollapsed ? 'justify-center items-center px-1 ml-1' : 'gap-1.5 px-4'}`}
           >
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href="/" className="flex items-center justify-center">
+                <Link href="/" className="flex align-middle justify-center">
                   <Image
                     src="/images/icons/company_logo.svg"
-                    width={isCollapsed ? 36 : 44}
-                    height={isCollapsed ? 32 : 40}
+                    width={isCollapsed ? 32 : 44}
+                    height={isCollapsed ? 32 : 44}
                     alt="Mathz AI Logo"
                     className={isCollapsed ? 'h-8' : 'h-10'}
                     priority
@@ -63,11 +74,11 @@ export function AppSidebar() {
                 </Link>
               </TooltipTrigger>
               {isCollapsed && (
-                <TooltipContent side="right">Mathz AI</TooltipContent>
+                <TooltipContent side="right" className="bg-black text-white">Mathz AI</TooltipContent>
               )}
             </Tooltip>
             {!isCollapsed && (
-              <h1 className="bg-gradient-secondary bg-clip-text text-2xl md:text-xl font-bold !text-transparent">
+              <h1 className="bg-gradient-secondary bg-clip-text text-2xl !text-transparent font-roca">
                 Mathz AI
               </h1>
             )}
@@ -75,10 +86,9 @@ export function AppSidebar() {
 
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-2">
                 {menuItems.map((item) => {
                   const isActive = activeItem === item.title;
-
                   return (
                     <SidebarMenuItem key={item.title}>
                       <Tooltip>
@@ -95,7 +105,7 @@ export function AppSidebar() {
                             aria-current={isActive ? 'page' : undefined}
                           >
                             <div
-                              className={`p-1 rounded ${
+                              className={`rounded ${
                                 isActive
                                   ? 'bg-content-background'
                                   : 'bg-transparent'
@@ -107,11 +117,11 @@ export function AppSidebar() {
                                 height={isCollapsed ? 36 : 24}
                                 alt={item.alt}
                                 loading="lazy"
-                                // className={
-                                //   isCollapsed
-                                //     ? 'h-7 w-7 object-contain'
-                                //     : 'h-6 w-6 object-contain'
-                                // }
+                                className={
+                                  isCollapsed
+                                    ? 'h-7 w-7 object-contain'
+                                    : 'h-6 w-6 object-contain'
+                                }
                               />
                             </div>
                             {!isCollapsed && (
@@ -122,7 +132,7 @@ export function AppSidebar() {
                           </SidebarMenuButton>
                         </TooltipTrigger>
                         {isCollapsed && (
-                          <TooltipContent side="right">
+                          <TooltipContent side="right" className="bg-black text-white">
                             {item.title}
                           </TooltipContent>
                         )}

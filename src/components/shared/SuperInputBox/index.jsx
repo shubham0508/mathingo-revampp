@@ -2,7 +2,10 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { useHaQuestionExtractionMutation } from '@/store/slices/HA';
+import {
+  useHaQuestionExtractionMutation,
+  useHaSolutionExtractionMutation,
+} from '@/store/slices/HA';
 import dynamic from 'next/dynamic';
 
 // Components
@@ -13,14 +16,17 @@ import TextEditor from './text-editor';
 import MathKeyboard from './math-keyboard';
 
 // Constants
-import { FILE_TYPES, MAX_FILE_SIZE, MAX_FILES, MODES } from '@/config/constant';
+import { FILE_TYPES, MAX_FILES, MODES } from '@/config/constant';
 import { createFileData, validateFile } from '@/lib/fileUtils';
 import toast from 'react-hot-toast';
+import { setAnswer, setQuestion } from '@/store/reducers/HA';
+import { getErrorMessage } from '@/lib/utils';
+import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
 
 const TLDrawWhiteboard = dynamic(() => import('./tldraw'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full">
+    <div className="flex items-center justify-center h-[200px] bg-white">
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -56,6 +62,9 @@ const SuperInput = ({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [haQuestionExtraction] = useHaQuestionExtractionMutation();
+  const [haSolutionExtraction] = useHaSolutionExtractionMutation();
+  const { ensureAuthenticated, isEnsuring } = useGuestUserAuth();
+
   const router = useRouter();
   const dispatch = useDispatch();
   const MODEL_NAME = 'alpha';
@@ -70,7 +79,6 @@ const SuperInput = ({
     if (editorRef.current) editorRef.current.focus();
   }, []);
 
-  // Submit handler
   const handleSubmit = useCallback(async () => {
     if (disabled || isProcessing) return;
 
@@ -79,6 +87,12 @@ const SuperInput = ({
     if (!hasContent) return;
 
     try {
+      const isReady = await ensureAuthenticated();
+      if (!isReady) {
+        toast.error('Something Went Wrong!!! Please try again Later');
+        return;
+      }
+
       setIsProcessing(true);
 
       if (files.length > 0) {
@@ -97,37 +111,55 @@ const SuperInput = ({
       setFiles([]);
       setShowMathKeyboard(false);
 
-      router.push('/homework-assistant/results');
     } catch (error) {
       console.error('Submission error:', error);
       toast.error('Failed to process your question. Please try again.');
-    } finally {
       setIsProcessing(false);
     }
   }, [text, drawingData, files, disabled, isProcessing]);
 
   const submitTextQuestion = async () => {
     try {
+      if (text.trim().length === 0) {
+        toast.error('Please enter a question');
+        return;
+      }
+
       const data = [{ data: text, input_type: 'text', file_url: '' }];
       const response = await haQuestionExtraction({
         model_name: MODEL_NAME,
         inputs: data,
-      });
+      }).unwrap();
 
-      if (response.data) {
-        dispatch(setQuestion(response.data));
-        toast.success('Question processed successfully!');
-      } else {
-        throw new Error('Failed to process question');
-      }
+      handleQuestionExtractionResponse(response);
     } catch (error) {
       console.error('Text submission error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to process your question. Please try again.');
+      }
+
+      console.error('API Error Details:', {
+        endpoint: 'haQuestionExtraction',
+        errorData: error?.data,
+        originalError: error,
+      });
+
       throw error;
     }
   };
 
   const submitFiles = async () => {
     try {
+      if (files.length === 0) {
+        toast.error('Please upload at least one file');
+        return;
+      }
+
+      toast.loading('Uploading files...', { id: 'file-upload' });
+
       const formData = new FormData();
       formData.append('type', 'ha_questions');
       files.forEach((file) => formData.append('files', file?.file));
@@ -136,11 +168,28 @@ const SuperInput = ({
         method: 'POST',
         body: formData,
       });
-      if (!response.ok) throw new Error('Failed to upload files');
+
+      if (!response.ok) {
+        toast.error('Upload failed', { id: 'file-upload' });
+        console.error(
+          'Upload response error:',
+          response.status,
+          response.statusText,
+        );
+        throw new Error(
+          `Failed to upload files: ${response.status} ${response.statusText}`,
+        );
+      }
 
       const result = await response.json();
-      if (!result?.success)
+      if (!result?.success) {
+        toast.error(result?.message || 'Failed to upload files', {
+          id: 'file-upload',
+        });
         throw new Error(result?.message || 'Failed to upload files');
+      }
+
+      toast.success('Files uploaded successfully', { id: 'file-upload' });
 
       const filesData = result?.files?.map(({ originalName, fileKey }) => ({
         input_type: originalName?.includes('pdf') ? 'pdf' : 'image',
@@ -148,18 +197,30 @@ const SuperInput = ({
         data: '',
       }));
 
+      toast.loading('Analyzing files...', { id: 'extraction' });
       const extractionResponse = await haQuestionExtraction({
         model_name: MODEL_NAME,
         inputs: filesData,
-      });
-      if (extractionResponse.data) {
-        dispatch(setQuestion(extractionResponse.data));
-        toast.success('Files processed successfully!');
-      } else {
-        throw new Error('Failed to process uploaded files');
-      }
+      }).unwrap();
+
+      toast.success('Analysis complete', { id: 'extraction' });
+      handleQuestionExtractionResponse(extractionResponse);
     } catch (error) {
       console.error('Upload error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to upload files. Please try again.');
+      }
+
+      // Log detailed error for developers
+      console.error('File Upload Error Details:', {
+        filesCount: files.length,
+        errorData: error?.data,
+        originalError: error,
+      });
+
       throw error;
     }
   };
@@ -195,15 +256,88 @@ const SuperInput = ({
       const extractionResponse = await haQuestionExtraction({
         model_name: MODEL_NAME,
         inputs: filesData,
-      });
-      if (extractionResponse.data) {
-        dispatch(setQuestion(extractionResponse.data));
-        toast.success('Drawing processed successfully!');
-      } else {
-        throw new Error('Failed to process drawing');
-      }
+      }).unwrap();
+
+      handleQuestionExtractionResponse(extractionResponse);
     } catch (error) {
       console.error('Drawing submission error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to process drawing. Please try again.');
+      }
+      throw error;
+    }
+  };
+
+  const handleQuestionExtractionResponse = (response) => {
+    if (response?.status_code === 201) {
+      const questions = extractAllQuestions(response.data);
+  
+      if (questions.length > 1) {
+        dispatch(setQuestion(response.data));
+        router.push('/homework-assistant/select-questions');
+      } else if (questions.length === 1) {
+        handleSingleQuestion(response);
+      } else {
+        toast.error('No questions were found in the input.');
+        setIsProcessing(false);
+      }
+    } else {
+      setIsProcessing(false);
+      throw new Error(response?.error || 'Failed to process question');
+    }
+  };
+
+  const extractAllQuestions = (data) => {
+    if (!data?.files) return [];
+
+    return data.files.flatMap((file) =>
+      file.pages.flatMap((page) =>
+        page.questions.map((question) => ({
+          question_id: page.question_id,
+          question,
+          file_url: file.file_url,
+          file_type: file.file_type,
+        })),
+      ),
+    );
+  };
+
+  const handleSingleQuestion = async (response) => {
+    try {
+      const firstFile = response.data.files[0];
+      const firstPage = firstFile.pages[0];
+  
+      const solutionResponse = await haSolutionExtraction({
+        model_name: MODEL_NAME,
+        inputs: [
+          {
+            question_id: firstPage.question_id,
+            questions_selected: firstPage.questions,
+            question_url: firstFile.file_url || 'no_input',
+          },
+        ],
+      }).unwrap();
+  
+      if (solutionResponse?.status_code === 201) {
+        dispatch(setQuestion(response.data));
+        dispatch(setAnswer(solutionResponse.data));
+        router.push('/homework-assistant/select-questions/problem-solver');
+      } else {
+        setIsProcessing(false);
+        throw new Error(solutionResponse?.error || 'Failed to get solutions');
+      }
+    } catch (error) {
+      setIsProcessing(false);
+      console.error('Error extracting answers:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to get solutions for the question.');
+      }
       throw error;
     }
   };
@@ -372,6 +506,33 @@ const SuperInput = ({
   const handlePaste = async (e) => {
     if (e) {
       e.preventDefault();
+      
+      // Handle pasted images
+      if (e.clipboardData.items) {
+        for (const item of e.clipboardData.items) {
+          if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            if (file) {
+              if (files.length >= MAX_FILES) {
+                toast.error(`Maximum ${MAX_FILES} files can be uploaded`);
+                return;
+              }
+              
+              const validation = validateFile(file);
+              if (!validation.isValid) {
+                Object.values(validation.errors).forEach((error) => toast.error(error));
+                return;
+              }
+              
+              const fileData = createFileData(file);
+              setFiles((prev) => [...prev, fileData]);
+              return; // Exit after handling image
+            }
+          }
+        }
+      }
+      
+      // Handle pasted text (existing logic)
       const pastedText = e.clipboardData.getData('text');
       if (pastedText?.length > 2000) {
         toast.error('Maximum 2000 characters can be added as question!!');
@@ -389,6 +550,72 @@ const SuperInput = ({
       }
     }
   };
+
+  useEffect(() => {
+    const dropArea = dropAreaRef.current;
+    if (!dropArea) return;
+  
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+  
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+  
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+  
+      const droppedFiles = Array.from(e.dataTransfer?.files || []);
+      if (droppedFiles.length === 0) return;
+  
+      if (files.length + droppedFiles.length > MAX_FILES) {
+        toast.error(`Maximum ${MAX_FILES} files can be uploaded`);
+        return;
+      }
+  
+      const validFiles = droppedFiles.filter((file) => {
+        const validation = validateFile(file);
+        if (!validation.isValid) {
+          Object.values(validation.errors).forEach((error) =>
+            toast.error(error),
+          );
+          return false;
+        }
+        return true;
+      });
+  
+      if (validFiles.length === 0) return;
+  
+      const filesData = validFiles.map((file) => createFileData(file));
+      setFiles((prev) => [...prev, ...filesData]);
+    };
+  
+    // Add global paste event handler for images
+    const handleGlobalPaste = (e) => {
+      if (mode === MODES.TEXT && !disabled && files.length === 0) {
+        handlePaste(e);
+      }
+    };
+  
+    dropArea.addEventListener('dragover', handleDragOver);
+    dropArea.addEventListener('dragleave', handleDragLeave);
+    dropArea.addEventListener('drop', handleDrop);
+    document.addEventListener('paste', handleGlobalPaste);
+  
+    return () => {
+      dropArea.removeEventListener('dragover', handleDragOver);
+      dropArea.removeEventListener('dragleave', handleDragLeave);
+      dropArea.removeEventListener('drop', handleDrop);
+      document.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, [files, validateFile, createFileData, mode, disabled, handlePaste]);
 
   const handleFileUpload = useCallback(
     (e) => {
@@ -471,7 +698,6 @@ const SuperInput = ({
     setFiles([]);
   };
 
-  // Mobile detection effect
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -481,7 +707,6 @@ const SuperInput = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // MathQuill initialization effect
   useEffect(() => {
     const loadMathQuill = async () => {
       if (typeof window === 'undefined' || initialized) return;
@@ -539,7 +764,6 @@ const SuperInput = ({
     setDrawingData(drawingDataUrl);
   }, []);
 
-  // Drag and drop effect
   useEffect(() => {
     const dropArea = dropAreaRef.current;
     if (!dropArea) return;
@@ -597,13 +821,49 @@ const SuperInput = ({
     };
   }, [files, validateFile, createFileData]);
 
+  useEffect(() => {
+    if (isProcessing) {
+      if (dropAreaRef.current) {
+        dropAreaRef.current.classList.add('pulse-animation');
+      }
+
+      if (editorRef.current) {
+        editorRef.current.setAttribute('contenteditable', 'false');
+      }
+    } else {
+      if (dropAreaRef.current) {
+        dropAreaRef.current.classList.remove('pulse-animation');
+      }
+
+      if (editorRef.current && files.length === 0 && !disabled) {
+        editorRef.current.setAttribute('contenteditable', 'true');
+      }
+    }
+  }, [isProcessing, files.length, disabled]);
+
+  useEffect(() => {
+    if (editorRef.current) {
+      const shouldDisableEditor = files.length > 0 || isProcessing || disabled;
+      editorRef.current.setAttribute(
+        'contenteditable',
+        shouldDisableEditor ? 'false' : 'true',
+      );
+
+      if (files.length > 0 && text.trim().length > 0) {
+        setText('');
+        editorRef.current.innerHTML = '';
+        toast.info('Text input has been cleared as files have been uploaded.');
+      }
+    }
+  }, [files.length, isProcessing, disabled]);
+
   return (
     <div className="relative w-full">
       <div
         ref={dropAreaRef}
-        className={`w-full flex flex-col rounded-lg overflow-hidden border-2 ${
-          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-        }`}
+        className={`w-full flex flex-col rounded-lg overflow-hidden border shadow-lg shadow-custom-shadow ${
+          isDragging ? 'border-blue-500' : 'border-black'
+        } transition-shadow duration-200`}
         style={{ minHeight: height }}
       >
         <FilePreviews
@@ -616,22 +876,25 @@ const SuperInput = ({
           {mode === MODES.TEXT && (
             <TextEditor
               editorRef={editorRef}
-              placeholder={placeholder}
+              placeholder={
+                isProcessing ? 'Processing your request...' : placeholder
+              }
               height={height}
-              disabled={disabled}
+              disabled={disabled || isProcessing || files.length > 0}
               handleEditorKeyDown={handleEditorKeyDown}
               handlePaste={handlePaste}
               updateContent={updateContent}
+              isProcessing={isProcessing} // Add this line
             />
           )}
 
-          {mode === MODES.DRAW && (
+          {/* {mode === MODES.DRAW && (
             <TLDrawWhiteboard
               onContentChange={handleDrawingChange}
               disabled={disabled}
               height={height}
             />
-          )}
+          )} */}
         </div>
 
         <Toolbar
@@ -648,10 +911,11 @@ const SuperInput = ({
           showMathKeyboard={showMathKeyboard}
           handleClear={handleClear}
           handleSubmit={handleSubmit}
+          isProcessing={isProcessing}
         />
       </div>
 
-      {showMathKeyboard && (
+      {showMathKeyboard && files.length === 0 && (
         <MathKeyboard
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -691,6 +955,22 @@ const SuperInput = ({
       )}
 
       <style jsx>{`
+        .pulse-animation {
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+          }
+        }
+
         .math-field {
           display: inline-block;
           padding: 2px 8px;
@@ -708,13 +988,6 @@ const SuperInput = ({
           outline: 2px solid #3b82f6;
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
           background: rgba(59, 130, 246, 0.05);
-        }
-        #editor:empty:before {
-          content: attr(data-placeholder);
-          color: #9ca3af;
-          position: absolute;
-          pointer-events: none;
-          font-style: italic;
         }
       `}</style>
     </div>

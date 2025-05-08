@@ -87,7 +87,7 @@ export function HeroSection() {
           </div>
 
           <div className="flex w-4/5 flex-col justify-center items-center relative">
-            <h2 className="text-4xl font-bold leading-tight md:text-3xl sm:text-2xl text-center">
+            <h1 className="text-4xl font-semibold leading-tight md:text-3xl sm:text-2xl text-center font-roca">
               <span className="text-black-900_01">Mathz AI is your</span>
               <span className="text-yellow-a400">&nbsp;</span>
               <span className="text-amber-400">#1</span>
@@ -95,12 +95,11 @@ export function HeroSection() {
                 &nbsp;Math Buddy
                 <br />
               </span>
-            </h2>
+            </h1>
 
-            {/* Streaming Text with fade */}
             <div className="mt-6">
               <h2
-                className={`text-center text-4xl font-normal text-amber-500 transition-opacity duration-700 ${
+                className={`text-center text-4xl font-normal text-amber-400 transition-opacity duration-700 ${
                   fade ? 'opacity-0' : 'opacity-100'
                 }`}
               >
@@ -109,16 +108,14 @@ export function HeroSection() {
               </h2>
             </div>
 
-            {/* Subtext */}
             <div className="mt-6 w-1/2 flex justify-center">
-              <p className="text-base text-center">
+              <p className="text-center text-secondary-text">
                 Unlock your math potential through interactive learning. Mathz
                 AI is focused to make Math problem-solving faster, smarter, and
                 easier.
               </p>
             </div>
 
-            {/* AI Tutor image */}
             <div className="w-full mt-10 flex justify-center">
               <Img
                 src="/images/logos/ai_tutor.png"
@@ -131,38 +128,26 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Input and Topic Buttons */}
-          <div className="relative w-full px-4 sm:px-0 sm:w-10/12 lg:w-7/12 mt-5 flex flex-col mb-10 justify-center items-center">
+          <div className="relative w-full px-4 ml-24 sm:px-0 sm:w-10/12 lg:w-7/12 mt-5 flex flex-col mb-10 justify-center items-center">
             {' '}
             <SuperInput />
             <div className="w-full mt-5 flex flex-wrap gap-3">
-              <Button className="bg-white text-black rounded-md border border-gray-200 hover:bg-gray-100">
+              <Button className="bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Calculus
               </Button>
-              <Button className="bg-white text-black rounded-md border-2 border-gray-200 hover:bg-gray-100">
+              <Button className="bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Algebra
               </Button>
-              <Button className="bg-white text-black rounded-md border-2 border-gray-200 hover:bg-gray-100">
+              <Button className="bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Geometry
               </Button>
-              <Button className="bg-white text-black rounded-md border-2 border-gray-200 hover:bg-gray-100">
+              <Button className="bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 More Topics
               </Button>
             </div>
           </div>
         </div>
-        
       </div>
-      {/* <div className="absolute bottom-4 right-0 sm:right-8 md:relative md:mt-6 md:right-0">
-          <Button
-            id="askUsButton"
-            variant="fill"
-            colorScheme="blue"
-            className="rounded-full bg-gradient-primary px-5 py-3 text-white hover:shadow-lg"
-          >
-            Ask Us
-          </Button>
-        </div> */}
     </section>
   );
 }

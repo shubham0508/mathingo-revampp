@@ -7,15 +7,24 @@ import {
   ChevronRight,
   Upload,
   X,
-  Maximize2,
-  Minimize2,
   Keyboard,
   Trash2,
+  LoaderCircle,
 } from 'lucide-react';
 import Head from 'next/head';
+import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
+import {
+  useHaQuestionExtractionMutation,
+  useHaSolutionExtractionMutation,
+} from '@/store/slices/HA';
+import { setAnswer, setQuestion } from '@/store/reducers/HA';
 import { createFileData, validateFile } from '@/lib/fileUtils';
 import MathKeyboard from '@/components/shared/SuperInputBox/math-keyboard';
 import FilePreviews from '@/components/shared/SuperInputBox/file-previews';
+import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
+import { getErrorMessage } from '@/lib/utils';
+import toast from 'react-hot-toast';
 
 export default function HWAssistant() {
   const examples = [
@@ -33,12 +42,21 @@ export default function HWAssistant() {
   const [activeField, setActiveField] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
+  const [disabled, setDisabled] = useState(true);
 
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const dropAreaRef = useRef(null);
   const editorRef = useRef(null);
   const MQRef = useRef(null);
+
+  const [haQuestionExtraction] = useHaQuestionExtractionMutation();
+  const [haSolutionExtraction] = useHaSolutionExtractionMutation();
+  const { ensureAuthenticated } = useGuestUserAuth();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const MODEL_NAME = 'alpha';
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -64,6 +82,7 @@ export default function HWAssistant() {
     },
   };
 
+  // Initialize MathQuill
   useEffect(() => {
     const loadMathQuill = async () => {
       if (typeof window === 'undefined' || initialized) return;
@@ -105,6 +124,13 @@ export default function HWAssistant() {
     return () => document.removeEventListener('click', handleClick);
   }, [initialized]);
 
+  useEffect(() => {
+    const contentExists = text.trim().length > 0 || files.length > 0;
+    setHasContent(contentExists);
+    setDisabled(!contentExists);
+  }, [text, files]);
+
+  // Initialize editor
   const initEditor = useCallback(() => {
     if (typeof window !== 'undefined' && window.MathQuill) {
       MQRef.current = window.MathQuill;
@@ -112,8 +138,15 @@ export default function HWAssistant() {
       setInitialized(true);
 
       if (editorRef.current) {
-        editorRef.current.addEventListener('input', updateContent);
+        editorRef.current.addEventListener('input', handleEditorInput);
       }
+    }
+  }, []);
+
+  const handleEditorInput = useCallback(() => {
+    updateContent();
+    if (editorRef.current && editorRef.current.textContent.trim().length > 0) {
+      setShowMathKeyboard(true);
     }
   }, []);
 
@@ -294,15 +327,16 @@ export default function HWAssistant() {
       if (newFiles.length === 0) return;
 
       if (files.length + newFiles.length > 5) {
-        // MAX_FILES = 5
-        alert('Maximum 5 files can be uploaded');
+        toast.error('Maximum 5 files can be uploaded');
         return;
       }
 
       const validFiles = newFiles.filter((file) => {
         const validation = validateFile(file);
         if (!validation.isValid) {
-          Object.values(validation.errors).forEach((error) => alert(error));
+          Object.values(validation.errors).forEach((error) =>
+            toast.error(error),
+          );
           return false;
         }
         return true;
@@ -312,23 +346,38 @@ export default function HWAssistant() {
 
       const filesData = validFiles.map((file) => createFileData(file));
       setFiles((prev) => [...prev, ...filesData]);
+
+      // Clear text when files are uploaded
+      if (text.trim().length > 0) {
+        setText('');
+        if (editorRef.current) editorRef.current.innerHTML = '';
+      }
     },
-    [files],
+    [files, text],
   );
 
-  const handleCameraInput = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCameraInput = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const validation = validateFile(file);
-    if (!validation.isValid) {
-      Object.values(validation.errors).forEach((error) => alert(error));
-      return;
-    }
+      const validation = validateFile(file);
+      if (!validation.isValid) {
+        Object.values(validation.errors).forEach((error) => toast.error(error));
+        return;
+      }
 
-    const fileData = createFileData(file);
-    setFiles((prev) => [...prev, fileData]);
-  }, []);
+      const fileData = createFileData(file);
+      setFiles((prev) => [...prev, fileData]);
+
+      // Clear text when files are uploaded
+      if (text.trim().length > 0) {
+        setText('');
+        if (editorRef.current) editorRef.current.innerHTML = '';
+      }
+    },
+    [text],
+  );
 
   const triggerFileInput = useCallback(() => {
     fileInputRef.current?.click();
@@ -352,8 +401,10 @@ export default function HWAssistant() {
       setText('');
     }
     setFiles([]);
+    setHasContent(false);
   };
 
+  // Handle drag and drop
   useEffect(() => {
     const dropArea = dropAreaRef.current;
     if (!dropArea) return;
@@ -379,14 +430,16 @@ export default function HWAssistant() {
       if (droppedFiles.length === 0) return;
 
       if (files.length + droppedFiles.length > 5) {
-        alert('Maximum 5 files can be uploaded');
+        toast.error('Maximum 5 files can be uploaded');
         return;
       }
 
       const validFiles = droppedFiles.filter((file) => {
         const validation = validateFile(file);
         if (!validation.isValid) {
-          Object.values(validation.errors).forEach((error) => alert(error));
+          Object.values(validation.errors).forEach((error) =>
+            toast.error(error),
+          );
           return false;
         }
         return true;
@@ -396,6 +449,12 @@ export default function HWAssistant() {
 
       const filesData = validFiles.map((file) => createFileData(file));
       setFiles((prev) => [...prev, ...filesData]);
+
+      // Clear text when files are uploaded
+      if (text.trim().length > 0) {
+        setText('');
+        if (editorRef.current) editorRef.current.innerHTML = '';
+      }
     };
 
     dropArea.addEventListener('dragover', handleDragOver);
@@ -407,15 +466,52 @@ export default function HWAssistant() {
       dropArea.removeEventListener('dragleave', handleDragLeave);
       dropArea.removeEventListener('drop', handleDrop);
     };
-  }, [files]);
+  }, [files, text]);
 
-  const handlePaste = async (e) => {
-    if (e) {
+  // Handle paste (both text and images)
+  const handlePaste = useCallback(
+    async (e) => {
       e.preventDefault();
+
+      // First check for image data in clipboard
+      const clipboardItems = e.clipboardData?.items;
+      if (clipboardItems) {
+        for (let i = 0; i < clipboardItems.length; i++) {
+          if (clipboardItems[i].type.indexOf('image') !== -1) {
+            const blob = clipboardItems[i].getAsFile();
+            if (blob) {
+              // Create a unique filename for the pasted image
+              const fileName = `pasted-image-${Date.now()}.png`;
+              const file = new File([blob], fileName, { type: 'image/png' });
+
+              const validation = validateFile(file);
+              if (!validation.isValid) {
+                Object.values(validation.errors).forEach((error) =>
+                  toast.error(error),
+                );
+                return;
+              }
+
+              const fileData = createFileData(file);
+              setFiles((prev) => [...prev, fileData]);
+
+              // Clear text when files are uploaded
+              if (text.trim().length > 0) {
+                setText('');
+                if (editorRef.current) editorRef.current.innerHTML = '';
+              }
+              return;
+            }
+          }
+        }
+      }
+
+      // If no image found, handle text paste
       const pastedText = e.clipboardData.getData('text');
       if (pastedText?.length > 2000) {
-        alert('Maximum 2000 characters can be added as question!!');
-      } else {
+        toast.error('Maximum 2000 characters can be added as question!!');
+      } else if (files.length === 0) {
+        // Only allow text if no files are uploaded
         if (activeField && document.activeElement.closest('.math-field')) {
           if (pastedText.includes('\\') || pastedText.includes('$')) {
             activeField.latex(pastedText);
@@ -426,37 +522,239 @@ export default function HWAssistant() {
           editorRef.current.textContent += pastedText;
         }
         updateContent();
+        setShowMathKeyboard(true);
       }
+    },
+    [activeField, files.length, text, updateContent],
+  );
+
+  // Handle file submission
+  const submitFiles = async () => {
+    try {
+      toast.loading('Uploading files...', { id: 'file-upload' });
+
+      const formData = new FormData();
+      formData.append('type', 'ha_questions');
+      files.forEach((file) => formData.append('files', file?.file));
+
+      const response = await fetch('/api/s3/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        toast.error('Upload failed', { id: 'file-upload' });
+        throw new Error(
+          `Failed to upload files: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      if (!result?.success) {
+        toast.error(result?.message || 'Failed to upload files', {
+          id: 'file-upload',
+        });
+        throw new Error(result?.message || 'Failed to upload files');
+      }
+
+      toast.success('Files uploaded successfully', { id: 'file-upload' });
+
+      const filesData = result?.files?.map(({ originalName, fileKey }) => ({
+        input_type: originalName?.includes('pdf') ? 'pdf' : 'image',
+        file_url: fileKey,
+        data: '',
+      }));
+
+      toast.loading('Analyzing files...', { id: 'extraction' });
+      const extractionResponse = await haQuestionExtraction({
+        model_name: MODEL_NAME,
+        inputs: filesData,
+      }).unwrap();
+
+      toast.success('Analysis complete', { id: 'extraction' });
+      handleQuestionExtractionResponse(extractionResponse);
+    } catch (error) {
+      console.error('Upload error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to upload files. Please try again.');
+      }
+      throw error;
+    }
+  };
+
+  // Handle text question submission
+  const submitTextQuestion = async () => {
+    try {
+      if (text.trim().length === 0) {
+        toast.error('Please enter a question');
+        return;
+      }
+
+      const data = [{ data: text, input_type: 'text', file_url: '' }];
+      const response = await haQuestionExtraction({
+        model_name: MODEL_NAME,
+        inputs: data,
+      }).unwrap();
+
+      handleQuestionExtractionResponse(response);
+    } catch (error) {
+      console.error('Text submission error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to process your question. Please try again.');
+      }
+      throw error;
+    }
+  };
+
+  // Handle question extraction response
+  const handleQuestionExtractionResponse = (response) => {
+    if (response?.status_code === 201) {
+      const questions = extractAllQuestions(response.data);
+
+      if (questions.length > 1) {
+        dispatch(setQuestion(response.data));
+        router.push('/homework-assistant/select-questions');
+      } else if (questions.length === 1) {
+        handleSingleQuestion(response);
+      } else {
+        toast.error('No questions were found in the input.');
+        setIsProcessing(false);
+      }
+    } else {
+      setIsProcessing(false);
+      throw new Error(response?.error || 'Failed to process question');
+    }
+  };
+
+  // Extract all questions from response
+  const extractAllQuestions = (data) => {
+    if (!data?.files) return [];
+
+    return data.files.flatMap((file) =>
+      file.pages.flatMap((page) =>
+        page.questions.map((question) => ({
+          question_id: page.question_id,
+          question,
+          file_url: file.file_url,
+          file_type: file.file_type,
+        })),
+      ),
+    );
+  };
+
+  // Handle single question case
+  const handleSingleQuestion = async (response) => {
+    try {
+      const firstFile = response.data.files[0];
+      const firstPage = firstFile.pages[0];
+
+      const solutionResponse = await haSolutionExtraction({
+        model_name: MODEL_NAME,
+        inputs: [
+          {
+            question_id: firstPage.question_id,
+            questions_selected: firstPage.questions,
+            question_url: firstFile.file_url || 'no_input',
+          },
+        ],
+      }).unwrap();
+
+      if (solutionResponse?.status_code === 201) {
+        dispatch(setQuestion(response.data));
+        dispatch(setAnswer(solutionResponse.data));
+        router.push('/homework-assistant/select-questions/problem-solver');
+      } else {
+        setIsProcessing(false);
+        throw new Error(solutionResponse?.error || 'Failed to get solutions');
+      }
+    } catch (error) {
+      setIsProcessing(false);
+      console.error('Error extracting answers:', error);
+      const errorMessage = getErrorMessage(error?.data?.error);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to get solutions for the question.');
+      }
+      throw error;
     }
   };
 
   const handleSubmit = async () => {
-    if (isProcessing) return;
+    if (isProcessing || disabled) return;
 
     const hasContent = text.trim().length > 0 || files.length > 0;
-    if (!hasContent) return;
+    if (!hasContent) {
+      toast.error('Please enter a question or upload files');
+      return;
+    }
 
     try {
-      setIsProcessing(true);
-      // Here you would typically call your API to process the question
-      console.log('Submitting:', { text, files });
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const isReady = await ensureAuthenticated();
+      if (!isReady) {
+        toast.error('Something went wrong! Please try again later');
+        return;
+      }
 
-      // Reset after submission
+      setIsProcessing(true);
+
+      if (files.length > 0) {
+        await submitFiles();
+      } else if (text.trim().length > 0) {
+        await submitTextQuestion();
+      }
+
       setText('');
       if (editorRef.current) editorRef.current.innerHTML = '';
       setFiles([]);
       setShowMathKeyboard(false);
-
-      alert('Question submitted successfully!');
+      setHasContent(false);
     } catch (error) {
       console.error('Submission error:', error);
-      alert('Failed to process your question. Please try again.');
-    } finally {
       setIsProcessing(false);
     }
   };
+
+  const handleExampleClick = (example) => {
+    if (example === 'More Examples') return;
+
+    if (files.length > 0) {
+      toast.error('Please remove uploaded files first to use examples');
+      return;
+    }
+
+    if (editorRef.current) {
+      editorRef.current.textContent = example;
+      updateContent();
+      setShowMathKeyboard(true);
+      editorRef.current.focus();
+    }
+  };
+
+  // Disable editor when files are uploaded or processing
+  useEffect(() => {
+    if (editorRef.current) {
+      const shouldDisableEditor = files.length > 0 || isProcessing;
+      editorRef.current.setAttribute(
+        'contenteditable',
+        shouldDisableEditor ? 'false' : 'true',
+      );
+
+      if (shouldDisableEditor) {
+        editorRef.current.style.pointerEvents = 'none';
+        editorRef.current.style.opacity = '0.7';
+      } else {
+        editorRef.current.style.pointerEvents = 'auto';
+        editorRef.current.style.opacity = '1';
+      }
+    }
+  }, [files.length, isProcessing]);
 
   return (
     <>
@@ -480,13 +778,13 @@ export default function HWAssistant() {
       </Head>
 
       <div className="flex flex-row justify-center w-full min-h-screen">
-        <div className="relative">
+        <div className="relative w-full">
           <div className="flex flex-col items-center">
             <motion.h1
               initial="hidden"
               animate="visible"
               variants={fadeIn}
-              className="bg-gradient-secondary bg-clip-text text-transparent font-black text-4xl"
+              className="bg-gradient-secondary bg-clip-text text-transparent font-black text-4xl font-roca"
             >
               Homework Assistant
             </motion.h1>
@@ -495,7 +793,7 @@ export default function HWAssistant() {
               initial="hidden"
               animate="visible"
               variants={fadeIn}
-              className="mt-8 text-heading-ha text-xl font-semibold"
+              className="mt-4 text-heading-ha text-xl font-semibold"
             >
               Instant AI Math Solver
             </motion.h2>
@@ -504,54 +802,69 @@ export default function HWAssistant() {
               initial="hidden"
               animate="visible"
               variants={fadeIn}
-              className="mt-10 shadow-xl rounded-lg bg-white"
+              className="mt-8 w-2/3 rounded-lg bg-white"
+              style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
             >
-              <div className="p-8">
+              <div className="p-6">
                 <motion.div
                   ref={dropAreaRef}
-                  whileHover={{
-                    boxShadow: '0px 0px 15px rgba(66, 85, 255, 0.3)',
-                  }}
                   transition={{ duration: 0.3 }}
-                  className={`w-full min-h-[298px] rounded-md border border-dashed ${
+                  className={`w-full min-h-[250px] rounded-md border-2 border-dashed ${
                     isDragging
-                      ? 'border-blue-500 bg-action-buttons-background'
-                      : 'border-gray-400'
-                  } flex flex-col justify-between p-10 relative`}
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300'
+                  } flex flex-col justify-between p-6 relative`}
                 >
-                  {/* Trash button moved to top-right corner */}
-                  <motion.div
-                    variants={buttonHover}
-                    initial="rest"
-                    whileHover="hover"
-                    className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer"
-                    onClick={handleClear}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </motion.div>
+                  {hasContent && (
+                    <motion.div
+                      variants={buttonHover}
+                      initial="rest"
+                      whileHover="hover"
+                      className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer"
+                      onClick={handleClear}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.div>
+                  )}
 
                   <FilePreviews files={files} removeFile={removeFile} />
 
-                  <div
-                    ref={editorRef}
-                    className="flex-1 outline-none"
-                    contentEditable
-                    onKeyDown={handleEditorKeyDown}
-                    onPaste={handlePaste}
-                    data-placeholder="Type a math problem.... or drag and drop/ paste an image here"
-                    style={{ minHeight: '100px' }}
-                  />
+                  <div className="flex flex-col flex-1">
+                    <div
+                      ref={editorRef}
+                      className="flex-1 outline-none relative"
+                      contentEditable={!disabled}
+                      onKeyDown={handleEditorKeyDown}
+                      onPaste={handlePaste}
+                      style={{
+                        minHeight: '60px',
+                        pointerEvents: disabled ? 'none' : 'auto',
+                        opacity: disabled ? 0.7 : 1,
+                      }}
+                    />
+                    {text?.length === 0 && files?.length === 0 && (
+                      <div className="flex flex-row absolute text-gray-400 text-sm w-full">
+                        <span>Type a math problem....</span>
+                        <span className="absolute mt-10">
+                          or drag and drop/ paste an image here
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-4">
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="flex gap-2">
                       <motion.button
                         variants={buttonHover}
                         initial="rest"
                         whileHover="hover"
-                        className="flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-4"
+                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${
+                          isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                         onClick={triggerFileInput}
+                        disabled={isProcessing}
                       >
-                        <Upload className="w-6 h-6" />
+                        <Upload className="w-4 h-4" />
                         Upload Files
                       </motion.button>
 
@@ -559,22 +872,14 @@ export default function HWAssistant() {
                         variants={buttonHover}
                         initial="rest"
                         whileHover="hover"
-                        className="flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-4"
+                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${
+                          isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                         onClick={triggerCameraInput}
+                        disabled={isProcessing}
                       >
-                        <Camera className="w-6 h-6" />
+                        <Camera className="w-4 h-4" />
                         Take a snap
-                      </motion.button>
-
-                      <motion.button
-                        variants={buttonHover}
-                        initial="rest"
-                        whileHover="hover"
-                        className="flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-4"
-                        onClick={toggleMathKeyboard}
-                      >
-                        <Keyboard className="w-6 h-6" />
-                        Math Keyboard
                       </motion.button>
                     </div>
 
@@ -583,31 +888,45 @@ export default function HWAssistant() {
                       initial="rest"
                       whileHover="hover"
                       whileTap={{ scale: 0.95 }}
-                      className="flex items-center gap-1 bg-action-buttons-foreground text-white font-medium rounded-md shadow-sm h-9 px-4 ml-10"
+                      className={`flex items-center gap-1 
+    ${isProcessing || disabled ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'bg-action-buttons-foreground'} 
+    text-white font-medium rounded-md shadow-sm h-9 px-4`}
                       onClick={handleSubmit}
-                      disabled={isProcessing}
+                      disabled={isProcessing || disabled}
                     >
                       {isProcessing ? (
-                        'Processing...'
+                        <div className="flex items-center">
+                          <LoaderCircle className="size-5 mr-3 animate-spin text-white" />
+                          Processing...
+                        </div>
                       ) : (
                         <>
-                          Submit&nbsp;&nbsp;Questions
+                          Submit Questions
                           <ChevronRight className="w-5 h-5" />
                         </>
                       )}
                     </motion.button>
                   </div>
                 </motion.div>
-                {showMathKeyboard && (
-                  <MathKeyboard
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    insertSymbol={insertSymbol}
-                    insertCommand={insertCommand}
-                    insertExponent={insertExponent}
-                    insertSubscript={insertSubscript}
-                    insertComplexExpression={insertComplexExpression}
-                  />
+                {showMathKeyboard && files.length === 0 && (
+                  <div className="relative">
+                    <button
+                      className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1"
+                      onClick={toggleMathKeyboard}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <MathKeyboard
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                      insertSymbol={insertSymbol}
+                      insertCommand={insertCommand}
+                      insertExponent={insertExponent}
+                      insertSubscript={insertSubscript}
+                      insertComplexExpression={insertComplexExpression}
+                      disabled={disabled}
+                    />
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -617,16 +936,19 @@ export default function HWAssistant() {
               initial="hidden"
               animate="visible"
               variants={staggerChildren}
-              className="mt-10 flex flex-col items-center"
+              className="mt-6 flex flex-col items-center w-full"
             >
               <motion.div
                 variants={fadeIn}
-                className="font-medium text-gray-500 text-lg mb-4"
+                className="font-medium text-gray-600 text-base mb-3"
               >
                 ✨ Jump in with one of these examples
               </motion.div>
 
-              <motion.div variants={staggerChildren} className="flex gap-2">
+              <motion.div
+                variants={staggerChildren}
+                className="flex flex-wrap gap-2 justify-center"
+              >
                 {examples.map((example, index) => (
                   <motion.button
                     key={index}
@@ -636,7 +958,11 @@ export default function HWAssistant() {
                       backgroundColor: '#dddff8',
                       transition: { duration: 0.2 },
                     }}
-                    className="bg-button-background-question font-semibold text-black text-lg shadow-sm rounded-md border-none py-2 px-4"
+                    onClick={() => handleExampleClick(example)}
+                    className={`bg-button-background-question font-semibold text-black text-sm shadow-sm rounded-md border-none py-2 px-4 ${
+                      disabled ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    disabled={disabled}
                   >
                     {example}
                   </motion.button>
@@ -682,12 +1008,6 @@ export default function HWAssistant() {
           outline: 2px solid #3b82f6;
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
           background: rgba(59, 130, 246, 0.05);
-        }
-        [contenteditable][data-placeholder]:empty:before {
-          content: attr(data-placeholder);
-          color: #9ca3af;
-          pointer-events: none;
-          font-style: italic;
         }
       `}</style>
     </>

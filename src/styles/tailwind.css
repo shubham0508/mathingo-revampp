@@ -42,8 +42,8 @@
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 232, 100%, 97%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent: 235, 100%, 93%;
+    --sidebar-accent-foreground: 235, 100%, 93%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
@@ -166,10 +166,11 @@
 
     /* Custom Colors */
     --sidebar-content-background: 235, 100%, 93%;
-    --heading-ha: 232, 68%, 68%;
+    --heading-ha: 232, 68%, 58%;
     --action-buttons-background: 232, 100%, 97%;
     --action-buttons-foreground: 234, 100%, 63%;
-    --button-background-question: 225, 40%, 94%;
+    --button-background-question: rgba(201, 204, 224, 24%);
+    --action-buttons-hover: #5C6EFF;
   }
 
   .dark {

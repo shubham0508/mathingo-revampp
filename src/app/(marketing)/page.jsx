@@ -1,9 +1,5 @@
-import { CTASection } from "@/components/marketing/sections/cta-section";
 import FeaturesSection from "@/components/marketing/sections/features-section";
 import { HeroSection } from "@/components/marketing/sections/hero-section";
-import { PricingSection } from "@/components/marketing/sections/pricing-section";
-import { ProductsShowcase } from "@/components/marketing/sections/products-showcase";
-import { ChatButton } from "@/components/shared/chat-button";
 import { siteConfig } from "@/config/site";
 
 export const metadata = {
@@ -40,10 +36,6 @@ export default function HomePage() {
       <div className="bg-white overflow-hidden w-full max-w-full relative">
         <HeroSection />
         <FeaturesSection />
-        {/* <ProductsShowcase />
-        <PricingSection />
-        <CTASection />
-        <ChatButton /> */}
       </div>
     </div>
   );

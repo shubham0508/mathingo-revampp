@@ -18,10 +18,28 @@ export const homeworkAssistantApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['TutorQuestion'],
     }),
+    haRelatedYoutubeVideos: builder.mutation({
+      query: ({ query, limit = 10 }) => ({
+        url: 'youtube_extractor',
+        method: 'POST',
+        body: { query, limit },
+      }),
+      invalidatesTags: ['YouTube'],
+    }),
+    haRelatedQuestions: builder.mutation({
+      query: ({ query, limit = 10 }) => ({
+        url: 'similar_question',
+        method: 'POST',
+        body: { query, limit },
+      }),
+      invalidatesTags: ['SimilarQuestions'],
+    }),
   }),
 });
 
 export const {
   useHaQuestionExtractionMutation,
   useHaSolutionExtractionMutation,
+  useHaRelatedQuestionsMutation,
+  useHaRelatedYoutubeVideosMutation
 } = homeworkAssistantApi;

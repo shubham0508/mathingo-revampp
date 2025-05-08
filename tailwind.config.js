@@ -30,7 +30,16 @@ module.exports = {
         'heading-ha': 'hsl(var(--heading-ha))',
         'action-buttons-background': 'hsl(var(--action-buttons-background))',
         'action-buttons-foreground': 'hsl(var(--action-buttons-foreground))',
-        'button-background-question': 'hsl(var(--button-background-question))',
+        'button-background-question': 'var(--button-background-question)',
+        'secondary-text': '#000000B2',
+        'secondary-border': '#00000066',
+        'button-order': 'hsl(212, 71%, 54%)',
+        'custom-shadow': 'hsl(209, 70%, 49%)',
+        'text-tertiary': '#7980A3',
+        'action-buttons-hover': 'var(--action-buttons-hover)',
+        'tabs-background': '#E2E6FF',
+        'solution-steps': 'rgba(42,53,148,0.8)',
+        'secondary-background': '#F0F2FF',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -286,8 +295,8 @@ module.exports = {
           'Segoe UI Symbol"',
           'Noto Color Emoji"',
         ],
-        avenir: 'Avenir',
-        roca: 'Roca',
+        avenir: ['Avenir', 'sans-serif'],
+        roca: ['Roca', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {

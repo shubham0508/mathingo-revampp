@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 
 const ToolbarButton = ({
   active,
@@ -7,22 +6,29 @@ const ToolbarButton = ({
   disabled,
   icon,
   title,
-  highlight = false,
+  highlight,
+  className = '',
 }) => (
-  <Button
-    variant="ghost"
-    size="sm"
+  <button
+    type="button"
     onClick={onClick}
-    className={`rounded-full p-2 hover:bg-gray-200 ${
-      active ? 'bg-gray-200' : ''
-    } ${highlight ? 'text-blue-600 hover:bg-blue-100' : 'text-gray-600'}`}
     disabled={disabled}
+    className={`
+      relative flex items-center justify-center w-8 h-8 rounded-lg
+      transition-all duration-200 focus:outline-none 
+      ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+      ${
+        highlight
+          ? 'text-white shadow-md hover:shadow-lg'
+          : 'hover:shadow-sm'
+      }
+      ${className}
+    `}
     title={title}
+    aria-label={title}
   >
-    {React.cloneElement(icon, {
-      className: `w-5 h-5 ${active ? 'text-gray-900' : ''}`,
-    })}
-  </Button>
+    {icon}
+  </button>
 );
 
 export default ToolbarButton;

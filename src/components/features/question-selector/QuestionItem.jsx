@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
+import 'katex/dist/katex.min.css';
+import Latex from 'react-latex-next';
 
-export default function QuestionItem({ question, onToggle }) {
+export default function QuestionItem({ question, onToggle, index }) {
   const handleToggle = (checked) => {
     onToggle(checked);
   };
@@ -16,7 +18,7 @@ export default function QuestionItem({ question, onToggle }) {
     >
       <div className="mt-1">
         <Checkbox
-          id={`question-${question.id}`}
+          id={index}
           checked={question.checked}
           onCheckedChange={handleToggle}
           className={`${
@@ -31,7 +33,7 @@ export default function QuestionItem({ question, onToggle }) {
           htmlFor={`question-${question.id}`}
           className="font-medium text-[#000000e6] text-lg cursor-pointer select-none"
         >
-          {question.text}
+          <Latex>{question.text || ""}</Latex>
         </label>
 
         {question.subItems && (
@@ -44,7 +46,7 @@ export default function QuestionItem({ question, onToggle }) {
                 transition={{ delay: 0.1 + i * 0.05 }}
                 className="pl-3"
               >
-                {item}
+                <Latex>{item || ""}</Latex>
               </motion.div>
             ))}
           </div>

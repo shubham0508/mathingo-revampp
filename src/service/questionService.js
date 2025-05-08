@@ -1,88 +1,75 @@
 export async function fetchQuestions() {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-
-  return [
-    {
-      id: 1,
-      fileUrl: '/images/features/ha_math_question.png',
-      fileType: 'image',
-      fileName: 'Math Homework Page 1',
-      questions: [
-        {
-          id: 101,
-          text: 'Prove the trace of matrix is product of diagonal entries',
-          checked: true,
-        },
-        {
-          id: 102,
-          text: 'Answer the following:',
-          subItems: [
-            '(a) Find A+B',
-            '(b) Find A−B',
-            '(c) Find the product ABAB',
-            '(d) Find the transpose of matrix A, denoted as A^T',
-            '(e) Determine if matrix A is a symmetric matrix. Justify your answer.',
-          ],
-          checked: false,
-        },
-        {
-          id: 103,
-          text: 'Prove that tr(aA+bB) = atr(A) + btr(B)',
-          checked: false,
-        },
-      ],
-    },
-    {
-      id: 2,
-      fileUrl: '/pdfs/sample_math.pdf',
-      fileType: 'pdf',
-      fileName: 'Math Assignment 2',
-      questions: [
-        {
-          id: 201,
-          text: 'Calculate the determinant of the following matrix',
-          checked: false,
-        },
-        {
-          id: 202,
-          text: 'Find the eigenvalues and eigenvectors',
-          checked: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      fileUrl: '/images/features/ha_math_question_2.png',
-      fileType: 'image',
-      fileName: 'Math Homework Page 3',
-      questions: [
-        {
-          id: 301,
-          text: 'Solve the system of linear equations',
-          checked: false,
-        },
-        {
-          id: 302,
-          text: 'Find the inverse of matrix M',
-          checked: false,
-        },
-        {
-          id: 303,
-          text: 'Calculate the rank of the following matrix',
-          checked: false,
-        },
-      ],
-    },
-  ];
+  try {
+    return {
+      status_code: 201,
+      data: {
+        files: [
+          {
+            file_id: '2d494be1-2caf-4d73-b358-efd385431adf',
+            file_type: 'image',
+            pages: [
+              {
+                question_id: 'e2cddd23-9778-4418-b9b7-5ae85ccab0e3',
+                page_no: 1,
+                image_id: 'image_1',
+                questions: [
+                  'What is the probability of rolling a sum of 7 with two dice?',
+                  'If a coin is tossed 3 times, what is the probability of getting exactly 2 heads?',
+                  'A bag contains 3 red balls and 5 blue balls. What is the probability of picking a red ball?',
+                  'What is the probability of drawing an Ace from a standard deck of 52 playing cards?',
+                  'Two cards are drawn at random from a deck of 52 cards. What is the probability that both are spades?',
+                ],
+              },
+            ],
+            file_url: '/images/probability-questions.jpg',
+          },
+          {
+            file_id: '3e594cf2-3dbb-5e84-c469-ffd496542beg',
+            file_type: 'pdf',
+            pages: [
+              {
+                question_id: 'f3deeed3-8889-5529-c8c8-6bf96dcaabf4',
+                page_no: 1,
+                image_id: 'pdf_1',
+                questions: [
+                  'Solve the quadratic equation: x² + 5x + 6 = 0',
+                  'Find the derivative of f(x) = 3x² + 2x - 1',
+                  'Calculate the integral of g(x) = 2x + 3',
+                ],
+              },
+            ],
+            file_url: '/pdfs/math-questions.pdf',
+          },
+        ],
+      },
+      error: [],
+    };
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    throw error;
+  }
 }
 
 export async function submitSelectedQuestions(questionIds) {
-  console.log('Submitting questions:', questionIds);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    // In a real implementation, this would be an actual API call
+    // const response = await fetch('/api/submit-questions', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ questionIds })
+    // });
+    // const data = await response.json();
 
-  return {
-    success: true,
-    redirectUrl: '/answers',
-    submissionId: 'sub_' + Math.random().toString(36).substring(2, 15),
-  };
+    // Mock successful response
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API delay
+
+    return {
+      success: true,
+      redirectUrl: '/answers',
+      submissionId: 'sub_' + Math.random().toString(36).substring(2, 15),
+    };
+  } catch (error) {
+    console.error('Error submitting questions:', error);
+    throw error;
+  }
 }

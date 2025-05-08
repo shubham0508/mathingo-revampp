@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const TextEditor = ({
   editorRef,
@@ -7,33 +7,48 @@ const TextEditor = ({
   disabled,
   handleEditorKeyDown,
   handlePaste,
-  updateContent,
-}) => (
-  <div className={`w-full ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+  isProcessing,
+}) => {
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.setAttribute('data-placeholder', placeholder);
+    }
+  }, [editorRef, placeholder]);
+
+  return (
     <div
-      className="w-full bg-white p-4 relative overflow-auto"
+      className="relative w-full h-full bg-white"
       style={{ minHeight: height }}
     >
       <div
-        ref={editorRef}
         id="editor"
-        contentEditable
-        className="w-full h-full focus:outline-none text-gray-800"
-        style={{
-          minHeight: height,
-          fontSize: '18px',
-          whiteSpace: 'normal',
-          overflowWrap: 'break-word',
-          wordWrap: 'break-word',
-          lineHeight: '1.6',
-        }}
+        ref={editorRef}
+        contentEditable={!disabled}
+        className="w-full h-full p-4 outline-none"
+        data-placeholder={disabled ? "" : placeholder}
         onKeyDown={handleEditorKeyDown}
         onPaste={handlePaste}
-        onInput={updateContent}
-        data-placeholder={placeholder}
+        style={{ minHeight: height }}
       />
+
+      {isProcessing && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+        </div>
+      )}
+
+      <style jsx>{`
+        #editor:empty:before {
+          content: attr(data-placeholder);
+          color: #000000b2;
+          position: absolute;
+          top: 1rem;
+          left: 1rem;
+          pointer-events: none;
+        }
+      `}</style>
     </div>
-  </div>
-);
+  );
+};
 
 export default TextEditor;

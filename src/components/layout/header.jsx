@@ -40,24 +40,20 @@ export default function Header({ className, ...props }) {
       className={`flex justify-between items-center mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 ${className}`}
     >
       <div className="flex items-center justify-between gap-8">
-        {/* Logo */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex gap-1.5 align-middle justify-center">
           <Link href="/">
             <Img
               src="/images/icons/company_logo.svg"
-              width={44}
-              height={40}
+              width={50}
+              height={50}
               alt="Mathz AI Logo"
-              className="h-10"
+              // className="h-10"
               priority
             />
           </Link>
-          <Heading
-            as="h3"
-            className="bg-gradient-secondary bg-clip-text text-2xl sm:text-xl font-bold !text-transparent"
-          >
+          <h1 className="bg-gradient-secondary font-roca bg-clip-text text-3xl !text-transparent font-semibold">
             Mathz AI
-          </Heading>
+          </h1>
         </div>
 
         {/* Mobile Hamburger - shows below lg (1024px) */}
@@ -79,12 +75,12 @@ export default function Header({ className, ...props }) {
               : 'hidden'
           }`}
         >
-          <ul className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-6">
+          <ul className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-2 font-avenir font-medium text-lg">
             {/* Dropdown */}
             <li className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex items-center text-black hover:text-blue-600 p-2 font-semibold align-middle"
+                  className="flex items-center text-black hover:text-blue-600 p-2 align-middle font-avenir"
                   aria-expanded={productsDropdownOpen}
                   aria-haspopup="true"
                 >
@@ -95,7 +91,7 @@ export default function Header({ className, ...props }) {
                   />
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="min-w-[12rem] bg-white">
+                <DropdownMenuContent className="bg-white">
                   <DropdownMenuItem className="px-3 py-2">
                     <Link
                       href="#"
@@ -127,12 +123,11 @@ export default function Header({ className, ...props }) {
               </DropdownMenu>
             </li>
 
-            {/* Other Links */}
             <li>
               <Link
                 href="#pricing"
                 onClick={handleCloseMenu}
-                className="block text-black hover:text-blue-600 p-2 font-semibold"
+                className="block text-black hover:text-blue-600 p-2"
               >
                 Pricing
               </Link>
@@ -141,7 +136,7 @@ export default function Header({ className, ...props }) {
               <Link
                 href="#blogs"
                 onClick={handleCloseMenu}
-                className="block text-black hover:text-blue-600 p-2 font-semibold"
+                className="block text-black hover:text-blue-600 p-2"
               >
                 Blogs
               </Link>
@@ -155,16 +150,16 @@ export default function Header({ className, ...props }) {
         <Button
           shape="round"
           onClick={handleLoginClick}
-          className="rounded-md border border-black-opacity-60 px-4 py-2 bg-transparent text-black duration-200"
+          className="rounded-md border border-black-opacity-60 px-3 py-4 bg-transparent text-black duration-200 font-avenir"
         >
           Log in
         </Button>
         <Button
           shape="round"
           onClick={handleSolveNowClick}
-          className="rounded-md border border-blue-600 bg-gradient-button text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors duration-200"
+          className="rounded-md border border-blue-600 bg-gradient-button text-white px-3 py-4 font-medium hover:bg-blue-700 transition-colors duration-200 font-avenir"
         >
-          Solve now- it's free!
+          Solve now- it's free !
         </Button>
       </div>
     </header>

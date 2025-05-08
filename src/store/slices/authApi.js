@@ -107,14 +107,6 @@ export const authApi = baseApi.injectEndpoints({
         body: passwordData,
       }),
     }),
-
-    guestUserLogin: builder.mutation({
-      query: () => ({
-        url: 'login/guest',
-        method: 'POST',
-      }),
-      invalidatesTags: ['Auth'],
-    }),
   }),
 });
 

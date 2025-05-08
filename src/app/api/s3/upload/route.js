@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/config/s3Config';
 import { getToken } from 'next-auth/jwt';
+import { s3Client } from '@/config/s3Config';
 
 function generateFileKey(userId, originalName, type) {
   const timestamp = Date.now();
@@ -43,7 +43,7 @@ export async function POST(req) {
     }
 
     const bucket = process.env.S3_BUCKET_NAME;
-    const userId = token.id; // Using user ID from the token
+    const userId = token.id;
 
     const uploadResults = await Promise.all(
       files.map(async (file) => {
@@ -60,6 +60,8 @@ export async function POST(req) {
             };
           }
         }
+
+        console.log('fileKey', fileKey)
 
         await s3Client.send(
           new PutObjectCommand({

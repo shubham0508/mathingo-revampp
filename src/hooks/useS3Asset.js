@@ -75,6 +75,8 @@ export const useS3Asset = (fileUrl, preserveCache = false) => {
           const parsedData = JSON.parse(storedData);
           if (parsedData.expires > Date.now()) {
             setUrl(parsedData.url);
+            setLoading(false);
+            setError(null);      
             return;
           } else {
             localStorage.removeItem(cacheKey);
@@ -87,13 +89,19 @@ export const useS3Asset = (fileUrl, preserveCache = false) => {
       const cachedData = assetCache.get(fileUrl);
       if (cachedData && cachedData.expires > Date.now()) {
         setUrl(cachedData.url);
+        setLoading(false);
+        setError(null);  
         return;
       }
 
       if (pendingRequests.has(fileUrl)) {
         try {
           const pendingUrl = await pendingRequests.get(fileUrl);
-          if (isMounted) setUrl(pendingUrl);
+          if (isMounted) {
+            setUrl(pendingUrl);
+            setLoading(false);
+            setError(null);      
+          }
         } catch (err) {
           if (isMounted) setError(err.message || 'Failed to fetch asset');
         }
