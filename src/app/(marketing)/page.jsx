@@ -1,5 +1,7 @@
 import FeaturesSection from "@/components/marketing/sections/features-section";
 import { HeroSection } from "@/components/marketing/sections/hero-section";
+import LANDINGPAGEEightPage from "@/components/marketing/sections/product-overview";
+import UniqueFeaturesSection from "@/components/marketing/sections/products-showcase";
 import { siteConfig } from "@/config/site";
 
 export const metadata = {
@@ -36,6 +38,8 @@ export default function HomePage() {
       <div className="bg-white overflow-hidden w-full max-w-full relative">
         <HeroSection />
         <FeaturesSection />
+        <UniqueFeaturesSection />
+        <LANDINGPAGEEightPage />
       </div>
     </div>
   );

@@ -37,26 +37,24 @@ export default function Header({ className, ...props }) {
 
   return (
     <header
-      className={`flex justify-between items-center mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 ${className}`}
+      className={`flex align-middle justify-between items-center mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 ${className}`}
     >
-      <div className="flex items-center justify-between gap-8">
+      <div className="flex items-center align-middle justify-between gap-8">
         <div className="flex gap-1.5 align-middle justify-center">
           <Link href="/">
             <Img
               src="/images/icons/company_logo.svg"
-              width={50}
-              height={50}
+              width={100}
+              height={100}
               alt="Mathz AI Logo"
-              // className="h-10"
               priority
             />
           </Link>
-          <h1 className="bg-gradient-secondary font-roca bg-clip-text text-3xl !text-transparent font-semibold">
+          <h1 className="bg-gradient-secondary font-roca bg-clip-text text2xl !text-transparent font-semibold">
             Mathz AI
           </h1>
         </div>
 
-        {/* Mobile Hamburger - shows below lg (1024px) */}
         <div className="lg:hidden">
           <button
             onClick={handleMenuToggle}
@@ -71,11 +69,11 @@ export default function Header({ className, ...props }) {
         <nav
           className={`lg:flex lg:items-center lg:space-x-6 ${
             menuOpen
-              ? 'absolute top-16 left-0 right-0 bg-white shadow-md z-50 px-6 py-6 block'
+              ? 'absolute top-16 left-0 right-0 bg-white shadow-md z-50 px-6 py-8 block'
               : 'hidden'
           }`}
         >
-          <ul className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-2 font-avenir font-medium text-lg">
+          <ul className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-2 font-avenir font-medium text-lg mt-2">
             {/* Dropdown */}
             <li className="relative">
               <DropdownMenu>
@@ -84,7 +82,7 @@ export default function Header({ className, ...props }) {
                   aria-expanded={productsDropdownOpen}
                   aria-haspopup="true"
                 >
-                  Products
+                  <span className="text-lg">Products</span>
                   <ChevronDown
                     size={16}
                     className={`ml-1 transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
@@ -98,7 +96,7 @@ export default function Header({ className, ...props }) {
                       onClick={handleCloseMenu}
                       className="block w-full"
                     >
-                      AI Math Tutor
+                      <span className="text-sm">AI Math Tutor</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="px-3 py-2">
@@ -107,7 +105,7 @@ export default function Header({ className, ...props }) {
                       onClick={handleCloseMenu}
                       className="block w-full"
                     >
-                      Homework Assignment
+                      <span className="text-sm">Homework Assignment</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="px-3 py-2">
@@ -116,7 +114,7 @@ export default function Header({ className, ...props }) {
                       onClick={handleCloseMenu}
                       className="block w-full"
                     >
-                      Smart Solution Check
+                      <span className="text-sm">Smart Solution Check</span>
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -129,7 +127,7 @@ export default function Header({ className, ...props }) {
                 onClick={handleCloseMenu}
                 className="block text-black hover:text-blue-600 p-2"
               >
-                Pricing
+                <span className="text-lg">Pricing</span>
               </Link>
             </li>
             <li>
@@ -138,7 +136,7 @@ export default function Header({ className, ...props }) {
                 onClick={handleCloseMenu}
                 className="block text-black hover:text-blue-600 p-2"
               >
-                Blogs
+                <span className="text-lg">Blogs</span>
               </Link>
             </li>
           </ul>
@@ -150,14 +148,14 @@ export default function Header({ className, ...props }) {
         <Button
           shape="round"
           onClick={handleLoginClick}
-          className="rounded-md border border-black-opacity-60 px-3 py-4 bg-transparent text-black duration-200 font-avenir"
+          className="rounded-md border border-black px-3 py-4 bg-transparent text-black duration-200 font-avenir"
         >
           Log in
         </Button>
         <Button
           shape="round"
           onClick={handleSolveNowClick}
-          className="rounded-md border border-blue-600 bg-gradient-button text-white px-3 py-4 font-medium hover:bg-blue-700 transition-colors duration-200 font-avenir"
+          className="rounded-md border border-blue-900 bg-primary text-white px-3 py-4 font-medium hover:bg-blue-700 transition-colors duration-200 font-avenir"
         >
           Solve now- it's free !
         </Button>

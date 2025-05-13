@@ -47,7 +47,7 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Color variables from paste-3.txt */
+    /* Custom colors */
     --amber-100: #ffedba;
     --amber-300: #ffcc4d;
     --amber-400: #fcc21b;
@@ -216,7 +216,7 @@
     @apply bg-background text-foreground;
   }
 
-  /* Form element reset from paste-3.txt */
+  /* Form element reset */
   [type="text"],
   input:where(:not([type])),
   [type="email"],
@@ -243,7 +243,7 @@
     line-height: unset;
   }
 
-  /* Override default focus colors for tailwindcss-forms */
+  /* Override default focus colors */
   [type="text"]:focus,
   [type="email"]:focus,
   [type="url"]:focus,
@@ -263,7 +263,7 @@
     --tw-ring-color: transparent;
   }
 
-  /* Other custom styles from paste-3.txt */
+  /* Other custom styles */
   li:focus-visible {
     outline: none;
   }
@@ -275,7 +275,7 @@
 
 @layer components {
 
-  /*Container CSS from paste-3.txt*/
+  /* Container styles */
   .container-xs {
     @apply w-full mx-auto max-w-[1124px];
   }

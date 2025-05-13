@@ -71,11 +71,11 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="w-full bg-hero-pattern bg-cover bg-no-repeat">
+    <section className="w-full bg-mathz-radial bg-cover bg-no-repeat">
       <Header />
       <div className="relative w-full flex flex-col items-center">
         <div className="w-full flex flex-col justify-center items-center">
-          <div className="flex justify-center items-center mt-10">
+          <div className="flex justify-center items-center mt-5">
             <Img
               src="/images/logos/infinity.png"
               alt="Infinity Background"
@@ -86,8 +86,8 @@ export function HeroSection() {
             />
           </div>
 
-          <div className="flex w-4/5 flex-col justify-center items-center relative">
-            <h1 className="text-4xl font-semibold leading-tight md:text-3xl sm:text-2xl text-center font-roca">
+          <div className="flex flex-col justify-center items-center relative text-center">
+            <h1 className="headingmd font-semibold leading-tight text-center font-roca">
               <span className="text-black-900_01">Mathz AI is your</span>
               <span className="text-yellow-a400">&nbsp;</span>
               <span className="text-amber-400">#1</span>
@@ -99,7 +99,7 @@ export function HeroSection() {
 
             <div className="mt-6">
               <h2
-                className={`text-center text-4xl font-normal text-amber-400 transition-opacity duration-700 ${
+                className={`text-center headingmd font-semibold text-black-900_01 transition-opacity duration-700 ${
                   fade ? 'opacity-0' : 'opacity-100'
                 }`}
               >
@@ -108,13 +108,11 @@ export function HeroSection() {
               </h2>
             </div>
 
-            <div className="mt-6 w-1/2 flex justify-center">
-              <p className="text-center text-secondary-text">
-                Unlock your math potential through interactive learning. Mathz
-                AI is focused to make Math problem-solving faster, smarter, and
-                easier.
-              </p>
-            </div>
+            <p className="text-secondary-text text-xl mt-5 flex justify-start items-center w-[52%] text-center">
+              Unlock your math potential through interactive learning. Mathz AI
+              is focused to make Math problem-solving faster, smarter, and
+              easier.
+            </p>
 
             <div className="w-full mt-10 flex justify-center">
               <Img
@@ -122,13 +120,13 @@ export function HeroSection() {
                 alt="AI Tutor"
                 width={400}
                 height={400}
-                className="absolute object-contain h-auto max-h-[400px] pointer-events-none select-none right-4 top-[-60px]"
+                className="absolute object-contain h-auto max-h-[400px] pointer-events-none select-none right-0 top-[-40px]"
                 priority
               />
             </div>
           </div>
 
-          <div className="relative w-full px-4 ml-24 sm:px-0 sm:w-10/12 lg:w-7/12 mt-5 flex flex-col mb-10 justify-center items-center">
+          <div className="relative px-4 ml-24 sm:px-0 sm:w-10/12 lg:w-8/12 mt-2 flex flex-col mb-10 justify-center items-center">
             {' '}
             <SuperInput />
             <div className="w-full mt-5 flex flex-wrap gap-3">

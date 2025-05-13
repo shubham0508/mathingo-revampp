@@ -16,8 +16,12 @@ module.exports = {
       lg: '1024px',
       xl: '1280px',
       '2xl': '1536px',
-      'max-md': { max: '767px' },
-      'max-sm': { max: '639px' },
+      'max-md': {
+        max: '767px',
+      },
+      'max-sm': {
+        max: '639px',
+      },
     },
     extend: {
       colors: {
@@ -30,16 +34,28 @@ module.exports = {
         'heading-ha': 'hsl(var(--heading-ha))',
         'action-buttons-background': 'hsl(var(--action-buttons-background))',
         'action-buttons-foreground': 'hsl(var(--action-buttons-foreground))',
+        'action-buttons-hover': 'var(--action-buttons-hover)',
         'button-background-question': 'var(--button-background-question)',
         'secondary-text': '#000000B2',
         'secondary-border': '#00000066',
         'button-order': 'hsl(212, 71%, 54%)',
         'custom-shadow': 'hsl(209, 70%, 49%)',
         'text-tertiary': '#7980A3',
-        'action-buttons-hover': 'var(--action-buttons-hover)',
         'tabs-background': '#E2E6FF',
         'solution-steps': 'rgba(42,53,148,0.8)',
         'secondary-background': '#F0F2FF',
+        'landing-bg-image': '#C4E8FF',
+        'landing-bg-border': '#2E90D0',
+        'ha-image-blue-boxes': '#80BAFF',
+        'mathzai-bg-start': '#D1E9FF', // Lightest blue for gradient top
+        'mathzai-bg-end': '#A6D8FF', // Darker blue for gradient bottom
+        'mathzai-circle-outer': '#C2E0FF', // Outer ring of the large circle
+        'mathzai-circle-border': '#A9D3FF', // Border/glow of the large circle
+        'mathzai-green': '#A8E0A3',
+        'mathzai-pink': '#FDC0C0',
+        'mathzai-yellow': '#FCE5A7',
+        'mathzai-blue-icon': '#3B82F6',
+        'mathzai-text-dark': '#374151', // For text on light bubbles
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -67,6 +83,16 @@ module.exports = {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
         },
         amber: {
           100: 'var(--amber-100)',
@@ -175,46 +201,7 @@ module.exports = {
           400: 'var(--yellow-400)',
           700: 'var(--yellow-700)',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
       },
-      borderRadius: {
-        xs: 'var(--radius-xs)',
-        sm: 'var(--radius-sm)',
-        md: 'var(--radius-md)',
-        lg: 'var(--radius-lg)',
-        xl: 'var(--radius-xl)',
-        '2xl': 'var(--radius-2xl)',
-        '3xl': 'var(--radius-3xl)',
-        '4xl': 'var(--radius-4xl)',
-        '5xl': 'var(--radius-5xl)',
-        '6xl': 'var(--radius-6xl)',
-        '7xl': 'var(--radius-7xl)',
-        '8xl': 'var(--radius-8xl)',
-      },
-      boxShadow: {
-        xs: 'var(--shadow-xs)',
-        sm: 'var(--shadow-sm)',
-        md: 'var(--shadow-md)',
-        lg: 'var(--shadow-lg)',
-      },
-      backgroundImage: {
-        'hero-pattern': "url('/images/icons/img_group_4.png')",
-        'gradient-primary': 'linear-gradient(180deg, #05a3e3, #3481dc)',
-        'gradient-secondary': 'linear-gradient(90deg, #1588e9, #31cdae)',
-        'gradient-button': 'linear-gradient(180deg, #05A3E4, #3482DD)',
-        'gradient-background': 'linear-gradient(180deg, #05A3E4, #3482DD)',
-        infinity: "url('/images/logos/infinity.png')",
-      },
-
       fontSize: {
         xs: [
           '0.75rem',
@@ -270,6 +257,40 @@ module.exports = {
             lineHeight: '1',
           },
         ],
+      },
+      borderRadius: {
+        xs: 'var(--radius-xs)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
+        '4xl': 'var(--radius-4xl)',
+        '5xl': 'var(--radius-5xl)',
+        '6xl': 'var(--radius-6xl)',
+        '7xl': 'var(--radius-7xl)',
+        '8xl': 'var(--radius-8xl)',
+      },
+      boxShadow: {
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        'feature-bubble': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'main-circle': '0 8px 20px rgba(0,0,0,0.15)',
+      },
+      backgroundImage: {
+        'hero-pattern': "url('/images/icons/img_group_4.png')",
+        'gradient-primary': 'linear-gradient(180deg, #05a3e3, #3481dc)',
+        'gradient-secondary': 'linear-gradient(90deg, #1588e9, #31cdae)',
+        'gradient-button': 'linear-gradient(180deg, #05A3E4, #3482DD)',
+        'gradient-background': 'linear-gradient(180deg, #05A3E4, #3482DD)',
+        infinity: "url('/images/logos/infinity.png')",
+        'mathz-radial': 'radial-gradient(circle, rgba(84,180,250,0.6) 9%, rgba(54,168,250,0.6) 64%, rgba(127,209,255,0.6) 100%)',
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic':
+        'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       spacing: {
         xs: 'var(--space-xs)',
@@ -338,5 +359,57 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addComponents }) {
+      addComponents({
+        '.textlg': {
+          fontSize: '18px',
+          fontWeight: '500',
+          '@screen sm': {
+            fontSize: '15px',
+          },
+        },
+        '.text2xl': {
+          fontSize: '30px',
+          fontWeight: '500',
+          // '@screen md': {
+          //   fontSize: '28px',
+          // },
+          // '@screen sm': {
+          //   fontSize: '25px',
+          // },
+        },
+        '.headingxs': {
+          fontSize: '25px',
+          fontWeight: '800',
+          '@screen md': {
+            fontSize: '23px',
+          },
+          '@screen sm': {
+            fontSize: '21px',
+          },
+        },
+        '.headings': {
+          fontSize: '30px',
+          fontWeight: '700',
+          '@screen md': {
+            fontSize: '28px',
+          },
+          '@screen sm': {
+            fontSize: '25px',
+          },
+        },
+        '.headingmd': {
+          fontSize: '40px',
+          fontWeight: '700',
+          // '@screen md': {
+          //   fontSize: '38px',
+          // },
+          // '@screen sm': {
+          //   fontSize: '34px',
+          // },
+        },
+      });
+    },
+  ],
 };
