@@ -22,6 +22,7 @@ import toast from 'react-hot-toast';
 import { setAnswer, setQuestion } from '@/store/reducers/HA';
 import { getErrorMessage } from '@/lib/utils';
 import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
+import Image from 'next/image';
 
 const TLDrawWhiteboard = dynamic(() => import('./tldraw'), {
   ssr: false,
@@ -274,7 +275,7 @@ const SuperInput = ({
   const handleQuestionExtractionResponse = (response) => {
     if (response?.status_code === 201) {
       const questions = extractAllQuestions(response.data);
-  
+
       if (questions.length > 1) {
         dispatch(setQuestion(response.data));
         router.push('/homework-assistant/select-questions');
@@ -309,7 +310,7 @@ const SuperInput = ({
     try {
       const firstFile = response.data.files[0];
       const firstPage = firstFile.pages[0];
-  
+
       const solutionResponse = await haSolutionExtraction({
         model_name: MODEL_NAME,
         inputs: [
@@ -320,7 +321,7 @@ const SuperInput = ({
           },
         ],
       }).unwrap();
-  
+
       if (solutionResponse?.status_code === 201) {
         dispatch(setQuestion(response.data));
         dispatch(setAnswer(solutionResponse.data));
@@ -506,7 +507,7 @@ const SuperInput = ({
   const handlePaste = async (e) => {
     if (e) {
       e.preventDefault();
-      
+
       // Handle pasted images
       if (e.clipboardData.items) {
         for (const item of e.clipboardData.items) {
@@ -517,13 +518,13 @@ const SuperInput = ({
                 toast.error(`Maximum ${MAX_FILES} files can be uploaded`);
                 return;
               }
-              
+
               const validation = validateFile(file);
               if (!validation.isValid) {
                 Object.values(validation.errors).forEach((error) => toast.error(error));
                 return;
               }
-              
+
               const fileData = createFileData(file);
               setFiles((prev) => [...prev, fileData]);
               return; // Exit after handling image
@@ -531,7 +532,7 @@ const SuperInput = ({
           }
         }
       }
-      
+
       // Handle pasted text (existing logic)
       const pastedText = e.clipboardData.getData('text');
       if (pastedText?.length > 2000) {
@@ -554,32 +555,32 @@ const SuperInput = ({
   useEffect(() => {
     const dropArea = dropAreaRef.current;
     if (!dropArea) return;
-  
+
     const handleDragOver = (e) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(true);
     };
-  
+
     const handleDragLeave = (e) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
     };
-  
+
     const handleDrop = (e) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-  
+
       const droppedFiles = Array.from(e.dataTransfer?.files || []);
       if (droppedFiles.length === 0) return;
-  
+
       if (files.length + droppedFiles.length > MAX_FILES) {
         toast.error(`Maximum ${MAX_FILES} files can be uploaded`);
         return;
       }
-  
+
       const validFiles = droppedFiles.filter((file) => {
         const validation = validateFile(file);
         if (!validation.isValid) {
@@ -590,25 +591,25 @@ const SuperInput = ({
         }
         return true;
       });
-  
+
       if (validFiles.length === 0) return;
-  
+
       const filesData = validFiles.map((file) => createFileData(file));
       setFiles((prev) => [...prev, ...filesData]);
     };
-  
+
     // Add global paste event handler for images
     const handleGlobalPaste = (e) => {
       if (mode === MODES.TEXT && !disabled && files.length === 0) {
         handlePaste(e);
       }
     };
-  
+
     dropArea.addEventListener('dragover', handleDragOver);
     dropArea.addEventListener('dragleave', handleDragLeave);
     dropArea.addEventListener('drop', handleDrop);
     document.addEventListener('paste', handleGlobalPaste);
-  
+
     return () => {
       dropArea.removeEventListener('dragover', handleDragOver);
       dropArea.removeEventListener('dragleave', handleDragLeave);
@@ -859,11 +860,20 @@ const SuperInput = ({
 
   return (
     <div className="relative w-full">
+      <div className="w-full mt-16 md:mt-10">
+        <Image
+          src="/images/logos/ai_tutor.png"
+          alt="AI Tutor"
+          width={400}
+          height={400}
+          className="absolute object-contain max-h-[200px] sm:max-h-[300px] md:max-h-[400px] pointer-events-none select-none top-[-90px] md:top-[-270px] right-[-140px] md:right-[-120px] lg:right-[-140px]"
+          priority
+        />
+      </div>
       <div
         ref={dropAreaRef}
-        className={`w-full flex flex-col rounded-lg overflow-hidden border shadow-lg shadow-custom-shadow ${
-          isDragging ? 'border-blue-500' : 'border-black'
-        } transition-shadow duration-200`}
+        className={`w-full flex flex-col rounded-lg overflow-hidden border shadow-lg shadow-custom-shadow ${isDragging ? 'border-blue-500' : 'border-black'
+          } transition-shadow duration-200`}
         style={{ minHeight: height }}
       >
         <FilePreviews

@@ -1,3 +1,5 @@
+import FloatingHelpButton from "@/components/marketing/sections/ask-us-modal";
+import FAQs from "@/components/marketing/sections/faqs";
 import FeaturesSection from "@/components/marketing/sections/features-section";
 import { HeroSection } from "@/components/marketing/sections/hero-section";
 import LANDINGPAGEEightPage from "@/components/marketing/sections/product-overview";
@@ -34,13 +36,13 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <div className="bg-white flex flex-row justify-center w-full">
-      <div className="bg-white overflow-hidden w-full max-w-full relative">
-        <HeroSection />
-        <FeaturesSection />
-        <UniqueFeaturesSection />
-        <LANDINGPAGEEightPage />
-      </div>
+    <div className="overflow-hidden relative">
+      <HeroSection />
+      <FeaturesSection />
+      <UniqueFeaturesSection />
+      <LANDINGPAGEEightPage />
+      <FAQs />
+      <FloatingHelpButton />
     </div>
   );
 }

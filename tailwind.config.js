@@ -21,7 +21,7 @@ module.exports = {
       },
       'max-sm': {
         max: '639px',
-      },
+      }
     },
     extend: {
       colors: {

@@ -3,9 +3,7 @@
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import React from 'react';
-import { CheckCircle2, X, XCircle } from 'lucide-react';
-import Latex from 'react-latex-next';
+import { Check, X } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 
 const fadeInUp = {
@@ -21,7 +19,6 @@ export default function FeaturesSection() {
   return (
     <section className="container mx-auto py-16 px-4">
       <div className="flex flex-col items-center">
-        {/* Section Title */}
         <motion.h1
           initial="hidden"
           whileInView="visible"
@@ -42,138 +39,237 @@ export default function FeaturesSection() {
           depending on how you want to see it.
         </motion.h2>
 
-        {/* Feature 1 - AI Math Tutor */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-2 w-full px-4 md:px-12 lg:px-24"
+          className="mt-12 sm:mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-10 w-full px-0 md:px-12 lg:px-24"
         >
-          <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
+          <div className="flex flex-col items-center justify-center text-center lg:w-1/2">
+            <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
               AI Math Tutor
             </h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg">
+            <p className="mt-4 max-w-md text-xl">
               Experience real-time tutoring support with an AI buddy who teaches
               interactively and understands your problems.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline" className="border-black">
+            <div className="mt-8 flex flex-wrap gap-4 ">
+              <Button variant="outline" className="border-black text-xl">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
               >
                 Start Learning
               </Button>
             </div>
           </div>
 
-          <div className="w-full max-w-lg">
-            <video
-              className="rounded-lg border-2 border-blue-500 w-full h-auto"
-              controls
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/videos/feature_AMT.mov" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+          <div className="lg:w-1/2 flex justify-center items-center text-center w-full">
+            <div className="relative w-full aspect-[4/3] flex justify-center items-center">
+              <div className="flex justify-center items-center relative z-10 w-[90%] h-[80%] lg:w-full lg:h-full">
+                <div className="absolute -left-5 -bottom-[20px] z-0 w-44 md:w-auto">
+                  <Image src="/images/features/AMT/bg-shape-pink-1.png" alt="Decorative Shape" width={350} height={500} />
+                </div>
+                <div className="absolute -top-[35px] right-24 z-0">
+                  <Image src="/images/features/AMT/bg-shape-blue-1.png" alt="Decorative Shape" width={50} height={50} />
+                </div>
+                <div className="absolute -top-[30px] right-12 z-0">
+                  <Image src="/images/features/AMT/bg-shape-blue-1.png" alt="Decorative Shape" width={40} height={40} />
+                </div>
+                <div className="absolute -bottom-[20px] -right-[20px] z-0 w-44 md:w-auto">
+                  <Image src="/images/features/AMT/bg-shape-pink-2.png" alt="Decorative Shape" width={350} height={1400} />
+                </div>
+
+                <div className="absolute inset-0 z-20">
+                  <Image
+                    src="/images/features/AMT/computer-body.png"
+                    alt="Computer Display Frame"
+                    layout="fill"
+                    objectFit="contain w-10 h-10"
+                  />
+                </div>
+                <div
+                  className="absolute z-10 overflow-hidden h-full"
+                  style={{
+                    top: '6.5%',
+                    left: '4.5%',
+                    width: '91%',
+                    height: '84%',
+                  }}
+                >
+                  <video
+                    className="w-full h-full object-cover rounded-md z-10"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                  >
+                    <source src="/videos/feature_AMT.mov" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+
+                <div className="absolute bottom-[-3%] sm:bottom-[-3%] left-1/2 -translate-x-1/2 w-[45%] sm:w-[40%] z-20 flex flex-col items-center">
+                  <Image
+                    src="/images/features/AMT/computer-base-1.png"
+                    alt="Computer Base"
+                    width={63}
+                    height={12}
+                    className='mx-auto object-contain w-[30%] h-auto'
+                  />
+                  <Image
+                    src="/images/features/AMT/computer-base-2.png"
+                    alt="Computer Base"
+                    width={200}
+                    height={50}
+                    layout="responsive"
+                    objectFit="contain"
+                    className="mt-2 sm:mt-10"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
 
-        {/* Feature 2 - Homework Assignment */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="mt-20 flex flex-col lg:flex-row items-center justify-between gap-2 w-full px-4 md:px-12 lg:px-24"
+          className="mt-12 sm:mt-32 flex flex-col lg:flex-row items-center justify-between gap-10 w-full px-0 md:px-12 lg:px-24"
         >
-          <div className="relative flex h-[468px] w-[44%] flex-col items-center self-center">
-            <div className="relative flex aspect-square w-full items-center justify-center rounded-full bg-[#BBF9B6]">
-              <div className="absolute right-[15%] top-1 h-[62px] w-[62px] rounded-[10px] bg-ha-image-blue-boxes" />
-              <div className="absolute bottom-[13%] left-[16%] h-[62px] w-[20%] rounded-[10px] bg-ha-image-blue-boxes" />
+          <div className="relative flex justify-center h-full items-center text-center w-full lg:w-1/2">
+            <div className="relative w-full aspect-[4/3] flex justify-center items-center mt-32">
+              <Image
+                src="/images/features/HA/ha_phone.png"
+                alt="Smartphone"
+                width={257}
+                height={469}
+                className="absolute z-10 w-[60%]"
+              />
+
+              <div className="absolute -top-[40px] left-0 sm:-top-[20px] sm:-left-14 z-0 opacity-80 w-[50%] h-auto">
+                <Image src="/images/features/HA/ha_bg_green_circle.png" alt="Decorative Shape" width={350} height={300} />
+              </div>
+              <div className="absolute top-0 right-4 sm:top-0 sm:right-4 z-0 w-[80%] h-auto">
+                <Image src="/images/features/HA/bg_ha_green_rectangle.png" alt="Decorative Shape" width={420} height={450} />
+              </div>
 
               <Image
-                src="/images/features/ha_math_question.png"
-                alt="Math question"
-                width={268}
-                height={352}
-                className="absolute top-[7px] w-[64%] rounded-[10px] object-contain"
+                src="/images/features/HA/ha_math-equation.png"
+                alt="Math equation snippet"
+                width={100}
+                height={100}
+                className="absolute top-0 left-8 object-contain z-20 h-auto w-[50%]"
               />
 
               <Image
-                src="/images/features/ha_math-equation.png"
-                alt="Math equation"
-                width={278}
-                height={40}
-                className="absolute top-[42%] left-[19px] w-[68%] object-contain"
-              />
-
-              <Image
-                src="/images/icons/img_plus.svg"
+                src="/images/features/HA/img_plus.png"
                 alt="Plus icon"
                 width={24}
                 height={24}
-                className="absolute right-[25%] my-auto h-6 w-6"
+                className="absolute top-3 sm:top-6 right-[37%] sm:right-[42%] w-6 h-6 z-20 object-contain"
               />
-            </div>
 
-            <div className="absolute bottom-0 right-0 z-10 flex w-3/4 flex-col justify-center gap-[18px] rounded-[10px] border border-landing-bg-border bg-white px-5 py-[22px]">
-              <div className="flex items-center gap-2 font-avenir">
-                <div className="bg-landing-bg-image text-[9px] px-4 py-2 rounded-md font-medium border border-landing-bg-border">
-                  Hints
+              <Image
+                src="/images/features/HA/ha_book.png"
+                alt="Open book"
+                width={150}
+                height={150}
+                className="absolute top-[50px] left-[10%] sm:left-8 -translate-x-1/2 w-[30%] sm:w-[40%] object-contain z-20 h-auto"
+              />
+
+              <div className="absolute top-[150px] left-[10%] sm:top-[280px] sm:left-16 md:left-12 md:top-[240px] -translate-x-1/2 w-[10%] sm:w-[10%] object-contain z-10 h-auto">
+                <Image src="/images/features/HA/ha_bg_green_circle.png" alt="Decorative Shape" width={40} height={40} layout="responsive" />
+              </div>
+              <div className="absolute top-[190px] left-[10%] sm:top-[340px] sm:left-16 md:left-12 md:top-[300px] -translate-x-1/2 w-[8%] sm:w-[8%] object-contain z-10 h-auto">
+                <Image src="/images/features/HA/ha_bg_green_circle.png" alt="Decorative Shape" width={30} height={30} layout="responsive" />
+              </div>
+
+              <Image
+                src="/images/features/HA/ha_camera.png"
+                alt="Camera icon"
+                width={60}
+                height={60}
+                className="absolute top-[20px] left-[5%] sm:left-0 -translate-x-1/2 w-[22%] object-contain z-10 h-auto"
+              />
+
+              <div className="absolute top-12 sm:top-14 z-10 flex flex-col justify-center gap-4 sm:gap-10 w-2/3 items-center px-4">
+                <div className="flex flex-wrap justify-center gap-1 2xl:gap-2 font-avenir text-center">
+                  <div className="text-[9px] sm:text-sm 2xl:text-sm text-primary px-1 py-1 sm:py-1 sm:px-1 2xl:px-2 2xl:py-2 rounded-md font-semibold border bg-[#E2E6FF] border-primary">
+                    Hints
+                  </div>
+                  <div className="text-[9px] sm:text-sm 2xl:text-sm border px-1 py-1 sm:py-1 sm:px-1 2xl:px-2 2xl:py-2 rounded-md font-semibold text-primary border-primary">
+                    Concepts
+                  </div>
+                  <div className="text-[9px] sm:text-sm 2xl:text-sm border px-1 py-1 sm:py-1 sm:px-1 2xl:px-2 2xl:py-2 rounded-md font-semibold text-primary border-primary">
+                    Solution
+                  </div>
+                  <div className="text-[9px] sm:text-sm 2xl:text-sm border px-1 py-1 sm:py-1 sm:px-1 2xl:px-2 2xl:py-2 rounded-md font-semibold text-primary border-primary">
+                    Answer
+                  </div>
                 </div>
-                <div className="text-[9px] border border-landing-bg-border px-4 py-2 rounded-md text-landing-bg-border font-medium">
-                  Concepts
-                </div>
-                <div className="text-[9px] border border-landing-bg-border px-4 py-2 rounded-md text-landing-bg-border">
-                  Solution
-                </div>
-                <div className="text-[9px] border border-landing-bg-border px-4 py-2 rounded-md text-landing-bg-border">
-                  Answer
+                <div className="flex flex-col gap-1 sm:gap-2 font-avenir text-[10px] sm:text-sm absolute top-10 w-3/4 sm:w-[80%] px-1 sm:px-2 text-start mt-0 sm:mt-10">
+                  <p>👉 Recall the definition of the transpose of a matrix.</p>
+                  <p>👉 Consider an arbitrary element of the matrix A and track how its indices change after taking the transpose twice.</p>
                 </div>
               </div>
-              <ul className="text-xs text-[13px] font-normal leading-[17px] list-disc px-5">
-                <li>Recall the definition of the transpose of a matrix.</li>
-                <li>
-                  Consider an arbitrary element of the matrix A and track how
-                  its indices change after taking the transpose twice.
-                </li>
-              </ul>
-            </div>
 
-            <Image
-              src="/images/icons/img_arrow_1.svg"
-              alt="Arrow icon"
-              width={62}
-              height={126}
-              className="absolute top-0 left-[13%] w-[16%] object-contain"
-            />
+              <Image
+                src="/images/features/HA/ha_phone_top.png"
+                alt="Smartphone"
+                width={100}
+                height={12}
+                className="absolute object-contain z-20 -top-[55px] sm:-top-[70px] 2xl:-top-[78px] h-auto"
+              />
+
+              <Image
+                src="/images/features/HA/ha_phone_black_rect.png"
+                alt="Smartphone"
+                width={268}
+                height={118}
+                className="absolute -bottom-10 sm:-bottom-16 w-[24%] object-contain z-20"
+              />
+
+              <Image
+                src="/images/features/HA/ha_phone_side1.png"
+                alt="Smartphone"
+                width={8}
+                height={37}
+                className="absolute top-0 right-[18%] sm:right-[90px] 2xl:right-[105px] object-contain z-20"
+              />
+
+              <Image
+                src="/images/features/HA/ha_phone_side2.png"
+                alt="Smartphone"
+                width={8}
+                height={54}
+                className="absolute top-10 right-[18%] sm:right-[90px] 2xl:right-[105px] object-contain z-20"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
-              Homework Assignment
+          <div className="flex flex-col items-center justify-center text-center w-full lg:w-1/2 mt-12 lg:mt-32 lg:ml-10 px-4 sm:px-0">
+            <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
+              Homework Assistant
             </h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg">
+            <p className="mt-4 max-w-md text-xl">
               Provide your math problems by uploading, typing, copy-pasting, or
               taking a picture. Filter out irrelevant questions and get precise
               hints, solutions, and relevant information.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline" className="border-black">
+            <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
+              <Button variant="outline" className="border-black text-xl">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
               >
                 Get help on an assignment
               </Button>
@@ -181,121 +277,178 @@ export default function FeaturesSection() {
           </div>
         </motion.div>
 
-        {/* Feature 3 - Smart Solution Check */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-2 w-full px-4 md:px-12 lg:px-24"
+          className="relative mt-32 sm:mt-44 flex flex-col-reverse lg:flex-row items-center justify-between gap-10 w-full px-0 md:px-12 lg:px-24"
         >
-          <div className="flex flex-col items-start">
-            <h3 className="text-2xl sm:text-3xl font-bold font-roca">
+          <div className="flex flex-col items-center justify-center text-center mt-8 lg:mt-0 lg:w-1/2 px-4 sm:px-0">
+            <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
               Smart Solution Check
             </h3>
-            <p className="mt-4 max-w-md text-base sm:text-lg">
-              Submit questions with your answers (PDF or image). Let an AI
-              homework helper check your solution, find mistakes, and provide
-              optimized guidance.
+            <p className="mt-4 max-w-md text-xl">
+              Tired of self-validation? Submit questions with your answers, either as a PDF or
+              image. Stand confident as an AI homework helper checks your solution
+              for mistakes and provides optimised answers.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Button variant="outline" className="border-black">
+            <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
+              <Button variant="outline" className="border-black text-xl">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
               >
-                Check your Solution
+                Verify your Solutions
               </Button>
             </div>
           </div>
 
-          <div className="relative h-[468px]">
-            <div className="flex flex-col items-center justify-center">
-              <div className="border border-landing-bg-border rounded-lg px-8 py-5 font-avenir">
-                <div className="text-xs flex justify-center items-center">
-                  Upload/ Paste/ Type your Question & Answer
-                </div>
-                <div className="flex justify-center items-center flex-row gap-8 mt-8">
-                  <div className="relative flex justify-center items-center align-middle">
-                    <Image
-                      src="/images/icons/ssc_answer.png"
-                      width={139}
-                      height={155}
-                      alt="Question Image"
-                      className="rounded-md object-contain"
-                    />
-                    <p className="absolute bg-landing-bg-image text-[12px] px-6 py-1 rounded-md font-medium top-[-12%]">
-                      Question
-                    </p>
-                  </div>
-                  <div className="relative flex justify-center items-center align-middle">
-                    <Image
-                      src="/images/icons/ssc_question.jpeg"
-                      width={139}
-                      height={155}
-                      alt="Arrow"
-                      className="object-contain"
-                    />
-                    <p className="absolute bg-landing-bg-image text-[12px] px-6 py-1 rounded-md font-medium top-[-12%]">
-                      Solution
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <div className="relative mt-10 lg:mt-48 w-full lg:w-1/2">
+            <div className="relative w-full aspect-[4/3] flex justify-center items-center">
+              <Image
+                src="/images/features/SSC/ssc_yellow_blob.png"
+                alt="Background shape"
+                width={100}
+                height={100}
+                className="absolute object-contain z-0 -top-[30%] left-10 sm:left-10 h-[110%] w-[110%]"
+              />
 
-              <div className="relative z-2 bg-white border border-landing-bg-border rounded-lg px-8 py-5 font-avenir mt-[-50px] ml-48">
-                <div className="flex items-start flex-col">
-                  <div className="flex flex-row gap-8">
-                    <p className="bg-landing-bg-image text-[12px] px-3 py-1 rounded-md font-medium">
-                      Uploaded Solution
-                    </p>
-                    <p className="text-landing-bg-border border border-landing-bg-border text-[12px] px-3 py-1 rounded-md font-medium">
-                      Optimised Solution
-                    </p>
-                  </div>
+              <Image
+                src="/images/features/SSC/ssc_book.png"
+                alt="Open book"
+                width={100}
+                height={100}
+                className="absolute -top-[17%] left-[15%] object-contain z-30 w-[20%] h-auto max-w-[100px]"
+              />
 
-                  <div className="flex flex-wrap items-center gap-1 text-sm font-normal mt-2">
-                    <CheckCircle2 className="fill-green-600 text-white w-5 h-5" />
-                    <span>x² + 5x + 6 = 0.</span>
-                    <span className="ml-5">So, x² + 2x + 3x + 6 = 0</span>
-                  </div>
+              <Image
+                src="/images/features/SSC/ssc_search.png"
+                alt="Search Icon"
+                width={59}
+                height={70}
+                className="absolute -top-[11%] left-[22%] object-contain z-30 w-[12%] h-auto max-w-[70px]"
+              />
+              <div className="relative w-full h-full flex items-center justify-center z-20">
 
-                  <div className="space-y-1 text-sm font-normal mt-1">
-                    <div className="flex flex-wrap items-center gap-1 mb-1">
-                      <CheckCircle2 className="fill-green-600 text-white w-5 h-5" />
+                <Image
+                  src="/images/features/SSC/ssc_laptop_screen_surround.png"
+                  alt="Laptop screen"
+                  width={389}
+                  height={256}
+                  className="absolute top-[0%] w-[85%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base.png"
+                  alt="Laptop base"
+                  width={480}
+                  height={80}
+                  className="absolute top-[70%] w-[140%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_keyboard.png"
+                  alt="Laptop keyboard"
+                  width={400}
+                  height={100}
+                  className="absolute top-[71%] w-[80%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_touchpad.png"
+                  alt="Laptop touchpad"
+                  width={100}
+                  height={100}
+                  className="absolute top-[80%] w-[20%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base_cover.png"
+                  alt="Laptop base cover"
+                  width={486}
+                  height={32}
+                  className="absolute top-[85%] w-[100%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base_line.png"
+                  alt="Laptop Base line"
+                  width={108}
+                  height={6}
+                  className="absolute bottom-[10%] w-[20%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base_line_1.png"
+                  alt="Laptop Base line"
+                  width={23}
+                  height={7}
+                  className="absolute bottom-[10%] right-[15%] w-[5%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base_circle.png"
+                  alt="Laptop Base circle"
+                  width={10}
+                  height={10}
+                  className="absolute bottom-[10%] right-[10%] w-[2%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ssc_laptop_base_circle.png"
+                  alt="Laptop Base circle"
+                  width={10}
+                  height={10}
+                  className="absolute bottom-[10%] right-[8%] w-[2%] h-auto object-contain"
+                />
+
+                <Image
+                  src="/images/features/SSC/ai_tutor.png"
+                  alt="AI Tutor character"
+                  width={130}
+                  height={179}
+                  className="absolute object-contain h-auto pointer-events-none select-none bottom-20 sm:bottom-36 right-[25%] md:bottom-32 2xl:bottom-36 z-30"
+                />
+
+                <div className="absolute top-10 sm:top-[15%] left-12 sm:left-24 sm:right-0 md:left-20 z-30 w-full sm:w-auto">
+                  <p className="ml-5 font-semibold text-[10px] 2xl:text-xl mb-1 sm:mb-5 sm:text-[16px]">Question: Solve for x, x² + 5x + 6 = 0.</p>
+                  <div className="mt-2 space-y-1 sm:space-y-2 text-[9px] 2xl:text-[17px] sm:text-[14px]">
+                    <div className="flex items-center gap-1">
+                      <Check className="text-[#109E03] w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>x² + 5x + 6 = 0. So, x² + 2x + 3x + 6 = 0</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Check className="text-[#109E03] w-3 h-3 sm:w-4 sm:h-4" />
                       <span>x(x + 2) + 3(x + 2) = 0</span>
                     </div>
-                      <div className="flex flex-wrap items-center gap-1 mb-1">
-                      <XCircle className="fill-red-600 text-white w-5 h-5" />
+                    <div className="flex items-center gap-1">
+                      <X className="text-[#B80303] w-3 h-3 sm:w-4 sm:h-4" />
                       <span>(x + 2)(x + 3) = 0</span>
                     </div>
-                      <div className="flex flex-wrap items-center gap-1">
-                      <XCircle className="fill-red-600 text-white w-5 h-5" />
-                      <span>x = -2, x = -3</span>
+                    <div className="flex items-center gap-1">
+                      <X className="text-[#B80303] w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>x = 2, x = 3</span>
                     </div>
                   </div>
-
-                  <div className="flex flex-col items-start justify-start px-3 py-2 mt-3">
-                    <div className="flex items-center gap-2 text-red-700">
-                      <p className="text-sm font-medium">Error in Factoring!</p>
-                    </div>
-                    <p className="text-sm text-red-700 mt-1">
-                      The correct factoring is{' '}
-                      <span>(x + 2)(x + 3) = 0</span>. So,{' '}
-                      <span>x = -2, x = -3</span> is the right solution.
-                    </p>
-                  </div>
-
-                  <Image
-                    src="/images/logos/ai_tutor.png"
-                    width={114}
-                    height={202}
-                    alt="AI Tutor"
-                    className="absolute top-1 right-0 h-[202px] w-[46%] object-contain"
-                  />
                 </div>
+                <div className="relative w-[45%] -top-[40%] left-[30%] sm:-top-[35%] sm:left-[35%] 2xl:-top-[30%] 2xl:left-[37%] z-40">
+                    <Image
+                      src="/images/features/SSC/ssc_speech_bubble.png"
+                      alt="Speech bubble"
+                      width={214}
+                      height={214}
+                      className="absolute object-fill"
+                    />
+                    <div className="absolute w-[60%] sm:w-[72%] 2xl:w-[62%] top-[65px] sm:top-[100px] left-10 sm:left-10 inset-0 text-[8px] sm:text-xs p-2 font-medium flex flex-col justify-center text-center">
+                      <p className="font-medium text-[#B80303] px-1 sm:px-2">Mistake in step 3 while factoring!</p>
+                      <p className="mt-0 ml-0 sm:mt-1 font-medium text-[#109E03] px-1 sm:px-1 sm:ml-4">
+                        The correct factoring is (x+2)(x+3)=0. So, x=-2, x=-3 is the right solution.
+                      </p>
+                    </div>
+                  </div>
               </div>
             </div>
           </div>

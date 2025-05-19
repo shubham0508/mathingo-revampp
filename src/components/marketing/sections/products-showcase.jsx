@@ -37,6 +37,7 @@ const featuresData = [
     text: "Crack geometry problems live",
     pillBgColor: "bg-[#F7FDFF]",
     numberBgColor: "bg-[#BFEFFF]",
+    dotSvgColor: "bg-[#BFEFFF]",
     dotSvgPath: "/images/features-overview/img_arrow_7.svg",
     itemMargin: "lg:ml-4",
     dotStyle: { top: '75%', left: 'calc(50% - 100px)', width: '70px', },
@@ -44,11 +45,11 @@ const featuresData = [
 ];
 
 const mathSymbols = [
-  { src: "/images/features-overview/img_mdi_pi.svg", alt: "Pi", style: { top: '4%', left: '50%', transform: 'translateX(-50%)' }, size: 'w-7 h-7' },
-  { src: "/images/features-overview/img_mdi_omega.svg", alt: "Omega", style: { top: '20%', left: '12%' }, size: 'w-7 h-7' },
-  { src: "/images/features-overview/img_ic_baseline_divide.svg", alt: "Divide", style: { top: '50%', left: '4%', transform: 'translateY(-50%)' }, size: 'w-7 h-7' },
-  { src: "/images/features-overview/img_mdi_alpha.svg", alt: "Derivative", style: { bottom: '20%', left: '12%' }, size: 'w-7 h-7' },
-  { src: "/images/features-overview/img_mdi_alpha.svg", alt: "Alpha", style: { bottom: '4%', left: '50%', transform: 'translateX(-50%)' }, size: 'w-7 h-7' },
+  { src: "/images/features-overview/img_mdi_pi.svg", alt: "Pi", style: { top: '4%', left: '50%', transform: 'translateX(-50%)' }, size: 'w-7 h-7 sm:w-8 sm:h-8' },
+  { src: "/images/features-overview/img_mdi_omega.svg", alt: "Omega", style: { top: '20%', left: '12%' }, size: 'w-7 h-7 sm:w-8 sm:h-8' },
+  { src: "/images/features-overview/img_ic_baseline_divide.svg", alt: "Divide", style: { top: '50%', left: '4%', transform: 'translateY(-50%)' }, size: 'w-7 h-7 sm:w-8 sm:h-8' },
+  { src: "/images/features-overview/img_mdi_alpha.svg", alt: "Derivative", style: { bottom: '20%', left: '12%' }, size: 'w-7 h-7 sm:w-8 sm:h-8' },
+  { src: "/images/features-overview/img_mdi_alpha.svg", alt: "Alpha", style: { bottom: '4%', left: '50%', transform: 'translateX(-50%)' }, size: 'w-7 h-7 sm:w-8 sm:h-8' },
 ];
 
 const fadeInUp = {
@@ -99,18 +100,15 @@ export default function MathzUniquePage() {
           viewport={{ once: true }}
           variants={container}
         >
-          {/* Glowing Circle */}
           <motion.div
             className="relative w-[360px] h-[360px] sm:w-[400px] sm:h-[400px] lg:w-[420px] lg:h-[420px] mb-16 lg:mb-0 shrink-0"
             variants={fadeInUp}
           >
-            <motion.div
-              className="w-full h-full rounded-full bg-[#94D7FF] flex items-center justify-center animate-pulse-slow"
+            <div
+              className="w-full h-full rounded-full bg-[#94D7FF] flex items-center justify-center"
               style={{
                 boxShadow: '0 0 80px 20px rgba(0, 145, 255, 0.6)',
               }}
-              animate={{ rotate: [0, 360] }}
-              transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
             >
               <div className="relative w-[calc(100%-100px)] h-[calc(100%-100px)] sm:w-[calc(100%-110px)] sm:h-[calc(100%-110px)] bg-white rounded-full shadow-lg flex items-center justify-center">
                 <Image
@@ -121,9 +119,8 @@ export default function MathzUniquePage() {
                   className="object-contain w-[90%] h-auto"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Floating Symbols */}
             {mathSymbols.map((symbol, index) => (
               <motion.img
                 key={symbol.alt}
@@ -133,10 +130,11 @@ export default function MathzUniquePage() {
                 style={symbol.style}
                 animate={{
                   y: [0, -6, 0],
-                  x: [0, 2, 0]
+                  x: [0, 2, 0],
+                  rotate: [0, 5, -5, 0]
                 }}
                 transition={{
-                  duration: 4 + index,
+                  duration: 4 + index * 0.5,
                   repeat: Infinity,
                   repeatType: "mirror",
                   ease: "easeInOut"
@@ -145,7 +143,6 @@ export default function MathzUniquePage() {
             ))}
           </motion.div>
 
-          {/* Feature List */}
           <motion.div
             className="relative flex flex-col gap-10 space-y-3 sm:space-y-5 items-start lg:items-start shrink-0"
             variants={container}
@@ -171,31 +168,25 @@ export default function MathzUniquePage() {
             ))}
           </motion.div>
 
-          {/* Connecting Line */}
-          <motion.img
+          <img
             src="/images/features-overview/img_line_1.svg"
             alt="Line"
             width={80}
             height={80}
-            className="absolute"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            className="absolute hidden lg:block"
           />
 
-          {/* Arrow/connector SVGs */}
           {featuresData.map((feature, index) => (
             <motion.img
               key={`dot-${feature.id}`}
               src={feature.dotSvgPath}
               alt=""
-              className="absolute h-auto z-0 pointer-events-none"
+              className="absolute h-auto z-0 pointer-events-none hidden lg:block"
               style={feature.dotStyle}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 + index * 0.2 }}
+              transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
             />
           ))}
         </motion.div>

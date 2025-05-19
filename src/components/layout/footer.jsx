@@ -26,40 +26,57 @@ const linkHoverVariants = {
 function Footer() {
   return (
     <motion.footer
-      className="relative text-white w-full h-full bg-[url(/images/icons/footer-background.svg)] bg-cover bg-no-repeat px-14 py-[74px]"
+      className="relative text-white w-full h-full bg-[url(/images/icons/footer-background.svg)] bg-cover bg-no-repeat px-4 sm:px-6 md:px-10 lg:px-14 py-10 sm:py-[74px] md:py-16 lg:py-[74px]"
       initial="hidden"
       whileInView="visible"
       variants={footerVariants}
       viewport={{ once: true }}
     >
-      <div className="relative z-10 container mx-auto px-4 text-center">
-        <div className="mb-8 flex flex-col items-center space-y-3">
-          <div className="flex items-center align-middle">
-            <Link href="/">
-              <Image
-                src="/images/icons/company_logo.svg"
-                width={80}
-                height={80}
-                alt="Mathz AI Logo"
-                priority
-              />
-            </Link>
-            <h1 className="bg-gradient-secondary bg-clip-text text-[35px] !text-transparent font-roca -ml-[14px]">
-              Mathz AI
-            </h1>
+      <div className="relative z-10 container mx-auto text-center">
+        <div className="mt-32 md:mt-0 mb-6 md:mb-8 flex flex-col items-center space-y-3 gap-3 md:gap-5">
+          <div className='flex flex-col justify-center items-center text-center'>
+            <div className="flex gap-1.5 align-middle justify-center">
+              <Link href="/">
+                <Image
+                  src="/images/icons/2.png"
+                  width={44}
+                  height={44}
+                  alt="Mathz AI Logo"
+                />
+              </Link>
+              <h1 className="bg-gradient-secondary font-roca bg-clip-text text2xl !text-transparent font-semibold">
+                Mathz AI
+              </h1>
+            </div>
+            <p className='font-medium'>Elevate Math Learning</p>
           </div>
-          <p className="text-gray-300 text-lg">Elevate Math Learning</p>
-          <button className="text-lg mt-4 px-6 py-2 bg-primary hover:bg-blue-700 transition text-white rounded shadow">
-            Start math journey now– it’s free!
+          <button className="text-base sm:text-lg mt-6 sm:mt-10 px-4 sm:px-6 py-2 bg-primary hover:bg-blue-700 transition text-white rounded shadow w-full sm:w-auto max-w-xs">
+            Start solving now– it's free!
           </button>
         </div>
 
-        {/* Grid of links */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-left justify-items-center text-sm mt-10">
-          {/* Company */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 uppercase text-lg">Company</h4>
-            <ul className="flex flex-col gap-4">
+        {/* Footer links section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 text-left mt-12 md:mt-20">
+          {/* Contact Us section */}
+          <div className="flex flex-col items-center sm:items-start">
+            <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">CONTACT US</h4>
+            <motion.p
+              key={"contact us"}
+              variants={linkHoverVariants}
+              initial="initial"
+              whileHover="hover"
+            >
+              <span className="text-gray-400 hover:text-white transition-colors hover:cursor-pointer text-sm sm:text-base"
+              >
+                support@mathzai.com
+              </span>
+            </motion.p>
+          </div>
+
+          {/* Company section */}
+          <div className="flex flex-col items-center sm:items-start">
+            <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">Company</h4>
+            <ul className="flex flex-col gap-2 md:gap-4 items-center sm:items-start">
               {[
                 { label: 'Our Mission', href: '/mission' },
                 { label: 'Terms of Services', href: '/terms' },
@@ -73,7 +90,7 @@ function Footer() {
                 >
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base"
                   >
                     {link.label}
                   </Link>
@@ -82,10 +99,10 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Explore */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 uppercase text-lg">Explore</h4>
-            <ul className="flex flex-col gap-4">
+          {/* Explore section */}
+          <div className="flex flex-col items-center sm:items-start">
+            <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">Explore</h4>
+            <ul className="flex flex-col gap-2 md:gap-4 items-center sm:items-start">
               {[
                 { label: 'Math Quiz', href: '/quiz' },
                 { label: 'Pricing', href: '/pricing' },
@@ -99,7 +116,7 @@ function Footer() {
                 >
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base"
                   >
                     {link.label}
                   </Link>
@@ -108,12 +125,12 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Social */}
-          <div>
-            <h4 className="text-white font-semibold mb-4 uppercase text-lg">
+          {/* Around the Web section */}
+          <div className="flex flex-col items-center sm:items-start">
+            <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">
               Around the Web
             </h4>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 md:gap-4 items-center sm:items-start">
               {[
                 {
                   icon: Instagram,
@@ -131,23 +148,29 @@ function Footer() {
                   href: 'https://www.tiktok.com/@mathzai',
                 },
               ].map((social) => (
-                <a
+                <motion.a
+                  variants={linkHoverVariants}
+                  initial="initial"
+                  whileHover="hover"
                   key={social.name}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 align-middle text-gray-300 hover:text-white"
+                  className="flex items-center gap-2 md:gap-4 align-middle text-gray-300 hover:text-white text-sm sm:text-base"
+
                 >
-                  <social.icon size={22} />
+
+
+                  <social.icon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>{social.name}</span>
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Footer Bottom */}
-        <div className="mt-16 text-gray-500 text-sm text-center">
+        {/* Copyright section */}
+        <div className="mt-10 md:mt-16 text-gray-500 text-xs sm:text-sm text-center">
           © {new Date().getFullYear()} Mathz AI. All Rights Reserved.
         </div>
       </div>
