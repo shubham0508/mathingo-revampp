@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { usePathname } from 'next/navigation';
+import { ArrowLeftToLine, ArrowRightToLine } from 'lucide-react';
 
 const menuItems = [
   {
@@ -40,47 +41,64 @@ const menuItems = [
 
 export function AppSidebar() {
   const [activeItem, setActiveItem] = useState('Homework Assistant');
-  const { state , setOpen } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const pathname = usePathname();
 
   useEffect(() => {
     const shouldCollapse = pathname.includes('/select-questions');
+
     if (shouldCollapse && state !== 'collapsed') {
-      setOpen(false);
+      toggleSidebar(false);
     } else if (!shouldCollapse && state !== 'expanded') {
-      setOpen(true);
+      toggleSidebar(true);
     }
-  }, [pathname, setOpen]);
+  }, [pathname]);
 
   return (
     <nav aria-label="Main Sidebar Navigation">
       <Sidebar side="left" className="h-screen" collapsible="icon">
         <SidebarContent className="mt-8">
           <div
-            className={`flex ${isCollapsed ? 'justify-center items-center px-1 ml-1' : 'gap-1.5 px-4'}`}
+            className={`flex ${isCollapsed ? 'justify-center items-center px-1 ml-1' : 'flex-row gap-1.5 px-4'}`}
           >
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href="/" className="flex align-middle justify-center">
-                  <Image
-                    src="/images/icons/company_logo.svg"
-                    width={isCollapsed ? 32 : 44}
-                    height={isCollapsed ? 32 : 44}
-                    alt="Mathz AI Logo"
-                    className={isCollapsed ? 'h-8' : 'h-10'}
-                    priority
-                  />
-                </Link>
+                <div className="flex gap-1.5 align-middle justify-center">
+                  <Link href="/">
+                    <Image
+                      src="/images/icons/2.png"
+                      width={isCollapsed ? 32 : 44}
+                      height={isCollapsed ? 32 : 44}
+                      alt="Mathz AI Logo"
+                    />
+                  </Link>
+
+                </div>
               </TooltipTrigger>
               {isCollapsed && (
                 <TooltipContent side="right" className="bg-black text-white">Mathz AI</TooltipContent>
               )}
             </Tooltip>
             {!isCollapsed && (
-              <h1 className="bg-gradient-secondary bg-clip-text text-2xl !text-transparent font-roca">
-                Mathz AI
-              </h1>
+              <div className="flex flex-row align-middle justify-center items-center gap-4">
+                <h1 className="bg-gradient-secondary font-roca bg-clip-text text2xl !text-transparent font-semibold">
+                  Mathz AI
+                </h1>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <div
+                      className="hover:bg-white dark:hover:bg-gray-700 rounded-full p-1 transition-colors duration-200 cursor-pointer"
+                      onClick={toggleSidebar}
+                    >
+                      <ArrowLeftToLine className="w-5 h-5" />{" "}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-black text-white" side="right">
+                    Collapse
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
           </div>
 
@@ -94,22 +112,19 @@ export function AppSidebar() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <SidebarMenuButton
-                            className={`flex items-center ${
-                              isCollapsed ? 'justify-center' : 'gap-3'
-                            } ${
-                              isActive
+                            className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'
+                              } ${isActive
                                 ? 'bg-content-background text-black'
                                 : 'bg-transparent hover:bg-content-background hover:bg-opacity-50 text-black'
-                            }`}
+                              }`}
                             onClick={() => setActiveItem(item.title)}
                             aria-current={isActive ? 'page' : undefined}
                           >
                             <div
-                              className={`rounded ${
-                                isActive
-                                  ? 'bg-content-background'
-                                  : 'bg-transparent'
-                              }`}
+                              className={`rounded ${isActive
+                                ? 'bg-content-background'
+                                : 'bg-transparent'
+                                }`}
                             >
                               <Image
                                 src={item.iconSrc}
@@ -141,6 +156,27 @@ export function AppSidebar() {
                   );
                 })}
               </SidebarMenu>
+
+              {state !== "expanded" && (
+                <div className="mt-10">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div
+                        className="hover:bg-white dark:hover:bg-gray-700 rounded-full p-1 transition-colors duration-200 cursor-pointer"
+                        onClick={toggleSidebar}
+                      >
+                        <ArrowRightToLine />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className="bg-black text-white"
+                      side="right"
+                    >
+                      Expand
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

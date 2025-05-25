@@ -16,7 +16,7 @@ const MathKeyboard = ({
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   return (
-    <div className="mt-2 border rounded-lg bg-white shadow-lg overflow-hidden">
+    <div className="mt-2 border rounded-lg bg-white border-gray-400 overflow-hidden">
       {isMobile ? (
         <MathKeyboardDropdown
           activeTab={activeTab}

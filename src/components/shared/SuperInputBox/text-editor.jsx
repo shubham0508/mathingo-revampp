@@ -10,22 +10,33 @@ const TextEditor = ({
   isProcessing,
 }) => {
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.setAttribute('data-placeholder', placeholder);
-    }
-  }, [editorRef, placeholder]);
+    const editor = editorRef.current;
+
+    if (!editor) return;
+
+    const updatePlaceholderVisibility = () => {
+      const isEmpty = editor.innerText.trim() === '';
+      if (isEmpty) {
+        editor.classList.add('show-placeholder');
+      } else {
+        editor.classList.remove('show-placeholder');
+      }
+    };
+
+    updatePlaceholderVisibility();
+
+    editor.addEventListener('input', updatePlaceholderVisibility);
+    return () => editor.removeEventListener('input', updatePlaceholderVisibility);
+  }, [editorRef]);
 
   return (
-    <div
-      className="relative w-full h-full bg-white"
-      style={{ minHeight: height }}
-    >
+    <div className="relative w-full h-full bg-white">
       <div
         id="editor"
         ref={editorRef}
         contentEditable={!disabled}
-        className="w-full h-full p-4 outline-none"
-        data-placeholder={disabled ? "" : placeholder}
+        className="w-full h-full p-4 outline-none show-placeholder"
+        data-placeholder={disabled ? '' : placeholder}
         onKeyDown={handleEditorKeyDown}
         onPaste={handlePaste}
         style={{ minHeight: height }}
@@ -38,7 +49,7 @@ const TextEditor = ({
       )}
 
       <style jsx>{`
-        #editor:empty:before {
+        #editor.show-placeholder:before {
           content: attr(data-placeholder);
           color: #000000b2;
           position: absolute;

@@ -17,7 +17,7 @@ const fadeInUp = {
 
 export default function FeaturesSection() {
   return (
-    <section className="container mx-auto py-16 px-4">
+    <section className="container mx-auto py-16 px-4 font-avenir">
       <div className="flex flex-col items-center">
         <motion.h1
           initial="hidden"
@@ -46,23 +46,22 @@ export default function FeaturesSection() {
           variants={fadeInUp}
           className="mt-12 sm:mt-20 flex flex-col-reverse lg:flex-row items-center justify-between gap-10 w-full px-0 md:px-12 lg:px-24"
         >
-          <div className="flex flex-col items-center justify-center text-center lg:w-1/2">
+          <div className="flex flex-col items-start justify-center lg:w-1/2">
             <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
               AI Math Tutor
             </h3>
             <p className="mt-4 max-w-md text-xl">
-              Experience real-time tutoring support with an AI buddy who teaches
-              interactively and understands your problems.
+              Experience Real time tutoring support with AI buddy who teaches interactively and understands your problems.
             </p>
             <div className="mt-8 flex flex-wrap gap-4 ">
-              <Button variant="outline" className="border-black text-xl">
+              <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-lg py-5 px-5"
               >
-                Start Learning
+                Solve with buddy
               </Button>
             </div>
           </div>
@@ -254,22 +253,20 @@ export default function FeaturesSection() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center text-center w-full lg:w-1/2 mt-12 lg:mt-32 lg:ml-10 px-4 sm:px-0">
+          <div className="flex flex-col items-start justify-center w-full lg:w-1/2 mt-12 lg:mt-32 lg:ml-10 px-4 sm:px-0">
             <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
               Homework Assistant
             </h3>
             <p className="mt-4 max-w-md text-xl">
-              Provide your math problems by uploading, typing, copy-pasting, or
-              taking a picture. Filter out irrelevant questions and get precise
-              hints, solutions, and relevant information.
+              Provide your math problems by uploading, typing, copy-pasting, or taking a picture. Filter out irrelevant questions and get precise hints, solutions & other relevant information for what matters most.
             </p>
             <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
-              <Button variant="outline" className="border-black text-xl">
+              <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-lg py-5 px-5"
               >
                 Get help on an assignment
               </Button>
@@ -284,22 +281,20 @@ export default function FeaturesSection() {
           variants={fadeInUp}
           className="relative mt-32 sm:mt-44 flex flex-col-reverse lg:flex-row items-center justify-between gap-10 w-full px-0 md:px-12 lg:px-24"
         >
-          <div className="flex flex-col items-center justify-center text-center mt-8 lg:mt-0 lg:w-1/2 px-4 sm:px-0">
+          <div className="flex flex-col items-start justify-center mt-8 lg:mt-0 lg:w-1/2 px-4 sm:px-0">
             <h3 className="bg-gradient-secondary bg-clip-text headingmd !text-transparent font-roca">
               Smart Solution Check
             </h3>
             <p className="mt-4 max-w-md text-xl">
-              Tired of self-validation? Submit questions with your answers, either as a PDF or
-              image. Stand confident as an AI homework helper checks your solution
-              for mistakes and provides optimised answers.
+              Tired of self-validation? Submit questions with your answers, either as a PDF or image. Stand confident as an AI homework helper checks your solution for mistakes and provides optimised answers.
             </p>
             <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
-              <Button variant="outline" className="border-black text-xl">
+              <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
                 <span>Know More</span>
               </Button>
               <Button
                 shape="round"
-                className="bg-primary text-white border-button-order hover:bg-blue-700 text-xl"
+                className="bg-primary text-white border-button-order hover:bg-blue-700 text-lg py-5 px-5"
               >
                 Verify your Solutions
               </Button>
@@ -435,20 +430,20 @@ export default function FeaturesSection() {
                   </div>
                 </div>
                 <div className="relative w-[45%] -top-[40%] left-[30%] sm:-top-[35%] sm:left-[35%] 2xl:-top-[30%] 2xl:left-[37%] z-40">
-                    <Image
-                      src="/images/features/SSC/ssc_speech_bubble.png"
-                      alt="Speech bubble"
-                      width={214}
-                      height={214}
-                      className="absolute object-fill"
-                    />
-                    <div className="absolute w-[60%] sm:w-[72%] 2xl:w-[62%] top-[65px] sm:top-[100px] left-10 sm:left-10 inset-0 text-[8px] sm:text-xs p-2 font-medium flex flex-col justify-center text-center">
-                      <p className="font-medium text-[#B80303] px-1 sm:px-2">Mistake in step 3 while factoring!</p>
-                      <p className="mt-0 ml-0 sm:mt-1 font-medium text-[#109E03] px-1 sm:px-1 sm:ml-4">
-                        The correct factoring is (x+2)(x+3)=0. So, x=-2, x=-3 is the right solution.
-                      </p>
-                    </div>
+                  <Image
+                    src="/images/features/SSC/ssc_speech_bubble.png"
+                    alt="Speech bubble"
+                    width={214}
+                    height={214}
+                    className="absolute object-fill"
+                  />
+                  <div className="absolute w-[60%] sm:w-[72%] 2xl:w-[62%] top-[65px] sm:top-[100px] left-10 sm:left-10 inset-0 text-[8px] sm:text-xs p-2 font-medium flex flex-col justify-center text-center">
+                    <p className="font-medium text-[#B80303] px-1 sm:px-2">Mistake in step 3 while factoring!</p>
+                    <p className="mt-0 ml-0 sm:mt-1 font-medium text-[#109E03] px-1 sm:px-1 sm:ml-4">
+                      The correct factoring is (x+2)(x+3)=0. So, x=-2, x=-3 is the right solution.
+                    </p>
                   </div>
+                </div>
               </div>
             </div>
           </div>

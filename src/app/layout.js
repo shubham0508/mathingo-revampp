@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 import { Providers } from './providers';
 import Footer from '@/components/layout/footer';
+import ToasterContext from '@/components/shared/ToasterContext';
 
 export const metadata = {
   title: {
@@ -78,6 +79,7 @@ export default function RootLayout({ children }) {
             <div className="flex-1">{children}</div>
             <Footer />
           </div>
+          <ToasterContext />
         </Providers>
       </body>
     </html>

@@ -99,7 +99,7 @@ export function HeroSection() {
 
             <div className="mt-4 md:mt-6">
               <h2
-                className={`text-center text-2xl md:headingmd lg:headingmd font-semibold text-black-900_01 transition-opacity duration-700 ${fade ? 'opacity-0' : 'opacity-100'
+                className={`font-roca text-center text-2xl md:headingmd font-semibold text-black-900_01 transition-opacity duration-700 ${fade ? 'opacity-0' : 'opacity-100'
                   }`}
               >
                 {displayedText}
@@ -117,17 +117,17 @@ export function HeroSection() {
 
           <div className="relative px-4 md:px-8 w-full md:ml-0 lg:ml-24 sm:w-11/12 md:w-10/12 lg:w-8/12 mt-2 flex flex-col mb-6 md:mb-10 justify-center items-center">
             <SuperInput />
-            <div className="w-full mt-3 md:mt-5 flex flex-wrap gap-2 md:gap-3 justify-center md:justify-start">
-              <Button className="text-xs md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
+            <div className="w-full mt-3 md:mt-5 flex flex-wrap gap-2 justify-center md:justify-start">
+              <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Calculus
               </Button>
-              <Button className="text-xs md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
+              <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Algebra
               </Button>
-              <Button className="text-xs md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
+              <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 Geometry
               </Button>
-              <Button className="text-xs md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
+              <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
                 More Topics
               </Button>
             </div>

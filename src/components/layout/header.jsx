@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Img } from '../ui/img';
 import { Button } from '../ui/button';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import {
@@ -12,20 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { AuthFlow } from '../auth';
 
 export default function Header({ className }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [showSigninModal, setShowSigninModal] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const router = useRouter();
 
   const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
@@ -36,7 +30,7 @@ export default function Header({ className }) {
   };
 
   const handleLoginClick = () => {
-    console.log('Login clicked');
+    setShowSigninModal(true);
   };
 
   const handleSolveNowClick = () => {
@@ -85,7 +79,7 @@ export default function Header({ className }) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="px-3 py-2 hover:bg-blue-50 rounded-sm cursor-pointer">
-                    <Link href="#" className="block w-full">
+                    <Link href="/homework-assistant" className="block w-full">
                       <span className="text-sm">Homework Assignment</span>
                     </Link>
                   </DropdownMenuItem>
@@ -122,14 +116,14 @@ export default function Header({ className }) {
             <Button
               shape="round"
               onClick={handleLoginClick}
-              className="rounded-md border border-black px-3 py-1.5 bg-transparent text-black hover:bg-black/5 transition-colors text-sm lg:text-base"
+              className="rounded-md border border-black px-3 py-1.5 lg:py-5  bg-transparent text-black hover:bg-black/5 transition-colors text-sm lg:text-lg"
             >
               Log in
             </Button>
             <Button
               shape="round"
               onClick={handleSolveNowClick}
-              className="rounded-md border border-blue-700 bg-primary text-white px-3 py-1.5 hover:bg-blue-700 transition-colors text-sm lg:text-base font-medium"
+              className="rounded-md border border-blue-700 bg-primary text-white px-3 py-1.5 lg:px-6 lg:py-5 hover:bg-blue-700 transition-colors text-sm lg:text-lg font-medium"
             >
               Solve now - it's free!
             </Button>
@@ -171,7 +165,7 @@ export default function Header({ className }) {
                       <Link href="#" onClick={handleCloseMenu} className="block py-1">
                         <span className="text-base">AI Math Tutor</span>
                       </Link>
-                      <Link href="#" onClick={handleCloseMenu} className="block py-1">
+                      <Link href="/homework-assistant" onClick={handleCloseMenu} className="block py-1">
                         <span className="text-base">Homework Assignment</span>
                       </Link>
                       <Link href="#" onClick={handleCloseMenu} className="block py-1">
@@ -227,6 +221,13 @@ export default function Header({ className }) {
           </div>
         </div>
       </div>
+      {showSigninModal && 
+        <AuthFlow 
+          initialStep="signIn" 
+          isPopup={true} 
+          onClose={()=>setShowSigninModal(false)}
+        />
+      }
     </header>
   );
 }

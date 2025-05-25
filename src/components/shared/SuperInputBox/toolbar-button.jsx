@@ -1,34 +1,40 @@
-import React from 'react';
+"use client";
+
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ToolbarButton = ({
-  active,
+  active = false,
+  disabled = false,
   onClick,
-  disabled,
   icon,
   title,
-  highlight,
   className = '',
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={`
-      relative flex items-center justify-center w-8 h-8 rounded-lg
-      transition-all duration-200 focus:outline-none 
-      ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-      ${
-        highlight
-          ? 'text-white shadow-md hover:shadow-lg'
-          : 'hover:shadow-sm'
-      }
-      ${className}
-    `}
-    title={title}
-    aria-label={title}
-  >
-    {icon}
-  </button>
-);
+}) => {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`
+              flex items-center justify-center rounded text-sm p-2 transition-colors
+              ${disabled ? 'cursor-not-allowed opacity-40 hover:bg-transparent' : ''}
+              ${active ? 'bg-gray-200 text-gray-900' : 'text-gray-700 hover:bg-gray-100'}
+              ${className}
+            `}
+          >
+            {icon}
+          </button>
+        </TooltipTrigger>
+
+        <TooltipContent side="top" align="center" sideOffset={6} className="bg-black">
+           <span>{title}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 export default ToolbarButton;

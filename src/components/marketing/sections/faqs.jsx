@@ -100,7 +100,7 @@ const FAQs = () => {
   return (
     <motion.div
       ref={faqRef}
-      className="mx-auto max-w-3xl w-full flex flex-col items-center px-4 py-12"
+      className="mx-auto max-w-3xl w-full flex flex-col items-center px-4 py-12 font-avenir"
       initial="hidden"
       animate={isFaqVisible ? 'visible' : 'hidden'}
       variants={staggerChildren}

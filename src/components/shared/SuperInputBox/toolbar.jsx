@@ -3,14 +3,13 @@ import {
   Type,
   Upload,
   Camera,
-  Pencil,
   Calculator,
   Trash2,
   SendHorizontal,
   Loader2,
 } from 'lucide-react';
-import ToolbarButton from './toolbar-button';
 import { MODES } from '@/config/constant';
+import ToolbarButton from './toolbar-button';
 
 const Toolbar = ({
   mode,
@@ -29,104 +28,78 @@ const Toolbar = ({
   isProcessing,
 }) => {
   const isTextInputDisabled = disabled || files.length > 0 || isProcessing;
-
   const isFileUploadDisabled =
     disabled || mode === MODES.DRAW || text.trim().length > 0 || isProcessing;
 
   return (
-    <div className="px-4 py-3 flex justify-between items-center bg-white rounded-b-lg">
-      <div className="flex items-center gap-2">
+    <div className="px-3 py-2 flex justify-between items-center bg-white rounded-b-md">
+      <div className="flex items-center gap-1">
         <ToolbarButton
           active={mode === MODES.TEXT}
           onClick={() => setMode(MODES.TEXT)}
           disabled={isTextInputDisabled}
-          icon={
-            <Type
-              className={
-                mode === MODES.TEXT ? 'text-blue-600' : 'text-gray-600'
-              }
-            />
-          }
-          title="Text input"
-          className={`hover:bg-blue-50 ${mode === MODES.TEXT ? 'bg-blue-50 border-blue-200' : ''}`}
+          icon={<Type className="w-4 h-4" />}
+          title="Text Input"
         />
 
         <ToolbarButton
           active={false}
-          onClick={triggerFileInput}
+          onClick={() => triggerFileInput()}
           disabled={isFileUploadDisabled}
-          icon={<Upload className="text-emerald-600" />}
-          title="Upload files"
-          className="hover:bg-emerald-50"
+          icon={<Upload className="w-4 h-4" />}
+          title="Upload File"
         />
 
         {isMobile && (
           <ToolbarButton
             active={false}
-            onClick={triggerCameraInput}
+            onClick={() => triggerCameraInput()}
             disabled={isFileUploadDisabled}
-            icon={<Camera className="text-purple-600" />}
-            title="Take photo"
-            className="hover:bg-purple-50"
+            icon={<Camera className="w-4 h-4" />}
+            title="Camera"
           />
         )}
 
-        {mode === MODES.TEXT ? (
+        {mode === MODES.TEXT && text?.trim().length > 0 && (
           <ToolbarButton
             active={showMathKeyboard}
-            onClick={toggleMathKeyboard}
-            disabled={disabled || isProcessing || isTextInputDisabled}
-            icon={
-              <Calculator
-                className={
-                  showMathKeyboard ? 'text-amber-600' : 'text-gray-600'
-                }
-              />
-            }
-            title="Math keyboard"
-            className={`hover:bg-amber-50 ${showMathKeyboard ? 'bg-amber-50 border-amber-200' : ''}`}
+            onClick={() => toggleMathKeyboard()}
+            disabled={isTextInputDisabled}
+            icon={<Calculator className="w-4 h-4" />}
+            title="Math Keyboard"
           />
-        ) : null}
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {(mode === MODES.TEXT && text?.length > 0) ||
-        (mode === MODES.DRAW && drawingData) ||
-        files.length > 0 ? (
+          (mode === MODES.DRAW && drawingData) ||
+          files.length > 0 ? (
           <ToolbarButton
             active={false}
-            onClick={handleClear}
+            onClick={() => handleClear()}
             disabled={disabled || isProcessing}
-            icon={<Trash2 className="text-red-500" />}
+            icon={<Trash2 className="w-4 h-4" />}
             title="Clear"
-            className="hover:bg-red-50"
           />
         ) : null}
 
         <ToolbarButton
           active={false}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit()}
           disabled={
             disabled ||
             (!text.trim() && !drawingData && files.length === 0) ||
             isProcessing
           }
-          icon={
-            isProcessing ? (
-              <Loader2 className="animate-spin text-white" />
-            ) : (
-              <SendHorizontal className="text-white" />
-            )
-          }
-          title={isProcessing ? 'Processing...' : 'Send'}
-          highlight={text.trim() || drawingData || files.length > 0}
-          className={`transition-all duration-300 ${
-            isProcessing
-              ? 'bg-blue-400'
-              : text.trim() || drawingData || files.length > 0
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-gray-300'
-          }`}
+          icon={<SendHorizontal className="w-4 h-4" />}
+          title='Send'
+          className={`transition-colors duration-200 px-2 py-1 text-sm font-medium rounded ${isProcessing
+            ? 'bg-gray-200 text-gray-500'
+            : text.trim() || drawingData || files.length > 0
+              ? 'bg-primary text-white hover:bg-blue-800'
+              : 'bg-gray-100 text-gray-400'
+            }`}
         />
       </div>
     </div>

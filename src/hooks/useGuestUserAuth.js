@@ -15,7 +15,7 @@ export const useGuestUserAuth = () => {
       const guestToken = localStorage.getItem('guestToken');
       if (guestToken) return true;
 
-      const guestRes = await authApi.fetchGuestToken();
+      const guestRes = await authApi.guestUserLogin();
       const guestTokenNew = guestRes?.access_token;
       const guestUsername = guestRes?.username ?? 'guest';
 

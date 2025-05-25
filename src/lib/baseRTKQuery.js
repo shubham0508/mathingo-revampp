@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getSession, signIn } from 'next-auth/react';
-import authApi from './auth-api';
 import { API_BASE_URL } from '@/config/constant';
+import authApi from './auth-api';
 
 let isFetchingGuestToken = false;
 
@@ -35,12 +35,10 @@ export const baseApi = createApi({
       !isFetchingGuestToken
     ) {
       localStorage.removeItem('guestToken');
-
       isFetchingGuestToken = true;
 
       try {
-        const guestRes = await authApi.fetchGuestToken();
-
+        const guestRes = await authApi.guestUserLogin();
         const guestToken = guestRes?.access_token;
         const guestUsername = guestRes?.username ?? 'guest';
 

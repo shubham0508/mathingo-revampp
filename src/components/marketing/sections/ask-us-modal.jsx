@@ -15,6 +15,7 @@ import {
     DialogOverlay
 } from "@/components/ui/dialog";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 const HelpModal = ({ open, onOpenChange }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,34 +137,33 @@ const HelpModal = ({ open, onOpenChange }) => {
             <DialogOverlay className="bg-black-opacity-90" />
 
             <DialogContent
-                className="w-[350px] max-h-[90vh] overflow-y-auto border-1"
+                className="w-[350px] overflow-y-auto border-1"
                 onInteractOutside={(e) => e.preventDefault ? null : onOpenChange(false)}
             >
                 <DialogHeader className="bg-primary text-white px-6 py-5 -mt-6 -mx-6 rounded-t-lg flex justify-center items-center">
                     <DialogTitle className="text-2xl font-bold mb-2">How can we help you?</DialogTitle>
                     <DialogDescription className="text-[15px] text-white font-medium flex justify-center items-center text-center">
-                        Have a question? Check our FAQs or ask us below. We'll get back to you shortly.
+                        <p>Have a question? Check our <span className="font-bold underline">FAQs</span> or ask us below. We'll get back to you shortly.</p>
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6 pt-4 font-avenir">
-                    <div className="space-y-2">
+                <form onSubmit={handleSubmit} className="space-y-3 pt-4 font-avenir">
+                    <div>
                         <Label htmlFor="name" className="text-gray-700 text-[15px] font-bold">Name</Label>
                         <Input
                             id="name"
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="Enter your name"
                             disabled={isSubmitting}
-                            className="focus:ring-2 focus:ring-blue-500"
+                            className="shadow-none"
                         />
                         {errors.name && (
-                            <p className="text-[15px] font-medium text-red-500">{errors.name}</p>
+                            <p className="text-xs font-medium text-red-500">{errors.name}</p>
                         )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div>
                         <Label htmlFor="email" className="text-gray-700 text-[15px] font-bold">Email address</Label>
                         <Input
                             id="email"
@@ -171,28 +171,26 @@ const HelpModal = ({ open, onOpenChange }) => {
                             type="email"
                             value={formData.email}
                             onChange={handleInputChange}
-                            placeholder="you@example.com"
                             disabled={isSubmitting}
-                            className="focus:ring-2 focus:ring-blue-500"
+                            className="shadow-none"
                         />
                         {errors.email && (
-                            <p className="text-[15px] font-medium text-red-500">{errors.email}</p>
+                            <p className="text-xs font-medium text-red-500">{errors.email}</p>
                         )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div>
                         <Label htmlFor="question" className="text-gray-700 text-[15px] font-bold">What question can we answer about Mathz AI?</Label>
                         <Textarea
                             id="question"
                             name="question"
                             value={formData.question}
                             onChange={handleInputChange}
-                            placeholder="Type your question here..."
                             disabled={isSubmitting}
-                            className="resize-none h-32 focus:ring-2 focus:ring-blue-500"
+                            className="shadow-none"
                         />
                         {errors.question && (
-                            <p className="text-[15px] font-medium text-red-500">{errors.question}</p>
+                            <p className="text-xs font-medium text-red-500">{errors.question}</p>
                         )}
                         <div className="text-right text-xs text-gray-500">
                             {formData.question.length}/500

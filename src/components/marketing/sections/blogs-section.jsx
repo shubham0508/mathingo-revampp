@@ -144,7 +144,7 @@ export default function RelatedBlogSection() {
       className="flex flex-col items-center justify-center w-full py-6 px-4 md:px-6 lg:px-8"
     >
       <motion.div
-        className="w-full md:w-5/6 lg:w-4/5 flex flex-col items-center"
+        className="w-full md:w-5/6 lg:w-4/5 flex flex-col items-center h-full"
         initial="hidden"
         animate={isVisible ? "visible" : "hidden"}
         variants={fadeInUp}
@@ -154,10 +154,10 @@ export default function RelatedBlogSection() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative inline-block"
+            className="h-full flex"
           >
             <motion.h2
-              className="bg-gradient-secondary bg-clip-text text-2xl md:text-3xl lg:text-4xl !text-transparent font-roca text-center"
+              className="bg-gradient-secondary bg-clip-text text-2xl md:headingmd !text-transparent font-roca text-center h-12"
               variants={fadeInUp}
             >
               Related Blog Posts

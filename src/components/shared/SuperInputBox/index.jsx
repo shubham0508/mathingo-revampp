@@ -41,7 +41,7 @@ const SuperInput = ({
   initialMode = 'text',
   disabled = false,
   placeholder = 'Type a math problem or drag and drop an image here.',
-  height = '100px',
+  height = '170px',
 }) => {
   const [mode, setMode] = useState(initialMode);
   const [text, setText] = useState('');
@@ -70,6 +70,12 @@ const SuperInput = ({
   const dispatch = useDispatch();
   const MODEL_NAME = 'alpha';
 
+  useEffect(() => {
+    if (text?.trim().length === 0) {
+      setShowMathKeyboard(false)
+    }
+  }, [text])
+
   const placeCaretAfter = useCallback((node) => {
     const range = document.createRange();
     const sel = window.getSelection();
@@ -88,13 +94,13 @@ const SuperInput = ({
     if (!hasContent) return;
 
     try {
+      setIsProcessing(true);
       const isReady = await ensureAuthenticated();
       if (!isReady) {
+        setIsProcessing(false);
         toast.error('Something Went Wrong!!! Please try again Later');
         return;
       }
-
-      setIsProcessing(true);
 
       if (files.length > 0) {
         await submitFiles();
@@ -158,7 +164,7 @@ const SuperInput = ({
         toast.error('Please upload at least one file');
         return;
       }
-
+      setIsProcessing(true);
       toast.loading('Uploading files...', { id: 'file-upload' });
 
       const formData = new FormData();
@@ -171,6 +177,7 @@ const SuperInput = ({
       });
 
       if (!response.ok) {
+        setIsProcessing(false);
         toast.error('Upload failed', { id: 'file-upload' });
         console.error(
           'Upload response error:',
@@ -188,6 +195,7 @@ const SuperInput = ({
           id: 'file-upload',
         });
         throw new Error(result?.message || 'Failed to upload files');
+        setIsProcessing(false);
       }
 
       toast.success('Files uploaded successfully', { id: 'file-upload' });
@@ -207,6 +215,7 @@ const SuperInput = ({
       toast.success('Analysis complete', { id: 'extraction' });
       handleQuestionExtractionResponse(extractionResponse);
     } catch (error) {
+      setIsProcessing(false);
       console.error('Upload error:', error);
       const errorMessage = getErrorMessage(error?.data?.error);
       if (errorMessage) {
@@ -874,55 +883,59 @@ const SuperInput = ({
         ref={dropAreaRef}
         className={`w-full flex flex-col rounded-lg overflow-hidden border shadow-lg shadow-custom-shadow ${isDragging ? 'border-blue-500' : 'border-black'
           } transition-shadow duration-200`}
-        style={{ minHeight: height }}
+        style={{ height: height }}
       >
-        <FilePreviews
-          files={files}
-          expandFile={expandFile}
-          removeFile={removeFile}
-        />
+        <div className="">
+          <FilePreviews
+            files={files}
+            expandFile={expandFile}
+            removeFile={removeFile}
+          />
+        </div>
 
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           {mode === MODES.TEXT && (
             <TextEditor
               editorRef={editorRef}
               placeholder={
                 isProcessing ? 'Processing your request...' : placeholder
               }
-              height={height}
+              height="100%"
               disabled={disabled || isProcessing || files.length > 0}
               handleEditorKeyDown={handleEditorKeyDown}
               handlePaste={handlePaste}
               updateContent={updateContent}
-              isProcessing={isProcessing} // Add this line
+              isProcessing={isProcessing}
             />
           )}
 
-          {/* {mode === MODES.DRAW && (
+              {/* {mode === MODES.DRAW && (
             <TLDrawWhiteboard
               onContentChange={handleDrawingChange}
               disabled={disabled}
-              height={height}
+              height="100%"  // Make it fill available space
             />
           )} */}
         </div>
 
-        <Toolbar
-          mode={mode}
-          setMode={setMode}
-          text={text}
-          drawingData={drawingData}
-          files={files}
-          disabled={disabled}
-          isMobile={isMobile}
-          triggerFileInput={triggerFileInput}
-          triggerCameraInput={triggerCameraInput}
-          toggleMathKeyboard={toggleMathKeyboard}
-          showMathKeyboard={showMathKeyboard}
-          handleClear={handleClear}
-          handleSubmit={handleSubmit}
-          isProcessing={isProcessing}
-        />
+        <div>
+          <Toolbar
+            mode={mode}
+            setMode={setMode}
+            text={text}
+            drawingData={drawingData}
+            files={files}
+            disabled={disabled}
+            isMobile={isMobile}
+            triggerFileInput={triggerFileInput}
+            triggerCameraInput={triggerCameraInput}
+            toggleMathKeyboard={toggleMathKeyboard}
+            showMathKeyboard={showMathKeyboard}
+            handleClear={handleClear}
+            handleSubmit={handleSubmit}
+            isProcessing={isProcessing}
+          />
+        </div>
       </div>
 
       {showMathKeyboard && files.length === 0 && (

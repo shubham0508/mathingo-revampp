@@ -25,6 +25,7 @@ import FilePreviews from '@/components/shared/SuperInputBox/file-previews';
 import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
 import { getErrorMessage } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { satExamples } from '@/config/constant';
 
 export default function HWAssistant() {
   const examples = [
@@ -44,6 +45,7 @@ export default function HWAssistant() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasContent, setHasContent] = useState(false);
   const [disabled, setDisabled] = useState(true);
+  const [showExamplesModal, setShowExamplesModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -82,7 +84,6 @@ export default function HWAssistant() {
     },
   };
 
-  // Initialize MathQuill
   useEffect(() => {
     const loadMathQuill = async () => {
       if (typeof window === 'undefined' || initialized) return;
@@ -130,7 +131,6 @@ export default function HWAssistant() {
     setDisabled(!contentExists);
   }, [text, files]);
 
-  // Initialize editor
   const initEditor = useCallback(() => {
     if (typeof window !== 'undefined' && window.MathQuill) {
       MQRef.current = window.MathQuill;
@@ -347,7 +347,6 @@ export default function HWAssistant() {
       const filesData = validFiles.map((file) => createFileData(file));
       setFiles((prev) => [...prev, ...filesData]);
 
-      // Clear text when files are uploaded
       if (text.trim().length > 0) {
         setText('');
         if (editorRef.current) editorRef.current.innerHTML = '';
@@ -370,7 +369,6 @@ export default function HWAssistant() {
       const fileData = createFileData(file);
       setFiles((prev) => [...prev, fileData]);
 
-      // Clear text when files are uploaded
       if (text.trim().length > 0) {
         setText('');
         if (editorRef.current) editorRef.current.innerHTML = '';
@@ -404,7 +402,6 @@ export default function HWAssistant() {
     setHasContent(false);
   };
 
-  // Handle drag and drop
   useEffect(() => {
     const dropArea = dropAreaRef.current;
     if (!dropArea) return;
@@ -450,7 +447,6 @@ export default function HWAssistant() {
       const filesData = validFiles.map((file) => createFileData(file));
       setFiles((prev) => [...prev, ...filesData]);
 
-      // Clear text when files are uploaded
       if (text.trim().length > 0) {
         setText('');
         if (editorRef.current) editorRef.current.innerHTML = '';
@@ -468,19 +464,16 @@ export default function HWAssistant() {
     };
   }, [files, text]);
 
-  // Handle paste (both text and images)
   const handlePaste = useCallback(
     async (e) => {
       e.preventDefault();
 
-      // First check for image data in clipboard
       const clipboardItems = e.clipboardData?.items;
       if (clipboardItems) {
         for (let i = 0; i < clipboardItems.length; i++) {
           if (clipboardItems[i].type.indexOf('image') !== -1) {
             const blob = clipboardItems[i].getAsFile();
             if (blob) {
-              // Create a unique filename for the pasted image
               const fileName = `pasted-image-${Date.now()}.png`;
               const file = new File([blob], fileName, { type: 'image/png' });
 
@@ -495,7 +488,6 @@ export default function HWAssistant() {
               const fileData = createFileData(file);
               setFiles((prev) => [...prev, fileData]);
 
-              // Clear text when files are uploaded
               if (text.trim().length > 0) {
                 setText('');
                 if (editorRef.current) editorRef.current.innerHTML = '';
@@ -506,12 +498,10 @@ export default function HWAssistant() {
         }
       }
 
-      // If no image found, handle text paste
       const pastedText = e.clipboardData.getData('text');
       if (pastedText?.length > 2000) {
         toast.error('Maximum 2000 characters can be added as question!!');
       } else if (files.length === 0) {
-        // Only allow text if no files are uploaded
         if (activeField && document.activeElement.closest('.math-field')) {
           if (pastedText.includes('\\') || pastedText.includes('$')) {
             activeField.latex(pastedText);
@@ -528,7 +518,6 @@ export default function HWAssistant() {
     [activeField, files.length, text, updateContent],
   );
 
-  // Handle file submission
   const submitFiles = async () => {
     try {
       toast.loading('Uploading files...', { id: 'file-upload' });
@@ -585,7 +574,6 @@ export default function HWAssistant() {
     }
   };
 
-  // Handle text question submission
   const submitTextQuestion = async () => {
     try {
       if (text.trim().length === 0) {
@@ -612,7 +600,6 @@ export default function HWAssistant() {
     }
   };
 
-  // Handle question extraction response
   const handleQuestionExtractionResponse = (response) => {
     if (response?.status_code === 201) {
       const questions = extractAllQuestions(response.data);
@@ -632,7 +619,6 @@ export default function HWAssistant() {
     }
   };
 
-  // Extract all questions from response
   const extractAllQuestions = (data) => {
     if (!data?.files) return [];
 
@@ -648,7 +634,6 @@ export default function HWAssistant() {
     );
   };
 
-  // Handle single question case
   const handleSingleQuestion = async (response) => {
     try {
       const firstFile = response.data.files[0];
@@ -722,7 +707,10 @@ export default function HWAssistant() {
   };
 
   const handleExampleClick = (example) => {
-    if (example === 'More Examples') return;
+    if (example === 'More Examples') {
+      setShowExamplesModal(true);
+      return;
+    }
 
     if (files.length > 0) {
       toast.error('Please remove uploaded files first to use examples');
@@ -737,7 +725,21 @@ export default function HWAssistant() {
     }
   };
 
-  // Disable editor when files are uploaded or processing
+  const handleModalExampleClick = (example) => {
+    if (files.length > 0) {
+      toast.error('Please remove uploaded files first to use examples');
+      return;
+    }
+
+    if (editorRef.current) {
+      editorRef.current.textContent = example;
+      updateContent();
+      setShowMathKeyboard(true);
+      editorRef.current.focus();
+    }
+    setShowExamplesModal(false);
+  };
+
   useEffect(() => {
     if (editorRef.current) {
       const shouldDisableEditor = files.length > 0 || isProcessing;
@@ -809,11 +811,10 @@ export default function HWAssistant() {
                 <motion.div
                   ref={dropAreaRef}
                   transition={{ duration: 0.3 }}
-                  className={`w-full min-h-[250px] rounded-md border-2 border-dashed ${
-                    isDragging
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300'
-                  } flex flex-col justify-between p-6 relative`}
+                  className={`w-full min-h-[250px] rounded-md border-2 border-dashed ${isDragging
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300'
+                    } flex flex-col justify-between p-6 relative`}
                 >
                   {hasContent && (
                     <motion.div
@@ -833,17 +834,17 @@ export default function HWAssistant() {
                     <div
                       ref={editorRef}
                       className="flex-1 outline-none relative"
-                      contentEditable={!disabled}
+                      contentEditable={files.length === 0 && !isProcessing}
                       onKeyDown={handleEditorKeyDown}
                       onPaste={handlePaste}
                       style={{
                         minHeight: '60px',
-                        pointerEvents: disabled ? 'none' : 'auto',
-                        opacity: disabled ? 0.7 : 1,
+                        pointerEvents: (files.length > 0 || isProcessing) ? 'none' : 'auto',
+                        opacity: (files.length > 0 || isProcessing) ? 0.7 : 1,
                       }}
                     />
                     {text?.length === 0 && files?.length === 0 && (
-                      <div className="flex flex-row absolute text-gray-400 text-sm w-full">
+                      <div className="flex flex-row absolute text-gray-700 text-sm w-full">
                         <span>Type a math problem....</span>
                         <span className="absolute mt-10">
                           or drag and drop/ paste an image here
@@ -858,9 +859,8 @@ export default function HWAssistant() {
                         variants={buttonHover}
                         initial="rest"
                         whileHover="hover"
-                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${
-                          isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         onClick={triggerFileInput}
                         disabled={isProcessing}
                       >
@@ -872,9 +872,8 @@ export default function HWAssistant() {
                         variants={buttonHover}
                         initial="rest"
                         whileHover="hover"
-                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${
-                          isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         onClick={triggerCameraInput}
                         disabled={isProcessing}
                       >
@@ -890,7 +889,7 @@ export default function HWAssistant() {
                       whileTap={{ scale: 0.95 }}
                       className={`flex items-center gap-1 
     ${isProcessing || disabled ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'bg-action-buttons-foreground'} 
-    text-white font-medium rounded-md shadow-sm h-9 px-4`}
+    text-white font-medium rounded-md h-9 px-4`}
                       onClick={handleSubmit}
                       disabled={isProcessing || disabled}
                     >
@@ -908,7 +907,7 @@ export default function HWAssistant() {
                     </motion.button>
                   </div>
                 </motion.div>
-                {showMathKeyboard && files.length === 0 && (
+                {showMathKeyboard && files.length === 0 && text.trim().length > 0 && (
                   <div className="relative">
                     <button
                       className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1"
@@ -955,14 +954,15 @@ export default function HWAssistant() {
                     variants={fadeIn}
                     whileHover={{
                       scale: 1.05,
-                      backgroundColor: '#dddff8',
+                      backgroundColor: example === 'More Examples' ? '#f3f4f6' : '#dddff8',
                       transition: { duration: 0.2 },
                     }}
                     onClick={() => handleExampleClick(example)}
-                    className={`bg-button-background-question font-semibold text-black text-sm shadow-sm rounded-md border-none py-2 px-4 ${
-                      disabled ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    disabled={disabled}
+                    className={`bg-button-background-question font-semibold text-black text-sm shadow-sm rounded-md border-none py-2 cursor-pointer px-4 ${(hasContent && example !== 'More Examples')
+                      ? 'opacity-50 cursor-not-allowed'
+                      : ''
+                      }`}
+                    disabled={hasContent && example !== 'More Examples'}
                   >
                     {example}
                   </motion.button>
@@ -972,6 +972,110 @@ export default function HWAssistant() {
           </div>
         </div>
       </div>
+
+      {showExamplesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto"
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  SAT Math Examples
+                </h2>
+                <button
+                  onClick={() => setShowExamplesModal(false)}
+                  className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-green-700">
+                      Beginner
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {satExamples.beginner.map((question, index) => (
+                      <motion.button
+                        key={`beginner-${index}`}
+                        whileHover={{ scale: 1.02, backgroundColor: '#f0fdf4' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleModalExampleClick(question)}
+                        className="w-full text-left p-3 rounded-lg border border-green-200 hover:border-green-300 transition-all duration-200 text-sm text-gray-700 hover:text-green-800"
+                        disabled={hasContent}
+                      >
+                        {question}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-yellow-700">
+                      Intermediate
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {satExamples.intermediate.map((question, index) => (
+                      <motion.button
+                        key={`intermediate-${index}`}
+                        whileHover={{ scale: 1.02, backgroundColor: '#fffbeb' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleModalExampleClick(question)}
+                        className="w-full text-left p-3 rounded-lg border border-yellow-200 hover:border-yellow-300 transition-all duration-200 text-sm text-gray-700 hover:text-yellow-800"
+                        disabled={hasContent}
+                      >
+                        {question}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-red-700">
+                      Hard
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {satExamples.hard.map((question, index) => (
+                      <motion.button
+                        key={`hard-${index}`}
+                        whileHover={{ scale: 1.02, backgroundColor: '#fef2f2' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleModalExampleClick(question)}
+                        className="w-full text-left p-3 rounded-lg border border-red-200 hover:border-red-300 transition-all duration-200 text-sm text-gray-700 hover:text-red-800"
+                        disabled={hasContent}
+                      >
+                        {question}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {hasContent && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-800 text-sm text-center">
+                    Clear your current input to select an example question
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -993,21 +1097,11 @@ export default function HWAssistant() {
       <style jsx global>{`
         .math-field {
           display: inline-block;
-          padding: 2px 8px;
+          padding: 1px;
           background: rgba(59, 130, 246, 0.08);
-          border-radius: 6px;
-          margin: 0 2px;
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
         }
-        .math-field:hover {
-          background: rgba(59, 130, 246, 0.12);
-          cursor: pointer;
-        }
-        .math-field:focus-within {
-          outline: 2px solid #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-          background: rgba(59, 130, 246, 0.05);
+        .mq-editable-field {
+          border: none;
         }
       `}</style>
     </>

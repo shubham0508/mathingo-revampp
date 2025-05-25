@@ -12,7 +12,8 @@ import {
   ThumbsUp,
   ChevronRight,
   ChevronLeft,
-  SquareChevronDown,
+  ChevronDown,
+  Lock,
 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
@@ -21,6 +22,8 @@ import {
   useHaRelatedQuestionsMutation,
   useHaRelatedYoutubeVideosMutation,
 } from '@/store/slices/HA';
+import { useSession } from 'next-auth/react';
+import { AuthFlow } from '@/components/auth';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -55,65 +58,45 @@ const stepAnimation = {
   },
 };
 
-const Typewriter = ({ text, speed = 5, onComplete }) => {
+const Typewriter = ({ text, speed = 5, onComplete, className }) => {
   const [displayedText, setDisplayedText] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
-  const intervalRef = useRef(null);
-  const indexRef = useRef(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     setDisplayedText('');
-    indexRef.current = 0;
-    setIsComplete(false);
+    setCurrentIndex(0);
+  }, [text]);
 
-    if (!text) {
-      if (onComplete) onComplete();
-      setIsComplete(true);
+  useEffect(() => {
+    if (!text || currentIndex >= text.length) {
+      if (text && currentIndex === text.length) {
+        if (onComplete) {
+          onComplete();
+        }
+      } else if (!text) {
+        if (onComplete) {
+          onComplete();
+        }
+      }
       return;
     }
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    const charsPerTick = Math.max(1, Math.floor(text.length / 50));
-
-    intervalRef.current = setInterval(() => {
-      if (indexRef.current < text.length) {
-        const nextIndex = Math.min(
-          indexRef.current + charsPerTick,
-          text.length,
-        );
-        const nextChunk = text.substring(indexRef.current, nextIndex);
-        setDisplayedText((prev) => prev + nextChunk);
-        indexRef.current = nextIndex;
-
-        if (indexRef.current >= text.length) {
-          clearInterval(intervalRef.current);
-          if (onComplete) onComplete();
-          setIsComplete(true);
-        }
-      }
+    const timerId = setTimeout(() => {
+      setDisplayedText((prev) => prev + text[currentIndex]);
+      setCurrentIndex((prev) => prev + 1);
     }, speed);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [text, speed, onComplete]);
+    return () => clearTimeout(timerId);
+  }, [text, currentIndex, speed, onComplete]);
 
-  if (isComplete || !text) {
-    return <Latex>{text || ''}</Latex>;
-  }
-
-  return <Latex>{displayedText}</Latex>;
+  return (<div className={`${className} [&_.katex]:text-inherit [&_.katex]:font-inherit`}>
+    <Latex>{displayedText || ''}</Latex>
+  </div>)
 };
 
 const transformApiResponseToQuestionData = (questionData) => {
   if (!questionData) return null;
 
-  // Check if there's an error in the response
   if (questionData.error) {
     return {
       id: questionData.question_id,
@@ -122,7 +105,6 @@ const transformApiResponseToQuestionData = (questionData) => {
     };
   }
 
-  // Check if llm_response exists and has solution
   if (!questionData.llm_response || !questionData.llm_response.solution) {
     return {
       id: questionData.question_id,
@@ -160,12 +142,50 @@ const transformApiResponseToQuestionData = (questionData) => {
   };
 };
 
+const transformYouTubeResponse = (data) => {
+  if (!data || !Array.isArray(data)) return [];
+
+  return data.map((url, index) => {
+    const videoId = url.split('v=')[1]?.split('&')[0] || '';
+    const title = `Video ${index + 1}: Math Concept Explanation`;
+    const thumbnailUrl = videoId
+      ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+      : '/api/placeholder/400/225';
+
+    return {
+      id: videoId || `video-${index}`,
+      url: url,
+      title: title,
+      thumbnailUrl: thumbnailUrl,
+    };
+  });
+};
+
+const transformRelatedQuestionsResponse = (data) => {
+  if (!data || !data.response || !data.response.similar_questions) return [];
+  const { hard = [], medium = [], easy = [] } = data.response.similar_questions;
+  const allQuestions = [
+    ...hard.map((q) => ({ id: `hard-${hashString(q)}`, text: q, difficulty: 'Hard' })),
+    ...medium.map((q) => ({ id: `medium-${hashString(q)}`, text: q, difficulty: 'Medium' })),
+    ...easy.map((q) => ({ id: `easy-${hashString(q)}`, text: q, difficulty: 'Easy' })),
+  ];
+  return allQuestions;
+};
+
+const hashString = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).substring(0, 8);
+};
+
 export default function HWAssistantPage() {
   const answerList = useSelector(
     (state) => state?.homeworkAssitant?.answers || [],
   );
-
-  console.log('answerList', answerList);
 
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
@@ -179,66 +199,21 @@ export default function HWAssistantPage() {
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [videoQueryMade, setVideoQueryMade] = useState({});
   const [questionQueryMade, setQuestionQueryMade] = useState({});
+  const [showSigninModal, setShowSigninModal] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
-  const transformYouTubeResponse = (data) => {
-    if (!data || !Array.isArray(data)) return [];
+  const { data: session } = useSession();
+  const isGuestUser = session?.user?.isGuest || false;
 
-    return data.map((url, index) => {
-      const videoId = url.split('v=')[1]?.split('&')[0] || '';
 
-      const title = `Video ${index + 1}: Math Concept Explanation`;
-
-      const thumbnailUrl = videoId
-        ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-        : '/api/placeholder/400/225';
-
-      return {
-        id: videoId || `video-${index}`,
-        url: url,
-        title: title,
-        thumbnailUrl: thumbnailUrl,
-      };
-    });
+  const handleSigninModalClose = () => {
+    setShowSigninModal(false);
+    setIsUnlocking(false);
   };
 
-  const transformRelatedQuestionsResponse = (data) => {
-    if (!data || !data.response || !data.response.similar_questions) return [];
-
-    const {
-      hard = [],
-      medium = [],
-      easy = [],
-    } = data.response.similar_questions;
-
-    const allQuestions = [
-      ...hard.map((q) => ({
-        id: `hard-${hashString(q)}`,
-        text: q,
-        difficulty: 'Hard',
-      })),
-      ...medium.map((q) => ({
-        id: `medium-${hashString(q)}`,
-        text: q,
-        difficulty: 'Medium',
-      })),
-      ...easy.map((q) => ({
-        id: `easy-${hashString(q)}`,
-        text: q,
-        difficulty: 'Easy',
-      })),
-    ];
-
-    return allQuestions;
-  };
-
-  const hashString = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16).substring(0, 8);
+  const handleUnlockClick = () => {
+    setIsUnlocking(true);
+    setShowSigninModal(true);
   };
 
   useEffect(() => {
@@ -262,7 +237,8 @@ export default function HWAssistantPage() {
           }
         }
       }
-
+      setIsLoading(false);
+    } else if (answerList) {
       setIsLoading(false);
     }
   }, [answerList]);
@@ -279,7 +255,8 @@ export default function HWAssistantPage() {
     if (
       selectedQuestion &&
       selectedQuestion.concepts &&
-      selectedQuestion.concepts.length > 0
+      selectedQuestion.concepts.length > 0 &&
+      !selectedQuestion.error
     ) {
       const conceptsQuery = selectedQuestion.concepts.join(',');
       const questionId = selectedQuestion.id;
@@ -294,29 +271,33 @@ export default function HWAssistantPage() {
         setQuestionQueryMade((prev) => ({ ...prev, [questionId]: true }));
       }
     }
-  }, [selectedQuestion?.id, selectedQuestion?.concepts]);
+  }, [selectedQuestion?.id, selectedQuestion?.concepts, selectedQuestion?.error, getRelatedVideos, getRelatedQuestions, videoQueryMade, questionQueryMade]);
 
   useEffect(() => {
-    if (selectedQuestion && videosApiData && videosApiData.data) {
+    if (selectedQuestion && videosApiData && videosApiData.data && !selectedQuestion.error) {
       const formattedVideos = transformYouTubeResponse(videosApiData.data);
-      setSelectedQuestion((prev) => ({
-        ...prev,
-        relatedVideos: formattedVideos || [],
-      }));
+      setSelectedQuestion((prev) => {
+        if (prev && prev.id === selectedQuestion.id) {
+          return { ...prev, relatedVideos: formattedVideos || [] };
+        }
+        return prev;
+      });
     }
-  }, [videosApiData, selectedQuestion?.id]);
+  }, [videosApiData, selectedQuestion?.id, selectedQuestion?.error]);
 
   useEffect(() => {
-    if (selectedQuestion && questionsApiData && questionsApiData.data) {
+    if (selectedQuestion && questionsApiData && questionsApiData.data && !selectedQuestion.error) {
       const formattedQuestions = transformRelatedQuestionsResponse(
         questionsApiData.data,
       );
-      setSelectedQuestion((prev) => ({
-        ...prev,
-        relatedQuestions: formattedQuestions || [],
-      }));
+      setSelectedQuestion((prev) => {
+        if (prev && prev.id === selectedQuestion.id) {
+          return { ...prev, relatedQuestions: formattedQuestions || [] };
+        }
+        return prev;
+      });
     }
-  }, [questionsApiData, selectedQuestion?.id]);
+  }, [questionsApiData, selectedQuestion?.id, selectedQuestion?.error]);
 
   const handleQuestionClick = (index) => {
     if (questions[index]?.active) return;
@@ -328,6 +309,8 @@ export default function HWAssistantPage() {
 
     setQuestions(updatedQuestions);
     setIsLoading(true);
+    setSelectedTab('Hints');
+    setExpandedExplanation(null);
 
     if (answerList && answerList.length > index) {
       const questionData = answerList[index];
@@ -343,20 +326,19 @@ export default function HWAssistantPage() {
 
           setCurrentQuestionId(formattedData.id);
 
-          setVideoQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
-          setQuestionQueryMade((prev) => ({
-            ...prev,
-            [formattedData.id]: false,
-          }));
+          if (!formattedData.error) {
+            setVideoQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
+            setQuestionQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
+          }
 
           if (formattedData.solution && formattedData.solution.length > 0) {
             setExpandedSteps(formattedData.solution.map((step) => step.step));
+          } else {
+            setExpandedSteps([]);
           }
         }
       }
     }
-
-    setExpandedExplanation(null);
     setIsLoading(false);
   };
 
@@ -441,16 +423,16 @@ export default function HWAssistantPage() {
         <Image
           src="/images/icons/hints-selected.svg"
           alt="Hints selected"
-          width={16}
-          height={16}
+          width={12}
+          height={12}
         />
       ),
       unselected: (
         <Image
           src="/images/icons/hints-unselected.svg"
           alt="Hints unselected"
-          width={16}
-          height={16}
+          width={12}
+          height={12}
         />
       ),
     },
@@ -459,16 +441,16 @@ export default function HWAssistantPage() {
         <Image
           src="/images/icons/concepts-selected.svg"
           alt="Concepts selected"
-          width={16}
-          height={16}
+          width={12}
+          height={12}
         />
       ),
       unselected: (
         <Image
           src="/images/icons/concepts-unselected.svg"
           alt="Concepts unselected"
-          width={16}
-          height={16}
+          width={12}
+          height={12}
         />
       ),
     },
@@ -511,10 +493,11 @@ export default function HWAssistantPage() {
   };
 
   const options = ['Hints', 'Concepts', 'Answer', 'Solution'];
+  const assistantLayoutClass = questions.length > 1 ? 'flex-1' : 'w-full';
 
   return (
     <motion.div
-      className="flex flex-col p-8"
+      className="flex flex-col px-8 py-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -523,7 +506,7 @@ export default function HWAssistantPage() {
         initial="hidden"
         animate="visible"
         variants={fadeIn}
-        className="font-black text-2xl font-roca"
+        className="font-black text-3xl font-roca"
       >
         <span className="bg-gradient-secondary bg-clip-text text-transparent">
           Unlock Your Problem-Solving Superpowers
@@ -532,10 +515,12 @@ export default function HWAssistantPage() {
       </motion.h1>
 
       <div className="flex flex-col gap-8 lg:flex-row mt-10">
-        <HomeworkQuestionsSection
-          questions={questions}
-          onQuestionClick={handleQuestionClick}
-        />
+        {questions.length > 1 && (
+          <HomeworkQuestionsSection
+            questions={questions}
+            onQuestionClick={handleQuestionClick}
+          />
+        )}
 
         {selectedQuestion && !isLoading && (
           <HomeworkAssistantSection
@@ -559,15 +544,32 @@ export default function HWAssistantPage() {
             expandedExplanation={expandedExplanation}
             videosLoading={videosLoading}
             questionsLoading={questionsLoading}
+            layoutClass={assistantLayoutClass}
+            isGuestUser={isGuestUser}
+            onUnlock={handleUnlockClick}
+            isUnlocking={isUnlocking}
           />
         )}
 
         {isLoading && (
-          <div className="flex-1 flex items-center justify-center">
+          <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
             <div className="text-xl font-medium text-gray-600">Loading...</div>
           </div>
         )}
+        {!isLoading && !selectedQuestion && (
+          <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
+            <div className="text-xl font-medium text-gray-600">No question selected or available.</div>
+          </div>
+        )}
       </div>
+      {showSigninModal && (
+        <AuthFlow
+          initialStep="signIn"
+          isPopup={true}
+          onClose={() => setShowSigninModal(false)}
+          defaultCallbackUrl='/homework-assistant/select-questions/problem-solver'
+        />
+      )}
     </motion.div>
   );
 }
@@ -593,6 +595,9 @@ function HomeworkAssistantSection({
   expandedExplanation,
   videosLoading,
   questionsLoading,
+  layoutClass,
+  isGuestUser,
+  onUnlock,
 }) {
   const displayedVideos =
     question.relatedVideos?.slice(videoCarouselIndex, videoCarouselIndex + 3) ||
@@ -604,13 +609,42 @@ function HomeworkAssistantSection({
     ) || [];
 
   const [typedContent, setTypedContent] = useState({});
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  const typedContentRef = useRef(typedContent);
+
+  const handleUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      await onUnlock();
+      // After successful login, let the animation complete
+      setTimeout(() => {
+        setIsUnlocking(false);
+      }, 1500);
+    } catch (error) {
+      setIsUnlocking(false);
+    }
+  };
+
+
+  useEffect(() => {
+    typedContentRef.current = typedContent;
+  }, [typedContent]);
+
 
   const handleTypingComplete = (contentKey) => {
-    setTypedContent((prev) => ({
-      ...prev,
-      [contentKey]: true,
-    }));
+    if (typedContentRef.current[contentKey] === false || typedContentRef.current[contentKey] === undefined) {
+      setTypedContent((prev) => ({
+        ...prev,
+        [contentKey]: true,
+      }));
+    }
   };
+
+  useEffect(() => {
+    setTypedContent({});
+  }, [question?.id, selectedTab]);
+
 
   const [actionStates, setActionStates] = useState({
     copied: false,
@@ -618,8 +652,8 @@ function HomeworkAssistantSection({
     downvoted: false,
   });
 
-  const handleCopyClick = () => {
-    navigator.clipboard.writeText(question?.answer || '');
+  const handleCopyClickInternal = () => {
+    onCopy();
     setActionStates((prev) => ({ ...prev, copied: true }));
     setTimeout(
       () => setActionStates((prev) => ({ ...prev, copied: false })),
@@ -627,27 +661,32 @@ function HomeworkAssistantSection({
     );
   };
 
-  const handleFeedback = (isPositive) => {
-    console.log(`User gave ${isPositive ? 'positive' : 'negative'} feedback`);
+  const handleFeedbackInternal = (isPositive) => {
+    onFeedback(isPositive);
     if (isPositive) {
-      setActionStates({ copied: false, upvoted: true, downvoted: false });
+      setActionStates((prev) => ({ ...prev, upvoted: !prev.upvoted, downvoted: false }));
     } else {
-      setActionStates({ copied: false, upvoted: false, downvoted: true });
+      setActionStates((prev) => ({ ...prev, downvoted: !prev.downvoted, upvoted: false }));
     }
   };
 
   if (question.error) {
     return (
-      <ErrorDisplay
-        questionText={question.text}
-        errorMessage={question.error}
-      />
+      <div className={layoutClass}>
+        <ErrorDisplay
+          questionText={question.text}
+          errorMessage={question.error}
+        />
+      </div>
     );
   }
 
+  const restrictedTabs = ['Concepts', 'Answer', 'Solution'];
+  const isCurrentTabRestricted = isGuestUser && restrictedTabs.includes(selectedTab);
+
   return (
     <motion.div
-      className="flex-1 rounded-lg bg-white p-6 shadow-md"
+      className={`rounded-lg bg-white p-6 ${layoutClass || ''}`}
       variants={fadeIn}
       initial="hidden"
       animate="visible"
@@ -687,12 +726,12 @@ function HomeworkAssistantSection({
                 <Button
                   variant="outline"
                   onClick={() => onTabChange(option)}
-                  className={`text-sm px-3 py-1 flex items-center ${selectedTab === option ? 'bg-tabs-background' : ''}`}
+                  className={`text-sm px-2 py-3 flex items-center shadow-none border border-primary ${selectedTab === option ? 'bg-tabs-background' : ''}`}
                 >
                   {selectedTab === option
                     ? iconMap[option].selected
                     : iconMap[option].unselected}
-                  <span className="">{option}</span>
+                  <span className="text-primary font-bold text-[16px]">{option}</span>
                 </Button>
               </motion.div>
             ))}
@@ -700,265 +739,281 @@ function HomeworkAssistantSection({
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={selectedTab}
+              key={`${question.id}-${selectedTab}-${isCurrentTabRestricted}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="space-y-4"
+              className="space-y-4 min-h-[150px]"
             >
-              {selectedTab === 'Hints' &&
-                question.hints &&
-                question.hints.length > 0 && (
-                  <motion.div
-                    className="space-y-3"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {question.hints.map((hint, idx) => (
-                      <motion.p
-                        key={idx}
-                        variants={stepAnimation}
-                        className="text-base font-medium text-gray-800"
+              {isCurrentTabRestricted ? (
+                <LockOverlay onUnlock={onUnlock} isUnlocking={isUnlocking} />
+              ) : (
+                <>
+                  {selectedTab === 'Hints' &&
+                    question.hints &&
+                    question.hints.length > 0 && (
+                      <motion.div
+                        className="space-y-3"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
                       >
-                        <span className="mr-2">👉</span>
-                        {typedContent[`hint-${idx}`] ? (
-                          <Latex>{hint}</Latex>
-                        ) : (
-                          <Typewriter
-                            text={hint}
-                            speed={20}
-                            onComplete={() =>
-                              handleTypingComplete(`hint-${idx}`)
-                            }
-                          />
-                        )}
-                      </motion.p>
-                    ))}
-                  </motion.div>
-                )}
-
-              {selectedTab === 'Concepts' &&
-                question.concepts &&
-                question.concepts.length > 0 && (
-                  <motion.div
-                    className="space-y-3"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {question.concepts.map((concept, idx) => (
-                      <motion.p
-                        key={idx}
-                        variants={stepAnimation}
-                        className="text-base font-medium text-gray-800"
-                      >
-                        <span className="mr-2">👉</span>
-                        {typedContent[`concept-${idx}`] ? (
-                          <Latex>{concept}</Latex>
-                        ) : (
-                          <Typewriter
-                            text={concept}
-                            speed={20}
-                            onComplete={() =>
-                              handleTypingComplete(`concept-${idx}`)
-                            }
-                          />
-                        )}
-                      </motion.p>
-                    ))}
-                  </motion.div>
-                )}
-
-              {selectedTab === 'Answer' && (
-                <motion.div
-                  className="space-y-3"
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <p className="text-base font-medium text-gray-800">
-                    <span className="mr-2">👉</span>
-                    {typedContent['answer'] ? (
-                      <Latex>{question.answer}</Latex>
-                    ) : (
-                      <Typewriter
-                        text={question.answer}
-                        speed={20}
-                        onComplete={() => handleTypingComplete('answer')}
-                      />
+                        {question.hints.map((hint, idx) => (
+                          <motion.p
+                            key={`hint-${question.id}-${idx}`}
+                            variants={stepAnimation}
+                            className="text-base font-medium text-gray-800"
+                          >
+                            <span className="mr-2">👉</span>
+                            {typedContent[`hint-${idx}`] ? (
+                              <Latex>{hint}</Latex>
+                            ) : (
+                              <Typewriter
+                                text={hint}
+                                speed={20}
+                                onComplete={() =>
+                                  handleTypingComplete(`hint-${idx}`)
+                                }
+                              />
+                            )}
+                          </motion.p>
+                        ))}
+                      </motion.div>
                     )}
-                  </p>
-                </motion.div>
-              )}
 
-              {selectedTab === 'Solution' &&
-                question.solution &&
-                question.solution.length > 0 && (
-                  <motion.div
-                    className="space-y-2"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {question.solution.map((step, idx) => (
-                      <div key={idx}>
-                        <motion.div
-                          className="flex items-start gap-4"
-                          variants={stepAnimation}
-                        >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary-background text-lg font-bold text-solution-steps">
-                            {step.step}.
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Latex className="text-lg font-extrabold text-solution-steps">
-                                {step.title}
-                              </Latex>
-                              <SquareChevronDown
-                                className={`h-7 w-7 transition-transform fill-primary text-white cursor-pointer ${
-                                  expandedExplanation === step.step
-                                    ? 'rotate-180'
-                                    : ''
-                                }`}
-                                onClick={() => onToggleExplanation(step.step)}
+                  {selectedTab === 'Concepts' &&
+                    question.concepts &&
+                    question.concepts.length > 0 && (
+                      <motion.div
+                        className="space-y-3"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {question.concepts.map((concept, idx) => (
+                          <motion.p
+                            key={`concept-${question.id}-${idx}`}
+                            variants={stepAnimation}
+                            className="text-base font-medium text-gray-800"
+                          >
+                            <span className="mr-2">👉</span>
+                            {typedContent[`concept-${idx}`] ? (
+                              <Latex>{concept}</Latex>
+                            ) : (
+                              <Typewriter
+                                text={concept}
+                                speed={20}
+                                onComplete={() =>
+                                  handleTypingComplete(`concept-${idx}`)
+                                }
                               />
-                            </div>
+                            )}
+                          </motion.p>
+                        ))}
+                      </motion.div>
+                    )}
 
+                  {selectedTab === 'Answer' && (
+                    <motion.div
+                      className="space-y-3"
+                      variants={staggerContainer}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <p className="text-base font-medium text-gray-800">
+                        <span className="mr-2">👉</span>
+                        {typedContent['answer'] ? (
+                          <Latex>{question.answer}</Latex>
+                        ) : (
+                          <Typewriter
+                            text={question.answer}
+                            speed={20}
+                            onComplete={() => handleTypingComplete('answer')}
+                          />
+                        )}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {selectedTab === 'Solution' &&
+                    question.solution &&
+                    question.solution.length > 0 && (
+                      <motion.div
+                        className="space-y-2"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {question.solution.map((step, idx) => (
+                          <div key={`solution-step-${question.id}-${idx}`}>
                             <motion.div
-                              className="mt-2 flex gap-4"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3 }}
+                              className="flex items-start align-middle gap-4"
+                              variants={stepAnimation}
                             >
-                              <Separator
-                                orientation="vertical"
-                                className="w-0.5 bg-secondary-background"
-                              />
+                              <div className="flex h-8 w-8 items-center justify-center align-middle rounded-full bg-secondary-background text-lg font-bold text-solution-steps">
+                                {step.step}.
+                              </div>
                               <div className="flex-1">
-                                <p className="text-sm whitespace-pre-wrap">
-                                  {typedContent[`step-${step.step}`] ? (
-                                    <Latex>{step.content || ''}</Latex>
-                                  ) : (
-                                    <Typewriter
-                                      text={step.content}
-                                      speed={10}
-                                      onComplete={() =>
-                                        handleTypingComplete(
-                                          `step-${step.step}`,
-                                        )
-                                      }
-                                    />
-                                  )}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <div className="text-lg font-semibold text-solution-steps [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
+                                    <Latex>{step.title}</Latex>
+                                  </div>
+                                  <div className="flex flex-row cursor-pointer text-gray-600 justify-center align-middle items-center ml-1" onClick={() => onToggleExplanation(step.step)}>
+                                    <span className="rounded-full w-1 h-1 bg-[#A3A6C1]/40"></span>
+                                    <span className="text-sm ml-0.5 text-[#192065]/40">Explanation</span>
+                                    <ChevronDown
+                                      className={`h-5 w-5 transition-transform text-[#192065]/40  ${expandedExplanation === step.step
+                                        ? 'rotate-180'
+                                        : ''
+                                        }`}
 
-                                {expandedExplanation === step.step &&
-                                  step.explanation && (
-                                    <motion.div
-                                      className="mt-3 p-3 bg-secondary-background rounded-lg border border-gray-200"
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      transition={{ delay: 0.2 }}
-                                    >
-                                      <p className="text-sm">
-                                        {typedContent[
-                                          `explanation-${step.step}`
-                                        ] ? (
-                                          <Latex>{step.explanation}</Latex>
-                                        ) : (
-                                          <Typewriter
-                                            text={step.explanation}
-                                            speed={10}
-                                            onComplete={() =>
-                                              handleTypingComplete(
-                                                `explanation-${step.step}`,
-                                              )
-                                            }
-                                          />
-                                        )}
-                                      </p>
-                                    </motion.div>
-                                  )}
+                                    />
+                                  </div>
+
+                                </div>
+
+                                <motion.div
+                                  className="mt-2 flex gap-4"
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <Separator
+                                    orientation="vertical"
+                                    className="w-0.5 bg-secondary-background"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="text-sm whitespace-pre-wrap">
+                                      {typedContent[`step-content-${step.step}`] ? (
+                                        <div className="text-[16px] font-semibold text-black [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
+                                          <Latex>{step.content || ''}</Latex>
+                                        </div>
+                                      ) : (
+                                        <Typewriter
+                                          text={step.content}
+                                          speed={10}
+                                          onComplete={() =>
+                                            handleTypingComplete(
+                                              `step-content-${step.step}`,
+                                            )
+                                          }
+                                          className="text-[16px] font-semibold text-black"
+                                        />
+                                      )}
+                                    </div>
+
+                                    {expandedExplanation === step.step &&
+                                      step.explanation && (
+                                        <motion.div
+                                          className="mt-3 p-3 bg-secondary-background rounded-lg border border-gray-200"
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          transition={{ delay: 0.2 }}
+                                        >
+                                          <div className="text-sm whitespace-pre-wrap">
+                                            {typedContent[
+                                              `explanation-${step.step}`
+                                            ] ? (
+                                              <div className="text-sm font-medium text-black [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
+                                                <Latex>{step.explanation}</Latex>
+                                              </div>
+                                            ) : (
+                                              <Typewriter
+                                                text={step.explanation}
+                                                speed={10}
+                                                onComplete={() =>
+                                                  handleTypingComplete(
+                                                    `explanation-${step.step}`,
+                                                  )
+                                                }
+                                                className="text-sm font-medium text-black"
+                                              />
+                                            )}
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                  </div>
+                                </motion.div>
                               </div>
                             </motion.div>
                           </div>
-                        </motion.div>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
+                        ))}
+                      </motion.div>
+                    )}
+                </>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Copy answer"
-              title="Copy"
-            >
-              <motion.div
-                whileHover={{ scale: 1.15, y: -2 }}
-                whileTap={{ scale: 0.95, y: 0 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-                onClick={handleCopyClick}
-                className="rounded-full cursor-pointer"
+        {!isCurrentTabRestricted && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Copy answer"
+                title="Copy"
               >
-                <Copy
-                  className={`h-7 w-7 transition-colors duration-200 ${
-                    actionStates.copied
+                <motion.div
+                  whileHover={{ scale: 1.15, y: -2 }}
+                  whileTap={{ scale: 0.95, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  onClick={handleCopyClickInternal}
+                  className="rounded-full cursor-pointer"
+                >
+                  <Copy
+                    className={`h-7 w-7 transition-colors duration-200 ${actionStates.copied
                       ? 'text-blue-600'
                       : 'text-gray-500 hover:text-blue-600'
-                  }`}
-                />
-              </motion.div>
-            </Button>
+                      }`}
+                  />
+                </motion.div>
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Dislike"
-              title="Dislike"
-            >
-              <motion.div
-                whileHover={{ scale: 1.15, y: -2 }}
-                whileTap={{ scale: 0.95, y: 0 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-                onClick={() => handleFeedback(false)}
-                className="rounded-full cursor-pointer"
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Dislike"
+                title="Dislike"
               >
-                <ThumbsDown
-                  className={`h-7 w-7 transition-colors duration-200 ${
-                    actionStates.downvoted
-                      ? 'text-red-600'
+                <motion.div
+                  whileHover={{ scale: 1.15, y: -2 }}
+                  whileTap={{ scale: 0.95, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  onClick={() => handleFeedbackInternal(false)}
+                  className="rounded-full cursor-pointer"
+                >
+                  <ThumbsDown
+                    className={`h-7 w-7 transition-colors duration-200 ${actionStates.downvoted
+                      ? 'text-red-600 fill-red-100'
                       : 'text-gray-500 hover:text-red-600'
-                  }`}
-                />
-              </motion.div>
-            </Button>
+                      }`}
+                  />
+                </motion.div>
+              </Button>
 
-            <Button variant="ghost" size="icon" aria-label="Like" title="Like">
-              <motion.div
-                whileHover={{ scale: 1.15, y: -2 }}
-                whileTap={{ scale: 0.95, y: 0 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-                onClick={() => handleFeedback(true)}
-                className="rounded-full cursor-pointer"
-              >
-                <ThumbsUp
-                  className={`h-7 w-7 transition-colors duration-200 ${
-                    actionStates.upvoted
-                      ? 'text-green-600'
+              <Button variant="ghost" size="icon" aria-label="Like" title="Like">
+                <motion.div
+                  whileHover={{ scale: 1.15, y: -2 }}
+                  whileTap={{ scale: 0.95, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  onClick={() => handleFeedbackInternal(true)}
+                  className="rounded-full cursor-pointer"
+                >
+                  <ThumbsUp
+                    className={`h-7 w-7 transition-colors duration-200 ${actionStates.upvoted
+                      ? 'text-green-600 fill-green-100'
                       : 'text-gray-500 hover:text-green-600'
-                  }`}
-                />
-              </motion.div>
-            </Button>
+                      }`}
+                  />
+                </motion.div>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
+
 
         {videosLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -985,7 +1040,7 @@ function HomeworkAssistantSection({
                 onMouseLeave={() => setIsCarouselHovered(false)}
               >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {displayedVideos.map((video, index) => (
+                  {displayedVideos.map((video) => (
                     <motion.a
                       key={`video-${video.id}`}
                       href={video.url}
@@ -1005,6 +1060,7 @@ function HomeworkAssistantSection({
                         height={225}
                         alt={video.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => e.currentTarget.src = '/api/placeholder/400/225'}
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                         <p className="text-white font-medium text-sm">
@@ -1022,7 +1078,7 @@ function HomeworkAssistantSection({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 bg-white rounded-full shadow-lg p-2"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 bg-white rounded-full shadow-lg p-2 z-10"
                         onClick={prevVideoCarousel}
                         aria-label="Previous videos"
                       >
@@ -1032,7 +1088,7 @@ function HomeworkAssistantSection({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 bg-white rounded-full shadow-lg p-2"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 bg-white rounded-full shadow-lg p-2 z-10"
                         onClick={nextVideoCarousel}
                         aria-label="Next videos"
                       >
@@ -1096,13 +1152,12 @@ function HomeworkAssistantSection({
                     >
                       <div className="flex flex-col items-center text-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            relatedQ.difficulty === 'Hard'
-                              ? 'bg-red-100 text-red-800'
-                              : relatedQ.difficulty === 'Medium'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-green-100 text-green-800'
-                          }`}
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${relatedQ.difficulty === 'Hard'
+                            ? 'bg-red-100 text-red-800'
+                            : relatedQ.difficulty === 'Medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                            }`}
                         >
                           {relatedQ.difficulty}
                         </span>
@@ -1121,7 +1176,7 @@ function HomeworkAssistantSection({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 bg-white rounded-full shadow-lg p-2"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 bg-white rounded-full shadow-lg p-2 z-10"
                         onClick={prevQuestionCarousel}
                         aria-label="Previous questions"
                       >
@@ -1131,7 +1186,7 @@ function HomeworkAssistantSection({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 bg-white rounded-full shadow-lg p-2"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 bg-white rounded-full shadow-lg p-2 z-10"
                         onClick={nextQuestionCarousel}
                         aria-label="Next questions"
                       >
@@ -1167,7 +1222,7 @@ function HomeworkAssistantSection({
 function HomeworkQuestionsSection({ questions, onQuestionClick }) {
   return (
     <motion.div
-      className="w-full lg:w-1/4"
+      className="w-full lg:w-1/4 bg-[#fafbff] rounded-md py-2"
       variants={fadeIn}
       initial="hidden"
       animate="visible"
@@ -1181,9 +1236,8 @@ function HomeworkQuestionsSection({ questions, onQuestionClick }) {
         {questions.map((question, index) => (
           <motion.div
             key={`question-${index}`}
-            className={`flex items-start gap-2 cursor-pointer p-3 rounded-lg relative ${
-              question.active ? 'text-primary' : 'hover:bg-gray-50'
-            }`}
+            className={`flex items-start gap-2 cursor-pointer p-3 rounded-lg relative ${question.active ? 'text-primary' : 'hover:bg-gray-50'
+              }`}
             onClick={() => onQuestionClick(index)}
             whileHover={{ scale: question.active ? 1 : 1.02 }}
             variants={stepAnimation}
@@ -1211,7 +1265,7 @@ function HomeworkQuestionsSection({ questions, onQuestionClick }) {
 const ErrorDisplay = ({ questionText, errorMessage }) => {
   return (
     <motion.div
-      className="mx-auto"
+      className="mx-auto bg-white p-6 rounded-lg w-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -1234,14 +1288,13 @@ const ErrorDisplay = ({ questionText, errorMessage }) => {
         <p className="text-gray-700">
           We're facing some difficulty while fetching the solution for:
         </p>
-        <div className="bg-gray-100 p-3 rounded-lg w-full">
+        <div className="bg-gray-100 p-3 rounded-lg w-full max-w-md">
           <Latex>{questionText || 'This question'}</Latex>
         </div>
         {errorMessage && (
           <p className="text-sm text-gray-600 mt-2">
             Error:{' '}
-            {errorMessage.split(':').slice(1).join(':').trim() ||
-              'Unknown error'}
+            {typeof errorMessage === 'string' ? (errorMessage.split(':').slice(1).join(':').trim() || 'Unknown error') : 'Unknown error'}
           </p>
         )}
         <Button
@@ -1253,5 +1306,185 @@ const ErrorDisplay = ({ questionText, errorMessage }) => {
         </Button>
       </div>
     </motion.div>
+  );
+};
+
+const LockOverlay = ({ onUnlock, isUnlocking = false, children }) => {
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    if (isUnlocking) {
+      // Delay content reveal to sync with lock animation
+      const timer = setTimeout(() => setShowContent(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isUnlocking]);
+
+  return (
+    <div className="relative min-h-[400px]">
+      <div className="absolute inset-0">
+        {children || (
+          <div className="p-8 space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Premium Content</h2>
+            <p className="text-gray-600">This is detailed analytics and advanced reporting features that are available with the premium subscription.</p>
+            <div className="flex flex-col gap-10">
+              <div className="bg-blue-100 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800">Concepts Used</h3>
+                <p className="text-sm text-blue-600">Detailed insights and metrics</p>
+              </div>
+              <div className="bg-green-100 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-800">Concepts Used</h3>
+                <p className="text-sm text-green-600">Advanced reporting tools</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {!showContent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center"
+          >
+            <motion.div
+              className="mb-8"
+              animate={isUnlocking ? "unlocking" : "locked"}
+              variants={{
+                locked: { scale: 1, rotate: 0 },
+                unlocking: {
+                  scale: [1, 1.1, 1],
+                  rotate: [0, -5, 5, 0],
+                  transition: { duration: 0.8, ease: "easeInOut" }
+                }
+              }}
+            >
+              <motion.div
+                className="relative w-20 h-16 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg shadow-2xl"
+                animate={isUnlocking ? {
+                  backgroundColor: ["#fbbf24", "#10b981", "#fbbf24"],
+                  transition: { duration: 1, ease: "easeInOut" }
+                } : {}}
+              >
+                <motion.div
+                  className="absolute -top-6 left-1/2 transform -translate-x-1/2"
+                  animate={isUnlocking ? "open" : "closed"}
+                  variants={{
+                    closed: { rotate: 0, x: "-50%", y: 0 },
+                    open: {
+                      rotate: -25,
+                      x: "-30%",
+                      y: -2,
+                      transition: { duration: 0.6, ease: "easeOut", delay: 0.2 }
+                    }
+                  }}
+                >
+                  <div className="w-10 h-8 border-4 border-gray-400 rounded-t-full bg-transparent" />
+                </motion.div>
+
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-4 h-4 bg-gray-600 rounded-full">
+                    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1 h-3 bg-gray-600" />
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isUnlocking && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ delay: 0.5, duration: 0.3 }}
+                      className="absolute -top-3 -right-3 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"
+                    >
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
+              <AnimatePresence>
+                {isUnlocking && (
+                  <>
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                        animate={{
+                          opacity: [0, 1, 0],
+                          scale: [0, 1.2, 0],
+                          x: (Math.random() - 0.5) * 120,
+                          y: (Math.random() - 0.5) * 120,
+                        }}
+                        transition={{
+                          duration: 1.8,
+                          delay: 0.3 + i * 0.1,
+                          ease: "easeOut"
+                        }}
+                        className="absolute w-3 h-3 bg-yellow-400 rounded-full"
+                        style={{ left: '50%', top: '50%' }}
+                      />
+                    ))}
+                  </>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Lock UI Card */}
+            <div className="bg-white backdrop-blur-xl rounded-2xl border border-white/40 shadow-2xl p-8 max-w-sm mx-4 text-center">
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                {isUnlocking ? "Unlocking..." : "Premium Content"}
+              </h3>
+              
+              <p className="text-gray-700 text-[14px] mb-6 leading-relaxed">
+                {isUnlocking
+                  ? "Getting your content ready..."
+                  : "Sign in to access detailed concepts, step-by-step solutions, and personalized help."
+                }
+              </p>
+
+              {!isUnlocking && (
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <button
+                    onClick={onUnlock}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg transition-all duration-200 hover:shadow-xl disabled:opacity-50"
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      Upgrade Now
+                    </span>
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showContent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute top-4 right-4 z-10"
+          >
+            <div className="inline-flex items-center gap-2 text-green-600 font-medium bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Content Unlocked!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };

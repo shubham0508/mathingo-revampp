@@ -84,7 +84,7 @@ export default function MathzUniquePage() {
 
       <div className="min-h-screen w-full bg-mathz-radial bg-cover bg-no-repeat flex flex-col items-center justify-center py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <motion.h1
-          className="headingmd font-bold text-black mb-16 text-center font-roca"
+          className="text-4xl font-bold text-black mb-16 text-center font-roca"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -94,7 +94,7 @@ export default function MathzUniquePage() {
         </motion.h1>
 
         <motion.div
-          className="relative flex flex-col lg:flex-row items-center justify-center w-full max-w-5xl xl:max-w-6xl mx-auto"
+          className="relative flex flex-col lg:flex-row items-center justify-center w-full max-w-5xl xl:max-w-6xl mx-auto font-avenir"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -156,11 +156,11 @@ export default function MathzUniquePage() {
               >
                 <div className={`flex items-center space-x-3 sm:space-x-4 p-1.5 pr-5 sm:pr-6 rounded-full ${feature.pillBgColor} shadow-md w-auto`}>
                   <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full ${feature.numberBgColor} flex items-center justify-center shrink-0`}>
-                    <span className={`font-bold text-md sm:text-lg text-black`}>
+                    <span className={`font-bold text-2xl sm:text-lg text-black`}>
                       {feature.id}
                     </span>
                   </div>
-                  <span className={`text-sm sm:text-base font-medium text-black`}>
+                  <span className={`text-xl sm:text-base font-medium text-black`}>
                     {feature.text}
                   </span>
                 </div>
