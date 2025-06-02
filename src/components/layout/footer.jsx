@@ -55,9 +55,7 @@ function Footer() {
           </button>
         </div>
 
-        {/* Footer links section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 text-left mt-12 md:mt-20">
-          {/* Contact Us section */}
           <div className="flex flex-col items-center sm:items-start">
             <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">CONTACT US</h4>
             <motion.p
@@ -66,21 +64,20 @@ function Footer() {
               initial="initial"
               whileHover="hover"
             >
-              <span className="text-gray-400 hover:text-white transition-colors hover:cursor-pointer text-sm sm:text-base"
+              <Link href="/contact-us" className="text-gray-400 hover:text-white transition-colors hover:cursor-pointer text-sm sm:text-base"
               >
                 support@mathzai.com
-              </span>
+              </Link>
             </motion.p>
           </div>
 
-          {/* Company section */}
           <div className="flex flex-col items-center sm:items-start">
             <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">Company</h4>
             <ul className="flex flex-col gap-2 md:gap-4 items-center sm:items-start">
               {[
-                { label: 'Our Mission', href: '/mission' },
-                { label: 'Terms of Services', href: '/terms' },
-                { label: 'Privacy Policy', href: '/privacy' },
+                { label: 'Our Mission', href: '/about-us' },
+                { label: 'Terms of Services', href: '/terms-of-service' },
+                { label: 'Privacy Policy', href: '/privacy-policy' },
               ].map((link) => (
                 <motion.li
                   key={link.label}
@@ -99,12 +96,11 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Explore section */}
           <div className="flex flex-col items-center sm:items-start">
             <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">Explore</h4>
             <ul className="flex flex-col gap-2 md:gap-4 items-center sm:items-start">
               {[
-                { label: 'Math Quiz', href: '/quiz' },
+                { label: 'Math Quiz', href: '/math-quiz' },
                 { label: 'Pricing', href: '/pricing' },
                 { label: 'Blogs', href: '/blogs' },
               ].map((link) => (
@@ -125,7 +121,6 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Around the Web section */}
           <div className="flex flex-col items-center sm:items-start">
             <h4 className="text-white font-semibold mb-3 md:mb-4 uppercase text-base sm:text-lg">
               Around the Web

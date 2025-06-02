@@ -1,4 +1,4 @@
-import { FILE_TYPES, MAX_FILE_SIZE } from "@/config/constant";
+import { FILE_TYPES, MAX_FILE_SIZE } from '@/config/constant';
 
 export const validateFile = (file) => {
   const errors = {};
@@ -23,4 +23,26 @@ export const createFileData = (file) => {
     isPdf: file.type === 'application/pdf',
     size: file.size,
   };
+};
+
+export const dataURLtoFile = (dataurl, filename) => {
+  if (!dataurl) return null;
+  const arr = dataurl.split(',');
+  if (arr.length < 2) return null;
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  if (!mimeMatch || mimeMatch.length < 2) return null;
+  const mime = mimeMatch[1];
+  let bstr;
+  try {
+    bstr = atob(arr[1]);
+  } catch (e) {
+    console.error('Error decoding base64 string', e);
+    return null;
+  }
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
 };

@@ -12,7 +12,7 @@ import { useHaSolutionExtractionMutation } from '@/store/slices/HA';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { setAnswer, setQuestion } from '@/store/reducers/HA';
+import { setAnswer } from '@/store/reducers/HA';
 import { LoaderCircle } from 'lucide-react';
 
 export default function SelectQuestionsPage() {
@@ -28,6 +28,7 @@ export default function SelectQuestionsPage() {
   const questionsList = useSelector(
     (state) => state?.homeworkAssitant?.questions || [],
   );
+  console.log('questionsList', questionsList)
 
   const [haSolutionExtraction] = useHaSolutionExtractionMutation();
 

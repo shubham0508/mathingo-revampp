@@ -102,7 +102,7 @@ export default function Header({ className }) {
             </li>
             <li>
               <Link
-                href="#blogs"
+                href="/blogs"
                 className="block text-black hover:text-blue-600 px-2 py-1.5 rounded-md transition-colors"
               >
                 <span className="text-base lg:text-lg">Blogs</span>
@@ -177,7 +177,7 @@ export default function Header({ className }) {
 
                 <li className="border-b pb-3">
                   <Link
-                    href="#pricing"
+                    href="/pricing"
                     onClick={handleCloseMenu}
                     className="block text-black"
                   >
@@ -186,7 +186,7 @@ export default function Header({ className }) {
                 </li>
                 <li className="border-b pb-3">
                   <Link
-                    href="#blogs"
+                    href="/blogs"
                     onClick={handleCloseMenu}
                     className="block text-black"
                   >
