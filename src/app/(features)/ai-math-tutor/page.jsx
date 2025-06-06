@@ -161,7 +161,9 @@ export default function AIMathTutorPage() {
                         setAnswer({
                             fileId: promptList?.data?.files[0]?.file_id,
                             question: promptList?.data?.files[0]?.pages[0]?.questions,
-                            question_url: promptList?.data?.files[0]?.file_url
+                            question_url: promptList?.data?.files[0]?.file_url || 'no_input',
+                            question_difficulty_level: promptList?.data?.files[0]?.pages[0]?.question_difficulty_level,
+                            question_id: promptList?.data?.files[0]?.pages[0]?.question_id
                         })
                     );
                     router.push("/ai-math-tutor/select-questions/ai-tutor-solution");

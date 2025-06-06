@@ -10,7 +10,23 @@ export const aiMathTutorApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['TutorQuestion'],
     }),
+    checkMySolution: builder.mutation({
+      query: (data) => ({
+        url: 'student_feedback_report',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['CheckMySolution'],
+    }),
+    aiMathTutorRelatedQuestions: builder.mutation({
+      query: (data) => ({
+        url: 'similar_question',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['AMTSimilarQuestions'],
+    }),
   }),
 });
 
-export const { useAiExtractQuestionMutation } = aiMathTutorApi;
+export const { useAiExtractQuestionMutation, useCheckMySolutionMutation, useAiMathTutorRelatedQuestionsMutation } = aiMathTutorApi;

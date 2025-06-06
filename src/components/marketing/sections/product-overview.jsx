@@ -9,6 +9,7 @@ import 'swiper/css/effect-fade';
 import { ChevronLeft, ChevronRight, Sparkles, Star } from 'lucide-react';
 import RelatedBlogSection from './blogs-section';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAllBlogs } from '@/lib/blogService';
 
 const testimonials = [
   {
@@ -41,6 +42,7 @@ export default function LANDINGPAGEEightPage() {
   const [sliderState, setSliderState] = useState(0);
   const testimonialSwiperRef = useRef(null);
   const [windowWidth, setWindowWidth] = useState(0);
+  const { blogs: initialBlogs } = getAllBlogs(1, 9);
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 40 },
@@ -59,32 +61,6 @@ export default function LANDINGPAGEEightPage() {
       transition: {
         staggerChildren: 0.3,
         delayChildren: 0.2,
-      }
-    }
-  };
-
-  const itemAnimation = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 80,
-        damping: 12
-      }
-    }
-  };
-
-  const sparkleAnimation = {
-    hidden: { opacity: 0, scale: 0 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 200,
-        damping: 10
       }
     }
   };
@@ -558,7 +534,7 @@ export default function LANDINGPAGEEightPage() {
             animate={isBlogsVisible ? 'visible' : 'hidden'}
             variants={fadeIn}
           >
-            <RelatedBlogSection />
+            <RelatedBlogSection relatedBlogs={initialBlogs}/>
           </motion.div>
         </div>
       </motion.div>

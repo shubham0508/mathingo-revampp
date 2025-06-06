@@ -74,7 +74,7 @@ export default function Header({ className }) {
 
                 <DropdownMenuContent className="bg-white shadow-lg rounded-md min-w-[180px] border border-gray-200">
                   <DropdownMenuItem className="px-3 py-2 hover:bg-blue-50 rounded-sm cursor-pointer">
-                    <Link href="#" className="block w-full">
+                    <Link href="/ai-math-tutor" className="block w-full">
                       <span className="text-sm">AI Math Tutor</span>
                     </Link>
                   </DropdownMenuItem>
@@ -94,7 +94,7 @@ export default function Header({ className }) {
 
             <li>
               <Link
-                href="#pricing"
+                href="/pricing"
                 className="block text-black hover:text-blue-600 px-2 py-1.5 rounded-md transition-colors"
               >
                 <span className="text-base lg:text-lg">Pricing</span>

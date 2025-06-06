@@ -11,46 +11,57 @@ import {
 
 const faqData = [
   {
-    question: 'What kind of maths problems do MathzAI solve?',
+    question: 'What types of math problems can MathzAI solve?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'MathzAI supports a wide range of math topics including algebra, calculus, geometry, trigonometry, statistics, and word problems. Whether it’s a simple equation or a complex multi-step problem, MathzAI can guide you through it.',
   },
   {
-    question: 'Can MathzAI verify my solution for the given problem?',
+    question: 'Can MathzAI check my own solution step-by-step?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Yes! With our Step-by-Step Concept (SSC) feature, you can upload your handwritten or typed solution, and MathzAI will verify each step for accuracy. If there’s a mistake, we’ll highlight it and guide you to the correct approach.',
   },
   {
-    question: 'How does the personalised AI Tutor in Mathz AI work?',
+    question: 'How does the AI Tutor in MathzAI help students?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Our AI Tutor acts like a personal coach. It offers interactive guidance, explains concepts clearly, and helps students solve problems in real time — even with voice support. It’s like having a private tutor available 24/7.',
   },
   {
-    question: 'Is Mathz AI compatible across multiple devices?',
+    question: 'Is MathzAI free to use?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'MathzAI offers both free and premium plans. You can try many core features at no cost. To unlock advanced tools like the AI Tutor, detailed solutions, and audio walkthroughs, you can subscribe to one of our affordable plans.',
   },
   {
-    question: 'How accurate are the solutions provided by Mathzai?',
+    question: 'Can I try MathzAI before subscribing?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Absolutely! We offer a free trial where you can solve math questions, check your steps, and explore the AI tutor. No credit card required.',
   },
   {
-    question: 'Is there any customer support available?',
+    question: 'Is MathzAI compatible with all devices?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Yes. MathzAI works seamlessly across desktops, tablets, and mobile devices. It’s optimized for all modern browsers and supports touch input for stylus-based math solving.',
   },
   {
-    question: 'Do you offer any subscription plans?',
+    question: 'Can I draw or upload handwritten solutions?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Yes! You can either type your solution or use our stylus/drawing feature to submit handwritten answers. MathzAI uses advanced recognition to understand and evaluate your input.',
   },
   {
-    question: 'Can I try MathzAI before purchasing?',
+    question: 'Is MathzAI suitable for school and competitive exams?',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Our expert team is always available to provide detailed guidance and support for all your mathematical challenges.',
+      'Definitely. MathzAI is ideal for students from middle school to college and those preparing for exams like SAT, ACT, JEE, CBSE Boards, and more. Our explanations align with curriculum standards.',
+  },
+  {
+    question: 'How accurate are the solutions provided by MathzAI?',
+    content:
+      'Our solutions are powered by AI trained on thousands of verified problem-solving patterns. Each answer is cross-checked for correctness and educational clarity.',
+  },
+  {
+    question: 'Do you offer support if I get stuck?',
+    content:
+      'Yes. You can reach out via our support chat or email for help. For deeper assistance, our AI tutor can walk you through the steps with real-time guidance.',
   },
 ];
+
 
 const staggerChildren = {
   hidden: { opacity: 0 },

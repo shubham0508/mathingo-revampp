@@ -75,9 +75,9 @@ export default function BlogCard({ blog, animate = true }) {
         >
             <Link href={`/blogs/${blog.slug}`} legacyBehavior>
                 <a className="block h-full">
-                    <article className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:border-blue-200 dark:hover:border-blue-700">
+                    <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:border-blue-200">
                         {/* Image Container */}
-                        <div className="relative w-full h-48 md:h-56 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+                        <div className="relative w-full h-48 md:h-56 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                             <motion.div variants={imageVariants} className="w-full h-full">
                                 <Image
                                     src={blog.coverImage || '/placeholder-images/default.webp'}
@@ -95,11 +95,11 @@ export default function BlogCard({ blog, animate = true }) {
 
                             {/* Floating action button */}
                             <motion.div
-                                className="absolute top-4 right-4 w-10 h-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                <Bookmark className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                                <Bookmark className="w-4 h-4 text-gray-700" />
                             </motion.div>
                         </div>
 
@@ -109,7 +109,7 @@ export default function BlogCard({ blog, animate = true }) {
                             className="p-6 flex flex-col flex-grow"
                         >
                             {/* Meta Information */}
-                            <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
                                 <motion.div
                                     className="flex items-center space-x-1"
                                     whileHover={{ scale: 1.05 }}
@@ -128,7 +128,7 @@ export default function BlogCard({ blog, animate = true }) {
 
                             {/* Title */}
                             <motion.h3
-                                className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300"
+                                className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300"
                                 layoutId={`title-${blog.slug}`}
                             >
                                 {blog.title}

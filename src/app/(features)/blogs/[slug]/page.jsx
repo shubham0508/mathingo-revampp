@@ -50,7 +50,7 @@ export default async function BlogPostPage({ params }) {
     const relatedBlogs = getRelatedBlogs(blog.slug, blog.tags, 3);
 
     return (
-        <main className="bg-white dark:bg-gray-950">
+        <main className="bg-white">
             <BlogLayout blog={blog} relatedBlogs={relatedBlogs} />
         </main>
     );

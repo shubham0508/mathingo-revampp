@@ -1,3 +1,4 @@
+// WebSocketService.js
 class WebSocketService {
   constructor() {
     if (WebSocketService.instance) {
@@ -183,35 +184,67 @@ class WebSocketService {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       const err = new Error('WebSocket not connected. Cannot send message.');
       this.notifyListeners('error', err);
+      console.error('WebSocketService: sendMessage error - not connected.');
       throw err;
     }
 
-    if (!data.question) {
-      const err = new Error('Missing "question" in message data.');
+    if (
+      !data.feature ||
+      !data.question_id ||
+      !data.question ||
+      !data.question_url
+    ) {
+      const err = new Error(
+        'Missing required fields (feature, question_id, question, question_url) in message data.',
+      );
       this.notifyListeners('error', err);
+      console.error(
+        'WebSocketService: sendMessage error - missing required fields:',
+        data,
+      );
       throw err;
+    }
+
+    const messagePayload = {
+      feature: data.feature,
+      question_id: data.question_id,
+      question: data.question,
+      question_url: data.question_url,
+      solution: data.solution || 'no_input',
+    };
+
+    if (data.session_id !== undefined) {
+      messagePayload.session_id = data.session_id;
+    }
+
+    if (data.feature === 'explanation' && data.explanation_text) {
+      messagePayload.explanation = data.explanation_text;
+    } else if (data.feature === 'next_3hint') {
+      if (data.current_hint_index) {
+        messagePayload.current_hint_index = data.current_hint_index;
+      }
+      if (data.hint) {
+        messagePayload.hint = data.hint;
+      }
+    } else if (data.feature === 'next_3step') {
+      if (data.current_step_index) {
+        messagePayload.current_step_index = data.current_step_index;
+      }
+      if (data.step) {
+        messagePayload.step = data.step;
+      }
+    } else if (data.feature === 'next_hint' && data.hint) {
+      messagePayload.hint = data.hint;
+    } else if (data.feature === 'next_step' && data.step) {
+      messagePayload.step = data.step;
     }
 
     try {
-      const messagePayload = {
-        question: data.question,
-        solution: data.solution || 'no_input',
-        feature: data.feature,
-        audio_feedback: data.audio_feedback !== false,
-        question_url: data.question_url || 'no_input',
-        explanation: data.explanation,
-        current_hint_index: data.current_hint_index,
-        current_step_index: data.current_step_index,
-        hint: data.hint,
-        step: data.step,
-      };
-      Object.keys(messagePayload).forEach(
-        (key) =>
-          messagePayload[key] === undefined && delete messagePayload[key],
-      );
-
-      this.socket.send(JSON.stringify(messagePayload));
+      const payloadString = JSON.stringify(messagePayload);
+      console.log('WebSocketService: Sending message:', payloadString);
+      this.socket.send(payloadString);
     } catch (error) {
+      console.error('WebSocketService: Error sending message:', error);
       this.notifyListeners('error', error);
       throw error;
     }
@@ -416,8 +449,32 @@ class WebSocketService {
     try {
       const data = JSON.parse(event.data);
 
+      if (data.type === 'audio_status') {
+        if (data.status === 'started') {
+          this.audioStatus.isPlaying = true;
+          this.audioStatus.isPaused = false;
+          this.notifyListeners('audioStatusChange', { ...this.audioStatus });
+        } else if (data.status === 'completed' || data.status === 'error') {
+          // Don't immediately set to false, let checkAndUpdateAudioState handle it
+          console.log('Received audio status:', data.status);
+          setTimeout(() => {
+            this.checkAndUpdateAudioState();
+          }, 100); // Small delay to ensure all buffers are processed
+        }
+        return;
+      }
+
       if (data.type === 'heartbeat') {
         this.notifyListeners('heartbeat', data);
+        return;
+      }
+
+      if (
+        data.status === 'info' &&
+        data.message &&
+        data.message.toLowerCase().includes('connection timeout')
+      ) {
+        this.notifyListeners('message', data);
         return;
       }
 
@@ -637,13 +694,16 @@ class WebSocketService {
 
   scheduleNextBuffer() {
     if (!this.audioContext || this.audioContext.state !== 'running') {
-      if (this.checkInterval) clearInterval(this.checkInterval);
-      this.checkInterval = null;
+      if (this.checkInterval) {
+        clearInterval(this.checkInterval);
+        this.checkInterval = null;
+      }
       return;
     }
 
     const SCHEDULE_AHEAD_TIME = 0.2;
 
+    // Process raw audio data into buffers
     while (this.processingBuffer.length >= this.bufferSize) {
       const chunk = this.processingBuffer.slice(0, this.bufferSize);
       this.processingBuffer = this.processingBuffer.slice(this.bufferSize);
@@ -651,10 +711,12 @@ class WebSocketService {
         const webAudioBuffer = this.createAudioBufferFromArray(chunk);
         this.audioBufferQueue.push(webAudioBuffer);
       } catch (e) {
+        console.error('Error creating audio buffer:', e);
         continue;
       }
     }
 
+    // Schedule audio buffers for playback
     while (
       this.audioBufferQueue.length > 0 &&
       this.scheduledTime < this.audioContext.currentTime + SCHEDULE_AHEAD_TIME
@@ -673,120 +735,129 @@ class WebSocketService {
       this.scheduledSources.push(source);
       this.scheduledTime = startTime + webAudioBufferToPlay.duration;
 
+      // Fixed onended callback
       source.onended = () => {
         this.scheduledSources = this.scheduledSources.filter(
           (s) => s !== source,
         );
-        if (
-          this.scheduledSources.length === 0 &&
-          this.audioBufferQueue.length === 0 &&
-          this.processingBuffer.length < this.bufferSize &&
-          this.isStreamComplete
-        ) {
-          this.isPlaying = false;
-          this.audioStatus.isPlaying = false;
-          this.audioStatus.isPaused = false;
-          this.audioStatus.queueLength = 0;
-          this.notifyListeners('audioStatusChange', { ...this.audioStatus });
-          if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
-          }
-        }
+
+        // Use setTimeout to ensure this runs after any other synchronous operations
+        setTimeout(() => {
+          this.checkAndUpdateAudioState();
+        }, 0);
       };
     }
 
-    this.audioStatus.isPlaying = this.isPlaying;
-    this.audioStatus.queueLength =
-      this.audioBufferQueue.length +
-      Math.floor(this.processingBuffer.length / this.bufferSize);
-    this.notifyListeners('audioStatusChange', { ...this.audioStatus });
-
-    if (this.checkInterval) clearInterval(this.checkInterval);
-
+    // Handle remaining processing buffer when stream is complete
     if (
-      this.isPlaying &&
-      (this.audioBufferQueue.length > 0 ||
-        this.processingBuffer.length >= this.bufferSize ||
-        (!this.isStreamComplete && this.processingBuffer.length > 0))
-    ) {
-      const timeUntilNextNeeded =
-        (this.scheduledTime -
-          this.audioContext.currentTime -
-          SCHEDULE_AHEAD_TIME * 0.5) *
-        1000;
-      this.checkInterval = setTimeout(
-        () => this.scheduleNextBuffer(),
-        Math.max(50, timeUntilNextNeeded),
-      );
-    } else if (
       this.isStreamComplete &&
       this.processingBuffer.length > 0 &&
       this.processingBuffer.length < this.bufferSize &&
       this.audioBufferQueue.length === 0 &&
       this.scheduledSources.length === 0
     ) {
-      if (this.processingBuffer.length > 0) {
-        try {
-          const lastChunkBuffer = this.createAudioBufferFromArray(
-            this.processingBuffer,
-          );
-          this.processingBuffer = new Float32Array(0);
-          this.audioBufferQueue.push(lastChunkBuffer);
-          this.checkInterval = setTimeout(() => this.scheduleNextBuffer(), 50);
-        } catch (e) {
-          this.isPlaying = false;
-          this.audioStatus.isPlaying = false;
-          this.audioStatus.isPaused = false;
-          this.audioStatus.queueLength = 0;
-          this.notifyListeners('audioStatusChange', { ...this.audioStatus });
-        }
-      } else {
-        this.isPlaying = false;
-        this.audioStatus.isPlaying = false;
-        this.audioStatus.isPaused = false;
-        this.audioStatus.queueLength = 0;
-        this.notifyListeners('audioStatusChange', { ...this.audioStatus });
+      try {
+        const lastChunkBuffer = this.createAudioBufferFromArray(
+          this.processingBuffer,
+        );
+        this.processingBuffer = new Float32Array(0);
+        this.audioBufferQueue.push(lastChunkBuffer);
+
+        // Schedule this last buffer immediately
+        setTimeout(() => this.scheduleNextBuffer(), 10);
+        return;
+      } catch (e) {
+        console.error('Error creating final audio buffer:', e);
+        // Clear the processing buffer and update state
+        this.processingBuffer = new Float32Array(0);
+        setTimeout(() => {
+          this.checkAndUpdateAudioState();
+        }, 0);
+        return;
       }
-    } else if (
-      this.isStreamComplete &&
-      this.audioBufferQueue.length === 0 &&
-      this.processingBuffer.length === 0 &&
-      this.scheduledSources.length === 0
-    ) {
-      this.isPlaying = false;
-      this.audioStatus.isPlaying = false;
-      this.audioStatus.isPaused = false;
-      this.audioStatus.queueLength = 0;
-      this.notifyListeners('audioStatusChange', { ...this.audioStatus });
-    } else if (!this.isStreamComplete && this.isPlaying) {
-      this.checkInterval = setTimeout(() => this.scheduleNextBuffer(), 100);
+    }
+
+    // Update audio state
+    this.checkAndUpdateAudioState();
+
+    // Clear any existing check interval
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+
+    // Schedule next check if needed
+    if (this.shouldBePlaying()) {
+      const timeUntilNextNeeded =
+        (this.scheduledTime -
+          this.audioContext.currentTime -
+          SCHEDULE_AHEAD_TIME * 0.5) *
+        1000;
+
+      this.checkInterval = setTimeout(
+        () => this.scheduleNextBuffer(),
+        Math.max(50, timeUntilNextNeeded),
+      );
     }
   }
 
   completeAudioStreamProcessing() {
     this.isStreamComplete = true;
-    if (
-      this.processingBuffer.length > 0 ||
+    console.log('Audio stream marked as complete');
+
+    // Use setTimeout to ensure this runs after any pending operations
+    setTimeout(() => {
+      this.checkAndUpdateAudioState();
+    }, 0);
+  }
+
+  shouldBePlaying() {
+    return (
       this.audioBufferQueue.length > 0 ||
-      this.scheduledSources.length > 0
-    ) {
-      if (this.audioContext && this.audioContext.state === 'running') {
-        if (!this.isPlaying) {
-          this.isPlaying = true;
-          this.audioStatus.isPlaying = true;
-          this.scheduledTime =
-            this.audioContext.currentTime + this.initialBufferTime;
-        }
-        this.scheduleNextBuffer();
-      }
-    } else {
+      this.scheduledSources.length > 0 ||
+      this.processingBuffer.length >= this.bufferSize ||
+      (!this.isStreamComplete && this.processingBuffer.length > 0)
+    );
+  }
+
+  checkAndUpdateAudioState() {
+    const shouldPlay = this.shouldBePlaying();
+
+    if (this.isPlaying && !shouldPlay) {
+      // Should stop playing
       this.isPlaying = false;
       this.audioStatus.isPlaying = false;
       this.audioStatus.isPaused = false;
       this.audioStatus.queueLength = 0;
       this.notifyListeners('audioStatusChange', { ...this.audioStatus });
+
+      if (this.checkInterval) {
+        clearInterval(this.checkInterval);
+        this.checkInterval = null;
+      }
+
+      console.log('Audio stopped - no more data to play');
+    } else if (
+      !this.isPlaying &&
+      shouldPlay &&
+      this.audioContext?.state === 'running'
+    ) {
+      // Should start playing
+      this.isPlaying = true;
+      this.audioStatus.isPlaying = true;
+      this.scheduledTime =
+        this.audioContext.currentTime + this.initialBufferTime;
+      this.scheduleNextBuffer();
+
+      console.log('Audio started - data available to play');
     }
+
+    // Update queue length regardless
+    this.audioStatus.queueLength =
+      this.audioBufferQueue.length +
+      Math.floor(this.processingBuffer.length / this.bufferSize);
+
+    this.notifyListeners('audioStatusChange', { ...this.audioStatus });
   }
 
   startHeartbeatMonitor() {

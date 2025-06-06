@@ -264,3 +264,47 @@ export const satExamples = {
     'Find the limit: lim(x→∞) (3x² + 2x)/(x² - 1)',
   ],
 };
+
+export const paymentPlans = [
+  {
+    id: 1,
+    title: "Free",
+    description: "A Perfect way to start your journey",
+    monthlyPrice: 0,
+    annualPrice: 0,
+  },
+  {
+    id: 2,
+    title: "Pro",
+    description: "Up to 10 users. Perfect for design teams, agencies and startups.",
+    monthlyPrice: 8.99,
+    annualPrice: 21.56,
+  },
+  {
+    id: 3,
+    title: "Premium",
+    description: "Up to 10 users. Perfect for design teams, agencies and startups.",
+    monthlyPrice: 18.99,
+    annualPrice: 45.56,
+  },
+];
+
+export const RAZORPAY_KEY = "rzp_test_MMVb9tQV2FQTuW"
+
+export const SUBSCRIPTION_FEATURES = {
+  free: [
+    "Unlimited Homework Assistant queries",
+    "Unlimited Smart Solution Checks",
+    "2 AI Math Tutor credits monthly",
+  ],
+  pro: [
+    "Unlimited Homework Assistant queries",
+    "Unlimited Smart Solution Checks",
+    "40 AI Math Tutor credits monthly",
+  ],
+  premium: [
+    "Unlimited Homework Assistant queries",
+    "Unlimited Smart Solution Checks",
+    "Unlimited AI Math Tutor access",
+  ]
+};

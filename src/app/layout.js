@@ -7,6 +7,7 @@ import { siteConfig } from '@/config/site';
 import { Providers } from './providers';
 import Footer from '@/components/layout/footer';
 import ToasterContext from '@/components/shared/ToasterContext';
+import Script from 'next/script';
 
 export const metadata = {
   title: {
@@ -74,6 +75,10 @@ export default function RootLayout({ children }) {
           fontMono.variable,
         )}
       >
+        <Script
+          id="razorpay-checkout-js"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+        />
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>

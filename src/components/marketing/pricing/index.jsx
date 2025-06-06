@@ -258,7 +258,7 @@ const Pricing = ({ status }) => {
                                                 className={`w-full py-3 text-base font-semibold rounded-lg shadow-md transition-transform duration-200 ease-out hover:scale-[1.02] focus:scale-[1.02] focus:ring-2 focus:ring-offset-2
                           ${plan.isRecommended ? "bg-primary hover:bg-blue-700 text-primary-foreground focus:ring-primary"
                                                         : plan.buttonVariant === "outline" ? "text-white bg-primary hover:bg-blue-700 focus:ring-primary dark:border-primary dark:text-primary dark:hover:bg-primary/20"
-                                                            : "bg-foreground hover:bg-foreground/90 text-background focus:ring-foreground dark:bg-slate-200 dark:hover:bg-slate-300 dark:text-slate-900 dark:focus:ring-slate-300"}
+                                                            : "bg-foreground hover:bg-foreground/90 text-background focus:ring-foreground"}
                           ${isDisabled ? "opacity-50 !cursor-not-allowed hover:!scale-100" : ""}`}
                                                 disabled={isDisabled}
                                                 onClick={() => handlePlanClick(plan.title)}

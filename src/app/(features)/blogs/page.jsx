@@ -89,7 +89,7 @@ export default function BlogsPage() {
                 />
             </Head>
 
-            <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-blue-900/10">
+            <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
 
                 <motion.section
                     className="relative py-16 md:py-24 overflow-hidden"
@@ -98,15 +98,15 @@ export default function BlogsPage() {
                     animate="visible"
                 >
                     <div className="absolute inset-0 overflow-hidden">
-                        <motion.div className="absolute top-10 left-10 w-20 h-20 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" />
-                        <motion.div className="absolute top-20 right-20 w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" style={{ animationDelay: '1s' }} />
-                        <motion.div className="absolute bottom-20 left-20 w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" style={{ animationDelay: '2s' }} />
+                        <motion.div className="absolute top-10 left-10 w-20 h-20 bg-blue-100 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" />
+                        <motion.div className="absolute top-20 right-20 w-16 h-16 bg-purple-100 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" style={{ animationDelay: '1s' }} />
+                        <motion.div className="absolute bottom-20 left-20 w-24 h-24 bg-green-100 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" style={{ animationDelay: '2s' }} />
                     </div>
 
                     <div className="container mx-auto px-4 text-center relative z-10">
                         <motion.div className="mb-6" variants={itemVariants}>
                             <motion.div
-                                className="inline-flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 text-sm font-medium mb-6"
+                                className="inline-flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-full text-blue-600 text-sm font-medium mb-6"
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: 'spring', stiffness: 300 }}
                             >
@@ -130,7 +130,7 @@ export default function BlogsPage() {
                             className="flex flex-wrap justify-center items-center gap-8 mb-8"
                         >
                             <motion.div
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-400"
+                                className="flex items-center space-x-2 text-gray-600"
                                 whileHover={{ scale: 1.05, color: '#3B82F6' }}
                                 transition={{ type: 'spring', stiffness: 300 }}
                             >
@@ -139,7 +139,7 @@ export default function BlogsPage() {
                             </motion.div>
 
                             <motion.div
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-400"
+                                className="flex items-center space-x-2 text-gray-600"
                                 whileHover={{ scale: 1.05, color: '#10B981' }}
                                 transition={{ type: 'spring', stiffness: 300 }}
                             >
@@ -148,7 +148,7 @@ export default function BlogsPage() {
                             </motion.div>
 
                             <motion.div
-                                className="flex items-center space-x-2 text-gray-600 dark:text-gray-400"
+                                className="flex items-center space-x-2 text-gray-600"
                                 whileHover={{ scale: 1.05, color: '#8B5CF6' }}
                                 transition={{ type: 'spring', stiffness: 300 }}
                             >

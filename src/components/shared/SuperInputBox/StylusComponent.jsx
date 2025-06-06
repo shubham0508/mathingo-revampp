@@ -526,8 +526,8 @@ const StylusDrawComponent = forwardRef(({
 
     const containerClasses = `
     ${isFullscreen
-            ? 'fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900'
-            : `relative bg-gray-100 dark:bg-gray-800 ${className}`
+            ? 'fixed inset-0 z-50 bg-gray-100'
+            : `relative bg-gray-100 ${className}`
         }
     flex flex-col items-center justify-center
 `;
@@ -581,33 +581,33 @@ const StylusDrawComponent = forwardRef(({
 
             {showToolbar && (
                 <>
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-1 p-2 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600">
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-1 p-2 bg-white rounded-lg shadow-xl border border-gray-200">
                         <Button variant={currentTool === 'pen' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pen')} title="Pen"> <Pen className="w-5 h-5" /> </Button>
                         <Button variant={currentTool === 'eraser' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('eraser')} title="Eraser"> <Eraser className="w-5 h-5" /> </Button>
                         <Button variant={currentTool === 'pan' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCurrentTool('pan')} title="Pan/Move"> <Hand className="w-5 h-5" /> </Button>
-                        <Separator orientation="vertical" className="h-6 mx-1 bg-gray-300 dark:bg-gray-500" />
+                        <Separator orientation="vertical" className="h-6 mx-1 bg-gray-300" />
                         <Button variant="ghost" size="icon" onClick={undo} disabled={undoStack.length === 0} title="Undo"> <Undo2 className="w-5 h-5" /> </Button>
                         <Button variant="ghost" size="icon" onClick={redo} disabled={redoStack.length === 0} title="Redo"> <Redo2 className="w-5 h-5" /> </Button>
-                        <Separator orientation="vertical" className="h-6 mx-1 bg-gray-300 dark:bg-gray-500" />
+                        <Separator orientation="vertical" className="h-6 mx-1 bg-gray-300" />
                         <Button variant="ghost" size="icon" onClick={clearCanvas} disabled={paths.length === 0 && canvasOffset.x === 0 && canvasOffset.y === 0 && scale === 1} title="Clear All"> <Trash2 className="w-5 h-5 text-red-500 hover:text-red-600" /> </Button>
                         <Button variant="ghost" size="icon" onClick={downloadDrawing} disabled={paths.length === 0} title="Download"> <Download className="w-5 h-5" /> </Button>
                         <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}> {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />} </Button>
                     </div>
 
                     <div
-                        className="absolute z-20 flex flex-col gap-4 p-3 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 w-36 overflow-y-auto scrollbar-none"
+                        className="absolute z-20 flex flex-col gap-4 p-3 bg-white rounded-lg shadow-xl border border-gray-200 w-36 overflow-y-auto scrollbar-none"
                         style={colorToolbarStyle}
                     >
                         <div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1 block">Color</span>
+                            <span className="text-xs font-medium text-gray-600 mb-1 block">Color</span>
                             <div className="grid grid-cols-3 gap-1.5">
                                 {colors.map((color) => (
                                     <button
                                         key={color}
                                         className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform focus:outline-none
                                         ${currentColor === color && currentTool !== 'eraser'
-                                                ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-600 ring-offset-1'
-                                                : 'border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400'
+                                                ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-1'
+                                                : 'border-gray-300 hover:border-gray-400'
                                             }`}
                                         style={{ backgroundColor: color }}
                                         onClick={() => { setCurrentColor(color); if (currentTool === 'eraser') setCurrentTool('pen'); }}
@@ -616,9 +616,9 @@ const StylusDrawComponent = forwardRef(({
                                 ))}
                             </div>
                         </div>
-                        <Separator className="bg-gray-200 dark:bg-gray-600" />
+                        <Separator className="bg-gray-200" />
                         <div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1 block">Brush Size</span>
+                            <span className="text-xs font-medium text-gray-600 mb-1 block">Brush Size</span>
                             <div className="grid grid-cols-2 gap-2">
                                 {widths.map(({ size, label }) => (
                                     <Button

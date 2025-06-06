@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Factory, Instagram, Linkedin } from 'lucide-react';
+import { Factory, Instagram, Linkedin, Youtube } from 'lucide-react';
 import Image from 'next/image';
 
 const footerVariants = {
@@ -138,9 +138,9 @@ function Footer() {
                   href: 'https://www.linkedin.com/company/mathzai',
                 },
                 {
-                  icon: Factory,
-                  name: 'TikTok',
-                  href: 'https://www.tiktok.com/@mathzai',
+                  icon: Youtube,
+                  name: 'Youtube',
+                  href: 'https://www.youtube.com/@MathzAI',
                 },
               ].map((social) => (
                 <motion.a
@@ -150,12 +150,9 @@ function Footer() {
                   key={social.name}
                   href={social.href}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="flex items-center gap-2 md:gap-4 align-middle text-gray-300 hover:text-white text-sm sm:text-base"
-
                 >
-
-
                   <social.icon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   <span>{social.name}</span>
                 </motion.a>
