@@ -58,7 +58,7 @@ const extractAllQuestions = (data) => {
           question_id: page.question_id,
           original_index: qIndex,
           text: question,
-          file_url: file.file_url,
+          file_url: file.file_url || 'no_input',
           file_type: file.file_type,
           file_id: file.file_id,
           image_id: page.image_id,
@@ -66,6 +66,7 @@ const extractAllQuestions = (data) => {
           fileIndex,
           pageIndex,
           checked: false,
+          question_difficulty_level: page?.question_difficulty_level || 'easy'
         };
       }),
     ),

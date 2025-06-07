@@ -96,8 +96,8 @@ const Toolbar = ({
           title='Send'
           className={`transition-colors duration-200 px-2 py-1 text-sm font-medium rounded ${isProcessing
             ? 'bg-gray-200 text-gray-500'
-            : text.trim() || drawingData || files.length > 0
-              ? 'bg-primary text-white hover:bg-blue-800'
+            : text?.trim().length > 0 || drawingData || files.length > 0
+              ? 'bg-primary text-white hover:bg-blue-700'
               : 'bg-gray-100 text-gray-400'
             }`}
         />

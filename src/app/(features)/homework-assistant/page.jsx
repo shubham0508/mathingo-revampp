@@ -646,6 +646,7 @@ export default function HWAssistant() {
             question_id: firstPage.question_id,
             questions_selected: firstPage.questions,
             question_url: firstFile.file_url || 'no_input',
+            difficulty_level: firstPage?.question_difficulty_level || 'easy'
           },
         ],
       }).unwrap();

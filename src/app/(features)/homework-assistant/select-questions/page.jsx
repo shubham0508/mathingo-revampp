@@ -59,6 +59,7 @@ export default function SelectQuestionsPage() {
           text: question.text,
           checked: false,
           pageNo: question.page_no,
+          difficulty_level: question?.question_difficulty_level
         });
 
         return acc;
@@ -146,6 +147,7 @@ export default function SelectQuestionsPage() {
           question_id: question.originalId,
           questions_selected: [question.text],
           question_url: file.fileUrl,
+          difficulty_level: question?.difficulty_level
         }));
       });
 
@@ -157,7 +159,11 @@ export default function SelectQuestionsPage() {
       const solutionResponse = await haSolutionExtraction(payload).unwrap();
 
       if (solutionResponse?.status_code === 201) {
-        dispatch(setAnswer(solutionResponse.data));
+        const answersWithDifficulty = solutionResponse.data.map((item, index) => ({
+          ...item,
+          difficulty_level: inputs[index]?.difficulty_level || null,
+        }));
+        dispatch(setAnswer(answersWithDifficulty));
         router.push('/homework-assistant/select-questions/problem-solver');
       } else {
         throw new Error(solutionResponse?.error || 'Failed to get solutions');
@@ -181,6 +187,9 @@ export default function SelectQuestionsPage() {
   };
 
   const currentFile = fileQuestions[currentFileIndex];
+
+  // Check if current file has a viewable file (not text type)
+  const hasViewableFile = currentFile && currentFile.fileType !== 'text' && currentFile.fileUrl;
 
   if (questionsList.length === 0) {
     return (
@@ -226,14 +235,15 @@ export default function SelectQuestionsPage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col lg:flex-row justify-between items-start gap-8 px-4 md:px-16 py-10"
+          className={`flex flex-col ${hasViewableFile ? 'lg:flex-row' : ''} justify-between items-start gap-8 px-4 md:px-16 py-10`}
         >
-          <div className="w-full lg:w-[45%]">
-            <h1 className="font-bold text-3xl md:text-3xl text-action-buttons-foreground mb-8 font-roca">
-              Select Questions to get help 👇
-            </h1>
+          {/* Left section - File Preview (only show if file is viewable) */}
+          {hasViewableFile && (
+            <div className="w-full lg:w-[45%]">
+              <h1 className="font-bold text-3xl md:text-3xl text-action-buttons-foreground mb-8 font-roca">
+                Select Questions to get help 👇
+              </h1>
 
-            {currentFile && (
               <QuestionSelector
                 file={currentFile}
                 currentIndex={currentFileIndex}
@@ -243,19 +253,26 @@ export default function SelectQuestionsPage() {
                 onDotClick={goToFileIndex}
                 onOpenPreview={handleOpenPreview}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="w-full lg:w-[55%] h-full flex flex-col">
+          {/* Right section - Questions List */}
+          <div className={`w-full ${hasViewableFile ? 'lg:w-[55%]' : ''} h-full flex flex-col`}>
+            {/* Show title here if no file preview */}
+            {!hasViewableFile && (
+              <h1 className="font-bold text-3xl md:text-3xl text-action-buttons-foreground mb-8 font-roca">
+                Select Questions to get help 👇
+              </h1>
+            )}
+
             <div className="flex justify-end items-end mb-8">
               <Button
                 onClick={handleSolveQuestions}
                 disabled={selectedQuestionCount === 0 || isSolving}
-                className={`bg-action-buttons-foreground hover:bg-action-buttons-foreground text-white font-medium text-lg ${
-                  selectedQuestionCount === 0
+                className={`bg-action-buttons-foreground hover:bg-action-buttons-foreground text-white font-medium text-lg ${selectedQuestionCount === 0
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
-                }`}
+                  }`}
               >
                 {isSolving ? (
                   <div className="flex items-center">

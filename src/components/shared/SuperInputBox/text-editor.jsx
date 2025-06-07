@@ -8,6 +8,7 @@ const TextEditor = ({
   handleEditorKeyDown,
   handlePaste,
   isProcessing,
+  hasContent
 }) => {
   useEffect(() => {
     const editor = editorRef.current;
@@ -15,7 +16,7 @@ const TextEditor = ({
     if (!editor) return;
 
     const updatePlaceholderVisibility = () => {
-      const isEmpty = editor.innerText.trim() === '';
+      const isEmpty = editor.innerText.trim() === '' && editor.innerHTML.trim() === '';
       if (isEmpty) {
         editor.classList.add('show-placeholder');
       } else {
@@ -25,9 +26,39 @@ const TextEditor = ({
 
     updatePlaceholderVisibility();
 
-    editor.addEventListener('input', updatePlaceholderVisibility);
-    return () => editor.removeEventListener('input', updatePlaceholderVisibility);
+    const events = ['input', 'paste', 'keyup', 'blur', 'focus'];
+    events.forEach(event => {
+      editor.addEventListener(event, updatePlaceholderVisibility);
+    });
+
+    const observer = new MutationObserver(updatePlaceholderVisibility);
+    observer.observe(editor, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    return () => {
+      events.forEach(event => {
+        editor.removeEventListener(event, updatePlaceholderVisibility);
+      });
+      observer.disconnect();
+    };
   }, [editorRef]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    if (hasContent) {
+      editor.classList.remove('show-placeholder');
+    } else {
+      const isEmpty = editor.innerText.trim() === '' && editor.innerHTML.trim() === '';
+      if (isEmpty) {
+        editor.classList.add('show-placeholder');
+      }
+    }
+  }, [hasContent, editorRef]);
 
   return (
     <div className="relative w-full h-full bg-white">

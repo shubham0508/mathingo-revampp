@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import 'katex/dist/katex.min.css';
+import Link from 'next/link';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -61,7 +62,7 @@ export default function FeaturesSection() {
                 shape="round"
                 className="bg-primary text-white border-button-order hover:bg-blue-700 text-lg py-5 px-5"
               >
-                Solve with buddy
+                <Link href="/ai-math-tutor">Solve with buddy</Link>
               </Button>
             </div>
           </div>
@@ -268,7 +269,7 @@ export default function FeaturesSection() {
                 shape="round"
                 className="bg-primary text-white border-button-order hover:bg-blue-700 text-lg py-5 px-5"
               >
-                Get help on an assignment
+                <Link href="/homework-assistant">Get help on an assignment</Link>
               </Button>
             </div>
           </div>

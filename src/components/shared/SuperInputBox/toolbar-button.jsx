@@ -9,6 +9,7 @@ const ToolbarButton = ({
   icon,
   title,
   className = '',
+  sendButton
 }) => {
   return (
     <TooltipProvider delayDuration={200}>

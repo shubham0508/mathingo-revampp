@@ -34,7 +34,7 @@ export default function Header({ className }) {
   };
 
   const handleSolveNowClick = () => {
-    console.log('Solve now clicked');
+    router.push("/signin")
   };
 
   return (

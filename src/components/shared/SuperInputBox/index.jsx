@@ -71,6 +71,18 @@ const SuperInput = ({
   const MODEL_NAME = 'alpha';
 
   useEffect(() => {
+    const focusEditor = () => {
+      if (editorRef.current && !disabled && files.length === 0) {
+        editorRef.current.focus();
+      }
+    };
+
+    const timer = setTimeout(focusEditor, 100);
+
+    return () => clearTimeout(timer);
+  }, [disabled, files.length]);
+
+  useEffect(() => {
     if (text?.trim().length === 0) {
       setShowMathKeyboard(false)
     }
@@ -327,6 +339,7 @@ const SuperInput = ({
             question_id: firstPage.question_id,
             questions_selected: firstPage.questions,
             question_url: firstFile.file_url || 'no_input',
+            difficulty_level: firstPage?.question_difficulty_level || 'easy'
           },
         ],
       }).unwrap();
@@ -607,9 +620,12 @@ const SuperInput = ({
       setFiles((prev) => [...prev, ...filesData]);
     };
 
-    // Add global paste event handler for images
     const handleGlobalPaste = (e) => {
-      if (mode === MODES.TEXT && !disabled && files.length === 0) {
+      const isTargetInSuperInput = dropAreaRef.current?.contains(e.target);
+      const isInputElement = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+      const isContentEditable = e.target.contentEditable === 'true';
+
+      if (isTargetInSuperInput && !isInputElement && mode === MODES.TEXT && !disabled && files.length === 0) {
         handlePaste(e);
       }
     };
@@ -906,10 +922,11 @@ const SuperInput = ({
               handlePaste={handlePaste}
               updateContent={updateContent}
               isProcessing={isProcessing}
+              hasContent={text?.trim().length > 0}
             />
           )}
 
-              {/* {mode === MODES.DRAW && (
+          {/* {mode === MODES.DRAW && (
             <TLDrawWhiteboard
               onContentChange={handleDrawingChange}
               disabled={disabled}
