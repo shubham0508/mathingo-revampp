@@ -136,7 +136,7 @@ export default function BlogCard({ blog, animate = true }) {
 
                             {/* Excerpt */}
                             <motion.p
-                                className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 flex-grow leading-relaxed"
+                                className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow leading-relaxed"
                                 layoutId={`excerpt-${blog.slug}`}
                             >
                                 {blog.excerpt}
@@ -144,13 +144,13 @@ export default function BlogCard({ blog, animate = true }) {
 
                             {/* Read More Section */}
                             <motion.div
-                                className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700"
+                                className="mt-auto pt-4 border-t border-gray-100"
                                 initial="rest"
                                 whileHover="hover"
                                 animate="rest"
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center space-x-3 text-xs text-gray-500">
                                         <motion.div
                                             className="flex items-center space-x-1"
                                             whileHover={{ scale: 1.05 }}
@@ -161,7 +161,7 @@ export default function BlogCard({ blog, animate = true }) {
                                     </div>
 
                                     <motion.div
-                                        className="flex items-center space-x-1 text-sm font-medium text-blue-600 dark:text-blue-400"
+                                        className="flex items-center space-x-1 text-sm font-medium text-blue-600"
                                         variants={arrowVariants}
                                     >
                                         <span>Read more</span>

@@ -41,15 +41,15 @@ export default function BlogCarousel({
     return (
         <motion.section
             ref={sectionRef}
-            className="py-12 md:py-16 bg-slate-50 dark:bg-slate-900"
+            className="py-12 md:py-16 bg-slate-50"
             initial="initial"
             animate={isVisible ? "animate" : "initial"}
             variants={sectionFadeIn}
         >
             <div className="container mx-auto px-4">
                 <motion.div className="text-center mb-8 md:mb-12" variants={sectionFadeIn}>
-                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{title}</h2>
-                    <p className="text-md md:text-lg text-gray-600 dark:text-gray-300">{subtitle}</p>
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900mb-2">{title}</h2>
+                    <p className="text-md md:text-lg text-gray-600">{subtitle}</p>
                 </motion.div>
 
                 <motion.div
@@ -80,10 +80,10 @@ export default function BlogCarousel({
                         ))}
                     </Swiper>
 
-                    <div className="swiper-button-prev-carousel group absolute top-1/2 -translate-y-1/2 left-0 z-10 p-2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-md cursor-pointer text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-all md:left-[-12px] flex items-center justify-center">
+                    <div className="swiper-button-prev-carousel group absolute top-1/2 -translate-y-1/2 left-0 z-10 p-2 bg-white/70 hover:bg-white rounded-full shadow-md cursor-pointer text-gray-700 hover:text-blue-600 transition-all md:left-[-12px] flex items-center justify-center">
                         <ChevronLeft size={28} />
                     </div>
-                    <div className="swiper-button-next-carousel group absolute top-1/2 -translate-y-1/2 right-0 z-10 p-2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-md cursor-pointer text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-all md:right-[-12px] flex items-center justify-center">
+                    <div className="swiper-button-next-carousel group absolute top-1/2 -translate-y-1/2 right-0 z-10 p-2 bg-white/70 hover:bg-white rounded-full shadow-md cursor-pointer text-gray-700 hover:text-blue-600 transition-all md:right-[-12px] flex items-center justify-center">
                         <ChevronRight size={28} />
                     </div>
 

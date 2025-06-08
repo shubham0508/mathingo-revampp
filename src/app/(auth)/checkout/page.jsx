@@ -590,21 +590,21 @@ const PaymentStatusDisplay = ({ status, orderId, errorMsg, router, searchParams 
             title: "Payment Successful!",
             description: "Your transaction is complete. Your plan is now active.",
             colorClass: "bg-green-500/10 border-green-500/30",
-            textColor: "text-green-700 dark:text-green-400",
+            textColor: "text-green-700",
         },
         error: {
             icon: <XCircle className="h-20 w-20 md:h-24 md:w-24 mb-6 text-red-500" />,
             title: "Payment Failed",
             description: errorMsg || "An error occurred while processing your payment.",
             colorClass: "bg-red-500/10 border-red-500/30",
-            textColor: "text-red-700 dark:text-red-400",
+            textColor: "text-red-700",
         },
         hold: {
             icon: <AlertCircle className="h-20 w-20 md:h-24 md:w-24 mb-6 text-yellow-500" />,
             title: "Action Required",
             description: errorMsg || "Your payment was successful, but we need a moment to update your profile.",
             colorClass: "bg-yellow-500/10 border-yellow-500/30",
-            textColor: "text-yellow-700 dark:text-yellow-400",
+            textColor: "text-yellow-700",
         },
     };
 

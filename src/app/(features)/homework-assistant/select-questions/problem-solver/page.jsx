@@ -101,6 +101,7 @@ const transformApiResponseToQuestionData = (questionData) => {
     return {
       id: questionData.question_id,
       text: questionData.question,
+      difficulty_level: questionData?.difficulty_level,
       error: questionData.error,
     };
   }
@@ -109,6 +110,7 @@ const transformApiResponseToQuestionData = (questionData) => {
     return {
       id: questionData.question_id,
       text: questionData.question,
+      difficulty_level: questionData?.difficulty_level,
       error: 'Failed to generate solution for this question',
     };
   }
@@ -133,6 +135,7 @@ const transformApiResponseToQuestionData = (questionData) => {
   return {
     id: questionData.question_id,
     text: questionData.question,
+    difficulty_level: questionData?.questionData,
     hints,
     concepts,
     answer,
@@ -267,7 +270,7 @@ export default function HWAssistantPage() {
       }
 
       if (!questionQueryMade[questionId]) {
-        getRelatedQuestions({ query: conceptsQuery, limit: 10 });
+        getRelatedQuestions({ query: conceptsQuery, limit: 10, level: 'LEVEL_UP', difficulty_level: selectedQuestion?.difficulty_level, feature: 'HA' });
         setQuestionQueryMade((prev) => ({ ...prev, [questionId]: true }));
       }
     }

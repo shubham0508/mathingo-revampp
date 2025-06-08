@@ -27,10 +27,10 @@ export const homeworkAssistantApi = baseApi.injectEndpoints({
       invalidatesTags: ['YouTube'],
     }),
     haRelatedQuestions: builder.mutation({
-      query: ({ query, limit = 10 }) => ({
+      query: (data) => ({
         url: 'similar_question',
         method: 'POST',
-        body: { query, limit },
+        body: data,
       }),
       invalidatesTags: ['SimilarQuestions'],
     }),

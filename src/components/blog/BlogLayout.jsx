@@ -119,17 +119,17 @@ export default function BlogLayout({ blog, relatedBlogs }) {
         animate="animate"
         variants={sectionFadeIn}
       >
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-roca bg-gradient-secondary bg-clip-text text-transparent mb-3 text-center">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-roca bg-gradient-secondary bg-clip-text text-transparent mb-3 text-center h-12">
           {blog.title}
         </h1>
-        <div className="text-center text-sm text-gray-600 dark:text-gray-400 space-x-2">
+        <div className="text-center text-sm text-gray-600 space-x-2">
           <span>By {blog.author.name}</span>
           <span>•</span>
           <span>Published: {blog.publishedDate}</span>
           <span>•</span>
           <span>{blog.readTime}</span>
         </div>
-        {blog.coverImage && (
+        {/* {blog.coverImage && (
           <motion.div
             className="mt-6 md:mt-8 rounded-lg overflow-hidden shadow-xl aspect-video relative max-h-full mx-auto w-full"
             variants={fadeInUp}
@@ -143,16 +143,16 @@ export default function BlogLayout({ blog, relatedBlogs }) {
               priority
             />
           </motion.div>
-        )}
+        )} */}
       </motion.header>
 
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
         <motion.article
-          className="lg:w-3/4 prose prose-lg dark:prose-invert max-w-none 
+          className="lg:w-3/4 prose prose-lg max-w-none 
                        prose-headings:font-semibold prose-headings:tracking-tight
-                       prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-800 dark:hover:prose-a:text-blue-300
+                       prose-a:text-blue-600 hover:prose-a:text-blue-800
                        prose-img:rounded-lg prose-img:shadow-md prose-img:mx-auto
-                       prose-code:before:content-none prose-code:after:content-none prose-code:px-1 prose-code:py-0.5 prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:rounded
+                       prose-code:before:content-none prose-code:after:content-none prose-code:px-1 prose-code:py-0.5 prose-code:bg-slate-100 prose-code:rounded
                        "
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -169,13 +169,13 @@ export default function BlogLayout({ blog, relatedBlogs }) {
 
       {relatedBlogs && relatedBlogs.length > 0 && (
         <motion.section
-          className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700"
+          className="mt-16 pt-8 border-t border-gray-200"
           initial="initial"
           whileInView="animate"
           viewport={{ once: true, amount: 0.2 }}
           variants={sectionFadeIn}
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900mb-6 md:mb-8">
             Related Articles
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">

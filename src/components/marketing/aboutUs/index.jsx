@@ -53,7 +53,7 @@ const AboutUs = () => {
     };
 
     return (
-        <section id="about-us" className="py-16 md:py-24 bg-gradient-to-b from-background to-secondary/30 dark:from-black dark:to-gray-900/70 text-foreground" aria-labelledby="about-us-heading">
+        <section id="about-us" className="py-16 md:py-24 bg-gradient-to-b from-background to-secondary/30 text-foreground" aria-labelledby="about-us-heading">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
 
                 <motion.div
@@ -93,7 +93,7 @@ const AboutUs = () => {
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {features.map((feature, index) => (
                             <motion.div key={index} variants={itemVariants} viewport={{ once: true }}>
-                                <Card className="h-full transform hover:scale-105 transition-transform duration-300 ease-out shadow-lg hover:shadow-xl dark:bg-card/80">
+                                <Card className="h-full transform hover:scale-105 transition-transform duration-300 ease-out shadow-lg hover:shadow-xl">
                                     <CardHeader>
                                         {feature.icon}
                                         <CardTitle className="text-2xl font-semibold text-primary">{feature.title}</CardTitle>
@@ -135,7 +135,7 @@ const AboutUs = () => {
                             {benefits.map((benefit, index) => (
                                 <motion.li
                                     key={index}
-                                    className="flex items-start p-4 bg-card dark:bg-card/70 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+                                    className="flex items-start p-4 bg-card rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
                                     variants={itemVariants}
                                     custom={index}
                                     whileInView="visible"
@@ -151,7 +151,7 @@ const AboutUs = () => {
                 </motion.div>
 
                 <motion.div
-                    className="text-center bg-primary/10 dark:bg-primary/20 p-8 md:p-12 rounded-2xl mb-16 md:mb-24"
+                    className="text-center bg-primary/10 p-8 md:p-12 rounded-2xl mb-16 md:mb-24"
                     variants={sectionVariants}
                     initial="hidden"
                     whileInView="visible"

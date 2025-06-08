@@ -10,7 +10,7 @@ import { Skeleton } from '../ui/skeleton';
 function BlogSkeletonCard() {
     return (
         <motion.div
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -46,8 +46,8 @@ function EmptyState() {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
             >
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mb-4">
-                    <BookOpen className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
+                    <BookOpen className="w-12 h-12 text-blue-600" />
                 </div>
 
                 {icons.slice(1).map((Icon, index) => (
@@ -68,15 +68,15 @@ function EmptyState() {
                             repeatDelay: 2
                         }}
                     >
-                        <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center">
-                            <Icon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                        <div className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center">
+                            <Icon className="w-4 h-4 text-gray-600" />
                         </div>
                     </motion.div>
                 ))}
             </motion.div>
 
             <motion.h3
-                className="text-2xl font-bold text-gray-900 dark:text-white mb-3"
+                className="text-2xl font-bold text-gray-900 mb-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
@@ -85,7 +85,7 @@ function EmptyState() {
             </motion.h3>
 
             <motion.p
-                className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-6"
+                className="text-gray-600 text-center max-w-md mb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 1 }}
@@ -94,7 +94,7 @@ function EmptyState() {
             </motion.p>
 
             <motion.div
-                className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400"
+                className="flex items-center space-x-2 text-sm text-gray-500"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 1.2 }}
@@ -253,7 +253,7 @@ export default function BlogList({ initialBlogs, initialHasMore, initialTotal })
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400">
+                    <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-600">
                         <BookOpen className="w-4 h-4" />
                         <span>You've reached the end of our blog posts</span>
                     </div>

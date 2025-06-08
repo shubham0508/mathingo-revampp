@@ -249,14 +249,14 @@ const ContactPage = () => {
                             className="lg:col-span-3"
                             variants={fadeInUp}
                         >
-                            <Card className="shadow-xl dark:bg-card/85 border-border/30" id="contact-form-card">
+                            <Card className="shadow-xl border-border/30" id="contact-form-card">
                                 <CardHeader>
                                     <CardTitle className="text-3xl font-semibold flex items-center">
                                         <MessageSquareText className="mr-3 h-8 w-8 text-primary" />
                                         Send Us a Message
                                     </CardTitle>
                                     {isPreFilled && (
-                                        <CardDescription className="!mt-2 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1.5 rounded-md inline-block">
+                                        <CardDescription className="!mt-2 text-sm bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md inline-block">
                                             Your details are pre-filled from our chat assistant.
                                         </CardDescription>
                                     )}
@@ -299,8 +299,8 @@ const ContactPage = () => {
                                                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
                                                     transition={{ duration: 0.3 }}
                                                     className={`p-3 rounded-md text-sm flex items-center
-                                                        ${submitStatus === 'success' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : ''}
-                                                        ${submitStatus === 'error' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : ''}
+                                                        ${submitStatus === 'success' ? 'bg-green-100 text-green-700' : ''}
+                                                        ${submitStatus === 'error' ? 'bg-red-100 text-red-700' : ''}
                                                     `}
                                                 >
                                                     {submitStatus === 'success' && <CheckCircle2 className="h-5 w-5 mr-2 flex-shrink-0" />}
@@ -318,7 +318,7 @@ const ContactPage = () => {
                             className="lg:col-span-2 space-y-8"
                             variants={fadeInUp}
                         >
-                            <Card className="shadow-lg dark:bg-card/85 border-border/30">
+                            <Card className="shadow-lg border-border/30">
                                 <CardHeader>
                                     <CardTitle className="text-2xl font-semibold flex items-center">
                                         Contact Information
