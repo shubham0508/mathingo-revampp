@@ -15,6 +15,7 @@ import StylusDrawComponent from '@/components/shared/SuperInputBox/StylusCompone
 import { useRouter } from 'next/navigation';
 import { useCheckMySolutionMutation } from '@/store/slices/AMT';
 import { setSolutionFeedback } from '@/store/reducers/AMT';
+import { useSession } from 'next-auth/react';
 
 const createVerifyStepResponseStructure = (steps, allStepsCorrect, response) => {
     return {
@@ -39,6 +40,8 @@ const MathTutorPage = () => {
     const dispatch = useDispatch();
     const router = useRouter();
     const [checkMySolution, { isLoading: isCheckingSolutionApi }] = useCheckMySolutionMutation();
+    const { data: session } = useSession();
+    const isGuestUser = session?.user?.isGuest || false;
 
     const [tutorResponse, setTutorResponse] = useState({
         streamingText: "",
@@ -721,6 +724,7 @@ const MathTutorPage = () => {
                                 isWhiteboardDirty={isWhiteboardDirty}
                                 formatTime={formatTime}
                                 timer={timer}
+                                isGuestUser={isGuestUser}
                             />
                         </motion.div>
                     )}

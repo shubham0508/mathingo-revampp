@@ -1317,7 +1317,6 @@ const LockOverlay = ({ onUnlock, isUnlocking = false, children }) => {
 
   useEffect(() => {
     if (isUnlocking) {
-      // Delay content reveal to sync with lock animation
       const timer = setTimeout(() => setShowContent(true), 800);
       return () => clearTimeout(timer);
     }

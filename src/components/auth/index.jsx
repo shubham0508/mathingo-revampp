@@ -251,7 +251,6 @@ export function AuthFlow({
         setIsActionLoading(true);
         signIn("google", { callbackUrl: defaultCallbackUrl })
             .catch((error) => {
-                // Handle API error response format
                 let errorMessage = "Google Sign-In failed. Please try again.";
 
                 if (error?.data?.error && Array.isArray(error.data.error) && error.data.error.length > 0) {
