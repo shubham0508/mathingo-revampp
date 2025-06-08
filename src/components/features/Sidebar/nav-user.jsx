@@ -19,20 +19,20 @@ const FALLBACK_AVATAR_URL = "https://github.com/shadcn.png";
 
 export function NavUser({
   user = {
-    full_name: "",
+    name: "",
     email: "",
     profile_picture: "",
     plan_type: "free"
   },
 }) {
   const { isMobile } = useSidebar();
-
+   
   const userData = useMemo(() => ({
-    fullName: user?.full_name || "",
+    fullName: user?.name || "",
     email: user?.email || "",
     planType: user?.plan_type || "free",
     profilePicture: user?.profile_picture || null,
-  }), [user?.full_name, user?.email, user?.plan_type, user?.profile_picture]);
+  }), [user?.name, user?.email, user?.plan_type, user?.profile_picture]);
 
   const { url: profileImage } = useS3Asset(userData.profilePicture);
 
@@ -57,13 +57,13 @@ export function NavUser({
   );
 
   return (
-    <SidebarMenu className="text-black dark:text-white">
+    <SidebarMenu className="text-black dark:text-white text-lg">
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground text-whiteText"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-black hover:text-black"
               aria-label={`User menu for ${userData.fullName}`}
             >
               <Avatar className="h-8 w-8 rounded-lg">
@@ -81,7 +81,7 @@ export function NavUser({
                 </AvatarFallback>
               </Avatar>
 
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-[14px] leading-tight">
                 <span className="truncate font-semibold" title={userData.fullName}>
                   {userData.fullName}
                 </span>
@@ -99,7 +99,7 @@ export function NavUser({
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-lg">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage
                     src={avatarSrc}
@@ -114,7 +114,7 @@ export function NavUser({
                     />
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-[14px] leading-tight">
                   <span className="truncate font-semibold" title={userData.fullName}>
                     {userData.fullName}
                   </span>
@@ -132,7 +132,7 @@ export function NavUser({
                   <DropdownMenuItem asChild>
                     <Link
                       href="/pricing-info"
-                      className="flex items-center gap-2 w-full"
+                      className="flex items-center gap-2 w-full cursor-pointer"
                       title="Upgrade to premium plan"
                     >
                       <Sparkles className="h-4 w-4" aria-hidden="true" />
@@ -148,7 +148,7 @@ export function NavUser({
               <DropdownMenuItem asChild>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 w-full"
+                  className="flex items-center gap-2 w-full cursor-pointer"
                   title="Manage your account settings"
                 >
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" />
@@ -158,7 +158,7 @@ export function NavUser({
               <DropdownMenuItem asChild>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 w-full"
+                  className="flex items-center gap-2 w-full cursor-pointer"
                   title="Manage your subscription"
                 >
                   <CreditCard className="h-4 w-4" aria-hidden="true" />

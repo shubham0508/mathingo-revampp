@@ -1,3 +1,4 @@
+import Footer from "@/components/layout/footer";
 import FloatingHelpButton from "@/components/marketing/sections/ask-us-modal";
 import FAQs from "@/components/marketing/sections/faqs";
 import FeaturesSection from "@/components/marketing/sections/features-section";
@@ -43,6 +44,7 @@ export default function HomePage() {
       <LANDINGPAGEEightPage />
       <FAQs />
       <FloatingHelpButton />
+      <Footer />
     </div>
   );
 }

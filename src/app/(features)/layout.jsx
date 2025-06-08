@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/features/Sidebar";
+import Footer from "@/components/layout/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function Layout({ children }) {
@@ -9,6 +10,7 @@ export default function Layout({ children }) {
         <div className="p-4">
           {children}
         </div>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );

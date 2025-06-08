@@ -56,7 +56,7 @@ export default function FeaturesSection() {
             </p>
             <div className="mt-8 flex flex-wrap gap-4 ">
               <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
-                <span>Know More</span>
+                <Link href="/learn-math-with-ai">Know More</Link>
               </Button>
               <Button
                 shape="round"
@@ -263,7 +263,7 @@ export default function FeaturesSection() {
             </p>
             <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
               <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
-                <span>Know More</span>
+                <Link href="/instant-math-solver">Know More</Link>
               </Button>
               <Button
                 shape="round"

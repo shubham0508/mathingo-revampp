@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { usePathname } from 'next/navigation';
-import { ArrowLeftToLine, ArrowRightToLine, BookOpen } from 'lucide-react';
+import { ArrowLeftToLine, ArrowRightToLine } from 'lucide-react';
 import { NavUser } from './nav-user';
 import { useSession } from 'next-auth/react';
 
@@ -36,7 +36,7 @@ const menuItems = [
     title: 'AI Math Tutor',
     iconSrc: '/images/icons/math_tutor.png',
     alt: 'AI Math Tutor Icon',
-    href: '/math-ai-tutor',
+    href: '/ai-math-tutor',
   },
   {
     title: 'Smart Solution Check',
@@ -44,40 +44,30 @@ const menuItems = [
     alt: 'Smart Solution Check Icon',
     href: '/solution-check',
   },
-];
-
-const guestMenuItems = [
-  ...menuItems,
   {
     title: 'Blogs',
-    iconSrc: null,
+    iconSrc: '/images/icons/blog.png',
     alt: 'Blogs Icon',
     href: '/blogs',
-    isLucideIcon: true,
   },
 ];
 
 export function AppSidebar() {
-  const [activeItem, setActiveItem] = useState('Homework Assistant');
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const pathname = usePathname();
   const { data: session } = useSession();
-
-  const isGuest = useMemo(() => session?.user?.isGuest ?? false, [session?.user?.isGuest]);
-
-  const currentMenuItems = useMemo(() =>
-    isGuest ? guestMenuItems : menuItems,
-    [isGuest]
-  );
+  
+  const isGuest = useMemo(() => {
+    if (!session || !session.user || Object.keys(session.user).length === 0) {
+      return true;
+    }
+    return session.user.isGuest ?? false;
+  }, [session]);
 
   const handleToggleSidebar = useCallback(() => {
     toggleSidebar();
   }, [toggleSidebar]);
-
-  const handleSetActiveItem = useCallback((title) => {
-    setActiveItem(title);
-  }, []);
 
   useEffect(() => {
     const shouldCollapse = pathname.includes('/select-questions');
@@ -156,8 +146,8 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu className="gap-2" role="menu">
-                {currentMenuItems.map((item) => {
-                  const isActive = activeItem === item.title;
+                {menuItems.map((item) => {
+                  const isActive = pathname.includes(item.href);
                   return (
                     <SidebarMenuItem key={item.title} role="none">
                       <Tooltip>
@@ -169,7 +159,6 @@ export function AppSidebar() {
                                   ? 'bg-content-background text-black hover:text-black'
                                   : 'bg-transparent text-black hover:text-black'
                                 }`}
-                              onClick={() => handleSetActiveItem(item.title)}
                               aria-current={isActive ? 'page' : undefined}
                               role="menuitem"
                               title={item.title}
@@ -180,30 +169,19 @@ export function AppSidebar() {
                                   : 'bg-transparent'
                                   }`}
                               >
-                                {item.isLucideIcon ? (
-                                  <BookOpen
-                                    className={
-                                      isCollapsed
-                                        ? 'h-4 w-4'
-                                        : 'h-6 w-6'
-                                    }
-                                    aria-hidden="true"
-                                  />
-                                ) : (
-                                  <Image
-                                    src={item.iconSrc}
-                                    width={isCollapsed ? 36 : 24}
-                                    height={isCollapsed ? 36 : 24}
-                                    alt={item.alt}
-                                    loading="lazy"
-                                    sizes={isCollapsed ? "36px" : "24px"}
-                                    className={
-                                      isCollapsed
-                                        ? 'h-7 w-7 object-contain'
-                                        : 'h-6 w-6 object-contain'
-                                    }
-                                  />
-                                )}
+                                <Image
+                                  src={item.iconSrc}
+                                  width={isCollapsed ? 36 : 24}
+                                  height={isCollapsed ? 36 : 24}
+                                  alt={item.alt}
+                                  loading="lazy"
+                                  sizes={isCollapsed ? "36px" : "24px"}
+                                  className={
+                                    isCollapsed
+                                      ? 'h-7 w-7 object-contain'
+                                      : 'h-6 w-6 object-contain'
+                                  }
+                                />
                               </div>
                               {!isCollapsed && (
                                 <span className="text-sm font-medium">
@@ -251,7 +229,7 @@ export function AppSidebar() {
         </SidebarContent>
         {!isGuest && (
           <>
-            <SidebarFooter className="flex justify-between items-center px-3 py-2 border-t">
+            <SidebarFooter className="flex justify-between items-center px-3 py-2 border-t text-lg">
               <NavUser user={session?.user} />
             </SidebarFooter>
             <SidebarRail />

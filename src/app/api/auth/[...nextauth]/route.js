@@ -4,6 +4,50 @@ import AppleProvider from 'next-auth/providers/apple';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import authApi from '@/lib/auth-api';
 
+const capitalizeName = (name) => {
+  if (!name || typeof name !== 'string') return name;
+
+  return name
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const mergeUserData = (baseData, profileData, fallbackData = {}) => {
+  const profile = profileData?.data || {};
+  const rawName =
+    profile.full_name ||
+    baseData.full_name ||
+    baseData.name ||
+    fallbackData.name;
+
+  return {
+    id: profile.user_id || baseData.user_id || baseData.id || fallbackData.id,
+    name: capitalizeName(rawName),
+    email: profile.email || baseData.email || fallbackData.email,
+    image:
+      profile.profile_picture ||
+      baseData.profile_picture ||
+      baseData.image ||
+      fallbackData.image,
+    username: profile.username || baseData.username || fallbackData.username,
+    country: profile.country || baseData.country || fallbackData.country,
+    grade: profile.grade || baseData.grade || fallbackData.grade,
+    isGuestUser:
+      profile.is_guest_user ??
+      baseData.is_guest_user ??
+      fallbackData.isGuestUser ??
+      false,
+    status: profile.status || baseData.status || fallbackData.status,
+    planType: profile.plan_type || baseData.plan_type || fallbackData.planType,
+    level: profile.level || baseData.level || fallbackData.level,
+    purpose: profile.purpose || baseData.purpose || fallbackData.purpose,
+    startDate:
+      profile.start_date || baseData.start_date || fallbackData.startDate,
+    endDate: profile.end_date || baseData.end_date || fallbackData.endDate,
+  };
+};
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -62,16 +106,23 @@ const handler = NextAuth({
             throw new Error('Invalid credentials - no access token received');
           }
 
-          const profileResponse = await authApi.profile(
-            loginResponse.access_token,
+          let profileResponse = null;
+          try {
+            profileResponse = await authApi.profile(loginResponse.access_token);
+          } catch (profileError) {
+            console.warn(
+              'Failed to fetch profile, using login data:',
+              profileError,
+            );
+          }
+
+          const userData = mergeUserData(
+            loginResponse.user || {},
+            profileResponse,
           );
 
           return {
-            id: loginResponse.user?.id || profileResponse.data?.id,
-            name: loginResponse.user?.name || profileResponse.data?.name,
-            email: loginResponse.user?.email || profileResponse.data?.email,
-            image: loginResponse.user?.image || profileResponse.data?.image,
-            ...profileResponse.data,
+            ...userData,
             accessToken: loginResponse.access_token,
             refreshToken: loginResponse.refresh_token,
             tokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
@@ -121,42 +172,29 @@ const handler = NextAuth({
           account.backendToken = response.access_token;
           account.backendRefreshToken = response.refresh_token;
 
+          let userProfile = null;
           try {
-            const userProfile = await authApi.profile(response.access_token);
-
-            Object.assign(user, {
-              id: response.user?.id || userProfile.data?.id,
-              name: response.user?.name || userProfile.data?.name,
-              email:
-                response.user?.email ||
-                userProfile.data?.email ||
-                profile?.email,
-              image:
-                response.user?.image ||
-                userProfile.data?.image ||
-                profile?.picture,
-              ...userProfile.data,
-              accessToken: response.access_token,
-              refreshToken: response.refresh_token,
-              tokenExpires: Date.now() + 24 * 60 * 60 * 1000,
-              isGuest: false,
-            });
+            userProfile = await authApi.profile(response.access_token);
           } catch (profileError) {
-            console.error(
+            console.warn(
               'Failed to fetch user profile after Google OAuth:',
               profileError,
             );
-            Object.assign(user, {
-              id: response.user?.id,
-              name: response.user?.name || profile?.name,
-              email: response.user?.email || profile?.email,
-              image: response.user?.image || profile?.picture,
-              accessToken: response.access_token,
-              refreshToken: response.refresh_token,
-              tokenExpires: Date.now() + 24 * 60 * 60 * 1000,
-              isGuest: false,
-            });
           }
+
+          const userData = mergeUserData(response.user || {}, userProfile, {
+            name: profile?.name,
+            email: profile?.email,
+            image: profile?.picture,
+          });
+
+          Object.assign(user, {
+            ...userData,
+            accessToken: response.access_token,
+            refreshToken: response.refresh_token,
+            tokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+            isGuest: false,
+          });
 
           return true;
         }
@@ -191,6 +229,16 @@ const handler = NextAuth({
           name: user.name,
           email: user.email,
           image: user.image,
+          username: user.username,
+          country: user.country,
+          grade: user.grade,
+          isGuestUser: user.isGuestUser,
+          status: user.status,
+          planType: user.planType,
+          level: user.level,
+          purpose: user.purpose,
+          startDate: user.startDate,
+          endDate: user.endDate,
           accessToken: account?.backendToken || user.accessToken,
           refreshToken: account?.backendRefreshToken || user.refreshToken,
           tokenExpires: user.tokenExpires || Date.now() + 24 * 60 * 60 * 1000,
@@ -226,10 +274,9 @@ const handler = NextAuth({
           return { ...token, error: 'RefreshAccessTokenError' };
         }
 
-        let updatedProfile = {};
+        let userProfile = null;
         try {
-          const userProfile = await authApi.profile(response.access_token);
-          updatedProfile = userProfile.data || {};
+          userProfile = await authApi.profile(response.access_token);
         } catch (profileError) {
           console.warn(
             'Failed to fetch updated profile after token refresh:',
@@ -237,9 +284,41 @@ const handler = NextAuth({
           );
         }
 
+        const currentUserData = {
+          user_id: token.id,
+          full_name: token.name,
+          email: token.email,
+          profile_picture: token.image,
+          username: token.username,
+          country: token.country,
+          grade: token.grade,
+          is_guest_user: token.isGuestUser,
+          status: token.status,
+          plan_type: token.planType,
+          level: token.level,
+          purpose: token.purpose,
+          start_date: token.startDate,
+          end_date: token.endDate,
+        };
+
+        const updatedUserData = mergeUserData(currentUserData, userProfile);
+
         return {
           ...token,
-          ...updatedProfile,
+          id: updatedUserData.id,
+          name: updatedUserData.name,
+          email: updatedUserData.email,
+          image: updatedUserData.image,
+          username: updatedUserData.username,
+          country: updatedUserData.country,
+          grade: updatedUserData.grade,
+          isGuestUser: updatedUserData.isGuestUser,
+          status: updatedUserData.status,
+          planType: updatedUserData.planType,
+          level: updatedUserData.level,
+          purpose: updatedUserData.purpose,
+          startDate: updatedUserData.startDate,
+          endDate: updatedUserData.endDate,
           accessToken: response.access_token,
           refreshToken: response.refresh_token || token.refreshToken,
           tokenExpires: Date.now() + 24 * 60 * 60 * 1000,
@@ -260,6 +339,16 @@ const handler = NextAuth({
         email: token.email,
         name: token.name || (token.isGuest ? 'Guest User' : ''),
         image: token.image,
+        username: token.username,
+        country: token.country,
+        grade: token.grade,
+        isGuestUser: token.isGuestUser,
+        status: token.status,
+        planType: token.planType,
+        level: token.level,
+        purpose: token.purpose,
+        startDate: token.startDate,
+        endDate: token.endDate,
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
         tokenExpires: token.tokenExpires,
@@ -281,7 +370,18 @@ const handler = NextAuth({
               'email',
               'name',
               'image',
-            ].includes(key)
+              'username',
+              'country',
+              'grade',
+              'isGuestUser',
+              'status',
+              'planType',
+              'level',
+              'purpose',
+              'startDate',
+              'endDate',
+            ].includes(key) &&
+            token[key] !== undefined
           ) {
             acc[key] = token[key];
           }

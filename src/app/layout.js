@@ -5,7 +5,6 @@ import { fontSans, fontMono } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 import { Providers } from './providers';
-import Footer from '@/components/layout/footer';
 import ToasterContext from '@/components/shared/ToasterContext';
 import Script from 'next/script';
 
@@ -82,7 +81,6 @@ export default function RootLayout({ children }) {
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>
-            <Footer />
           </div>
           <ToasterContext />
         </Providers>
