@@ -112,14 +112,14 @@ export default function BlogLayout({ blog, relatedBlogs }) {
   if (!blog) return <p>Blog post not found.</p>;
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
+    <div className="container mx-auto px-4">
       <motion.header
         className="mb-8 md:mb-12"
         initial="initial"
         animate="animate"
         variants={sectionFadeIn}
       >
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-roca bg-gradient-secondary bg-clip-text text-transparent mb-3 text-center h-12">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-roca bg-gradient-secondary bg-clip-text text-transparent mb-3 text-center h-14">
           {blog.title}
         </h1>
         <div className="text-center text-sm text-gray-600 space-x-2">

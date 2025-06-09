@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Upload,
   X,
-  Keyboard,
   Trash2,
   LoaderCircle,
 } from 'lucide-react';
@@ -18,7 +17,7 @@ import {
   useHaQuestionExtractionMutation,
   useHaSolutionExtractionMutation,
 } from '@/store/slices/HA';
-import { setAnswer, setQuestion } from '@/store/reducers/HA';
+import { resetAnswer, resetQuestion, setAnswer, setQuestion } from '@/store/reducers/HA';
 import { createFileData, validateFile } from '@/lib/fileUtils';
 import MathKeyboard from '@/components/shared/SuperInputBox/math-keyboard';
 import FilePreviews from '@/components/shared/SuperInputBox/file-previews';
@@ -124,6 +123,11 @@ export default function HWAssistant() {
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [initialized]);
+
+  useEffect(()=>{
+    dispatch(resetAnswer())
+    dispatch(resetQuestion())
+  },[])
 
   useEffect(() => {
     const contentExists = text.trim().length > 0 || files.length > 0;

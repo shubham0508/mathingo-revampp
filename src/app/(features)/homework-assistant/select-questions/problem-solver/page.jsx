@@ -69,14 +69,10 @@ const Typewriter = ({ text, speed = 5, onComplete, className }) => {
 
   useEffect(() => {
     if (!text || currentIndex >= text.length) {
-      if (text && currentIndex === text.length) {
-        if (onComplete) {
-          onComplete();
-        }
-      } else if (!text) {
-        if (onComplete) {
-          onComplete();
-        }
+      if (text && currentIndex === text.length && onComplete) {
+        onComplete();
+      } else if (!text && onComplete) {
+        onComplete();
       }
       return;
     }
@@ -103,58 +99,95 @@ const transformApiResponseToQuestionData = (questionData) => {
       text: questionData.question,
       difficulty_level: questionData?.difficulty_level,
       error: questionData.error,
+      is_multi_part: false,
+      parts: [],
+      hints: [],
+      concepts: [],
+      answer: '',
+      solution: [],
+      relatedVideos: [],
+      relatedQuestions: [],
     };
   }
 
-  if (!questionData.llm_response || !questionData.llm_response.solution) {
+  if (!questionData.llm_response || !Array.isArray(questionData.llm_response.solution)) {
     return {
       id: questionData.question_id,
       text: questionData.question,
       difficulty_level: questionData?.difficulty_level,
-      error: 'Failed to generate solution for this question',
+      error: 'Failed to generate solution for this question or solution data is invalid.',
+      is_multi_part: false,
+      parts: [],
+      hints: [],
+      concepts: [],
+      answer: '',
+      solution: [],
+      relatedVideos: [],
+      relatedQuestions: [],
     };
   }
 
-  const solutionData = questionData.llm_response.solution;
+  const solutionPartsFromApi = questionData.llm_response.solution;
+  const isMultiPart = solutionPartsFromApi.length > 1;
 
-  const hints = solutionData.flatMap((part) => part.hints || []);
-  const concepts = solutionData.flatMap((part) => part.concepts_used || []);
-  const answer = solutionData
-    .flatMap((part) => part.final_answer || [])
-    .join(', ');
+  let globalStepCounter = 0;
 
-  const solution = solutionData.flatMap((part, partIndex) =>
-    part.complete_solution.map((step, stepIndex) => ({
-      step: partIndex + stepIndex + 1,
-      title: step.concept_theorem_used || '',
-      content: step.sub_steps.join('\n') || '',
-      explanation: step.sub_steps_explnation || '',
-    })),
+  const processedParts = solutionPartsFromApi.map((apiPart) => {
+    const partSolutionSteps = (apiPart.complete_solution || []).map((stepData) => {
+      globalStepCounter++;
+      return {
+        step_id_global: globalStepCounter,
+        title: stepData.concept_theorem_used || `Step`,
+        sub_steps_array: Array.isArray(stepData.sub_steps) ? stepData.sub_steps : [],
+        explanation: stepData.sub_steps_explnation || '',
+      };
+    });
+
+    return {
+      question_number: apiPart.question_number || '',
+      hints: apiPart.hints || [],
+      concepts: apiPart.concepts_used || [],
+      final_answer_array: Array.isArray(apiPart.final_answer) ? apiPart.final_answer : (apiPart.final_answer ? [apiPart.final_answer] : []),
+      complete_solution_steps: partSolutionSteps,
+    };
+  });
+
+  const allFinalAnswersCombinedForClipboard = processedParts.map(p =>
+    (p.question_number && isMultiPart ? `Part ${p.question_number}:\n` : '') + p.final_answer_array.join('\n')
+  ).join(isMultiPart ? '\n\n' : '\n').trim();
+
+  const flatSolutionStepsForDisplay = processedParts.flatMap(part =>
+    part.complete_solution_steps.map(step => ({
+      ...step,
+      question_part_number: part.question_number,
+      step: step.step_id_global
+    }))
   );
 
   return {
     id: questionData.question_id,
     text: questionData.question,
-    difficulty_level: questionData?.questionData,
-    hints,
-    concepts,
-    answer,
-    solution,
+    difficulty_level: questionData?.difficulty_level,
+    is_multi_part: isMultiPart,
+    parts: processedParts,
+    hints: processedParts.flatMap(p => p.hints),
+    concepts: processedParts.flatMap(p => p.concepts),
+    answer: allFinalAnswersCombinedForClipboard,
+    solution: flatSolutionStepsForDisplay,
     relatedVideos: [],
     relatedQuestions: [],
   };
 };
 
+
 const transformYouTubeResponse = (data) => {
   if (!data || !Array.isArray(data)) return [];
-
   return data.map((url, index) => {
     const videoId = url.split('v=')[1]?.split('&')[0] || '';
     const title = `Video ${index + 1}: Math Concept Explanation`;
     const thumbnailUrl = videoId
       ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
       : '/api/placeholder/400/225';
-
     return {
       id: videoId || `video-${index}`,
       url: url,
@@ -226,7 +259,6 @@ export default function HWAssistantPage() {
         text: item.question,
         active: index === 0,
       }));
-
       setQuestions(generatedQuestions);
 
       if (answerList[0]) {
@@ -234,7 +266,6 @@ export default function HWAssistantPage() {
         if (formattedData) {
           setSelectedQuestion(formattedData);
           setCurrentQuestionId(formattedData.id);
-
           if (formattedData.solution && formattedData.solution.length > 0) {
             setExpandedSteps(formattedData.solution.map((step) => step.step));
           }
@@ -274,7 +305,7 @@ export default function HWAssistantPage() {
         setQuestionQueryMade((prev) => ({ ...prev, [questionId]: true }));
       }
     }
-  }, [selectedQuestion?.id, selectedQuestion?.concepts, selectedQuestion?.error, getRelatedVideos, getRelatedQuestions, videoQueryMade, questionQueryMade]);
+  }, [selectedQuestion?.id, selectedQuestion?.concepts, selectedQuestion?.error, getRelatedVideos, getRelatedQuestions, videoQueryMade, questionQueryMade, selectedQuestion?.difficulty_level]);
 
   useEffect(() => {
     if (selectedQuestion && videosApiData && videosApiData.data && !selectedQuestion.error) {
@@ -304,12 +335,10 @@ export default function HWAssistantPage() {
 
   const handleQuestionClick = (index) => {
     if (questions[index]?.active) return;
-
     const updatedQuestions = questions.map((q, i) => ({
       ...q,
       active: i === index,
     }));
-
     setQuestions(updatedQuestions);
     setIsLoading(true);
     setSelectedTab('Hints');
@@ -319,21 +348,17 @@ export default function HWAssistantPage() {
       const questionData = answerList[index];
       if (questionData) {
         const formattedData = transformApiResponseToQuestionData(questionData);
-
         if (formattedData) {
           setSelectedQuestion({
             ...formattedData,
             relatedVideos: [],
             relatedQuestions: [],
           });
-
           setCurrentQuestionId(formattedData.id);
-
           if (!formattedData.error) {
             setVideoQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
             setQuestionQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
           }
-
           if (formattedData.solution && formattedData.solution.length > 0) {
             setExpandedSteps(formattedData.solution.map((step) => step.step));
           } else {
@@ -345,11 +370,11 @@ export default function HWAssistantPage() {
     setIsLoading(false);
   };
 
-  const toggleExplanation = (step) => {
-    if (expandedExplanation === step) {
+  const toggleExplanation = (stepId) => {
+    if (expandedExplanation === stepId) {
       setExpandedExplanation(null);
     } else {
-      setExpandedExplanation(step);
+      setExpandedExplanation(stepId);
     }
   };
 
@@ -360,11 +385,10 @@ export default function HWAssistantPage() {
 
   const handleCopyClick = () => {
     navigator.clipboard.writeText(selectedQuestion?.answer || '');
-    console.log('Answer copied to clipboard');
   };
 
   const handleFeedback = (isPositive) => {
-    console.log(`User gave ${isPositive ? 'positive' : 'negative'} feedback`);
+    // Feedback logic here
   };
 
   const nextVideoCarousel = () => {
@@ -529,7 +553,6 @@ export default function HWAssistantPage() {
           <HomeworkAssistantSection
             question={selectedQuestion}
             selectedTab={selectedTab}
-            expandedSteps={expandedSteps}
             onTabChange={handleOptionClick}
             onToggleExplanation={toggleExplanation}
             onCopy={handleCopyClick}
@@ -569,7 +592,7 @@ export default function HWAssistantPage() {
         <AuthFlow
           initialStep="signIn"
           isPopup={true}
-          onClose={() => setShowSigninModal(false)}
+          onClose={handleSigninModalClose}
           defaultCallbackUrl='/homework-assistant/select-questions/problem-solver'
         />
       )}
@@ -580,7 +603,6 @@ export default function HWAssistantPage() {
 function HomeworkAssistantSection({
   question,
   selectedTab,
-  expandedSteps,
   onTabChange,
   onToggleExplanation,
   onCopy,
@@ -601,6 +623,7 @@ function HomeworkAssistantSection({
   layoutClass,
   isGuestUser,
   onUnlock,
+  isUnlocking: isUnlockingProp,
 }) {
   const displayedVideos =
     question.relatedVideos?.slice(videoCarouselIndex, videoCarouselIndex + 3) ||
@@ -612,22 +635,13 @@ function HomeworkAssistantSection({
     ) || [];
 
   const [typedContent, setTypedContent] = useState({});
-  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(isUnlockingProp);
 
   const typedContentRef = useRef(typedContent);
 
-  const handleUnlock = async () => {
-    setIsUnlocking(true);
-    try {
-      await onUnlock();
-      // After successful login, let the animation complete
-      setTimeout(() => {
-        setIsUnlocking(false);
-      }, 1500);
-    } catch (error) {
-      setIsUnlocking(false);
-    }
-  };
+  useEffect(() => {
+    setIsUnlocking(isUnlockingProp);
+  }, [isUnlockingProp]);
 
 
   useEffect(() => {
@@ -753,198 +767,236 @@ function HomeworkAssistantSection({
                 <LockOverlay onUnlock={onUnlock} isUnlocking={isUnlocking} />
               ) : (
                 <>
-                  {selectedTab === 'Hints' &&
-                    question.hints &&
-                    question.hints.length > 0 && (
-                      <motion.div
-                        className="space-y-3"
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        {question.hints.map((hint, idx) => (
-                          <motion.p
-                            key={`hint-${question.id}-${idx}`}
-                            variants={stepAnimation}
-                            className="text-base font-medium text-gray-800"
-                          >
-                            <span className="mr-2">👉</span>
-                            {typedContent[`hint-${idx}`] ? (
-                              <Latex>{hint}</Latex>
-                            ) : (
-                              <Typewriter
-                                text={hint}
-                                speed={20}
-                                onComplete={() =>
-                                  handleTypingComplete(`hint-${idx}`)
-                                }
-                              />
+                  {selectedTab === 'Hints' && question.parts && question.parts.length > 0 && (
+                    <motion.div className="space-y-1" variants={staggerContainer} initial="hidden" animate="visible">
+                      {question.is_multi_part ? (
+                        question.parts.map((part, partIdx) => (
+                          <div key={`hint-part-${question.id}-${partIdx}`} className="mb-3">
+                            {part.question_number && (
+                              <motion.h4 className="text-md font-semibold text-primary mb-1 flex items-center" variants={stepAnimation}>
+                                <span className="mr-2">👉</span> Part {part.question_number}:
+                              </motion.h4>
                             )}
-                          </motion.p>
-                        ))}
-                      </motion.div>
-                    )}
-
-                  {selectedTab === 'Concepts' &&
-                    question.concepts &&
-                    question.concepts.length > 0 && (
-                      <motion.div
-                        className="space-y-3"
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        {question.concepts.map((concept, idx) => (
-                          <motion.p
-                            key={`concept-${question.id}-${idx}`}
-                            variants={stepAnimation}
-                            className="text-base font-medium text-gray-800"
-                          >
+                            {part.hints.map((hint, hintIdx) => (
+                              <motion.p key={`hint-${question.id}-${partIdx}-${hintIdx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 ml-6 flex items-start">
+                                <span className="mr-2 mt-[0.1em]">•</span>
+                                <div className="flex-1">
+                                  {typedContent[`hint-${partIdx}-${hintIdx}`] ? (
+                                    <Latex>{hint}</Latex>
+                                  ) : (
+                                    <Typewriter text={hint} speed={20} onComplete={() => handleTypingComplete(`hint-${partIdx}-${hintIdx}`)} />
+                                  )}
+                                </div>
+                              </motion.p>
+                            ))}
+                            {part.hints.length === 0 && <p className="text-sm text-gray-500 ml-6">No hints for this part.</p>}
+                          </div>
+                        ))
+                      ) : (
+                        question.parts[0]?.hints.map((hint, idx) => (
+                          <motion.p key={`hint-${question.id}-${idx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 flex items-start">
                             <span className="mr-2">👉</span>
-                            {typedContent[`concept-${idx}`] ? (
-                              <Latex>{concept}</Latex>
-                            ) : (
-                              <Typewriter
-                                text={concept}
-                                speed={20}
-                                onComplete={() =>
-                                  handleTypingComplete(`concept-${idx}`)
-                                }
-                              />
-                            )}
+                            <div className="flex-1">
+                              {typedContent[`hint-0-${idx}`] ? (
+                                <Latex>{hint}</Latex>
+                              ) : (
+                                <Typewriter text={hint} speed={20} onComplete={() => handleTypingComplete(`hint-0-${idx}`)} />
+                              )}
+                            </div>
                           </motion.p>
-                        ))}
-                      </motion.div>
-                    )}
-
-                  {selectedTab === 'Answer' && (
-                    <motion.div
-                      className="space-y-3"
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      <p className="text-base font-medium text-gray-800">
-                        <span className="mr-2">👉</span>
-                        {typedContent['answer'] ? (
-                          <Latex>{question.answer}</Latex>
-                        ) : (
-                          <Typewriter
-                            text={question.answer}
-                            speed={20}
-                            onComplete={() => handleTypingComplete('answer')}
-                          />
-                        )}
-                      </p>
+                        ))
+                      )}
+                      {(!question.parts || question.parts.length === 0 || (question.is_multi_part && question.parts.every(p => p.hints.length === 0)) || (!question.is_multi_part && question.parts[0]?.hints.length === 0)) && (
+                        <p className="text-sm text-gray-500">No hints available for this question.</p>
+                      )}
                     </motion.div>
                   )}
 
-                  {selectedTab === 'Solution' &&
-                    question.solution &&
-                    question.solution.length > 0 && (
-                      <motion.div
-                        className="space-y-2"
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        {question.solution.map((step, idx) => (
-                          <div key={`solution-step-${question.id}-${idx}`}>
-                            <motion.div
-                              className="flex items-start align-middle gap-4"
+                  {selectedTab === 'Concepts' && question.parts && question.parts.length > 0 && (
+                    <motion.div className="space-y-1" variants={staggerContainer} initial="hidden" animate="visible">
+                      {question.is_multi_part ? (
+                        question.parts.map((part, partIdx) => (
+                          <div key={`concept-part-${question.id}-${partIdx}`} className="mb-3">
+                            {part.question_number && (
+                              <motion.h4 className="text-md font-semibold text-primary mb-1 flex items-center" variants={stepAnimation}>
+                                <span className="mr-2">👉</span> Part {part.question_number}:
+                              </motion.h4>
+                            )}
+                            {part.concepts.map((concept, conceptIdx) => (
+                              <motion.p key={`concept-${question.id}-${partIdx}-${conceptIdx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 ml-6 flex items-start">
+                                <span className="mr-2 mt-[0.1em]">•</span>
+                                <div className="flex-1">
+                                  {typedContent[`concept-${partIdx}-${conceptIdx}`] ? (
+                                    <Latex>{concept}</Latex>
+                                  ) : (
+                                    <Typewriter text={concept} speed={20} onComplete={() => handleTypingComplete(`concept-${partIdx}-${conceptIdx}`)} />
+                                  )}
+                                </div>
+                              </motion.p>
+                            ))}
+                            {part.concepts.length === 0 && <p className="text-sm text-gray-500 ml-6">No concepts for this part.</p>}
+                          </div>
+                        ))
+                      ) : (
+                        question.parts[0]?.concepts.map((concept, idx) => (
+                          <motion.p key={`concept-${question.id}-${idx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 flex items-start">
+                            <span className="mr-2">👉</span>
+                            <div className="flex-1">
+                              {typedContent[`concept-0-${idx}`] ? (
+                                <Latex>{concept}</Latex>
+                              ) : (
+                                <Typewriter text={concept} speed={20} onComplete={() => handleTypingComplete(`concept-0-${idx}`)} />
+                              )}
+                            </div>
+                          </motion.p>
+                        ))
+                      )}
+                      {(!question.parts || question.parts.length === 0 || (question.is_multi_part && question.parts.every(p => p.concepts.length === 0)) || (!question.is_multi_part && question.parts[0]?.concepts.length === 0)) && (
+                        <p className="text-sm text-gray-500">No concepts available for this question.</p>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {selectedTab === 'Answer' && question.parts && question.parts.length > 0 && (
+                    <motion.div className="space-y-1" variants={staggerContainer} initial="hidden" animate="visible">
+                      {question.is_multi_part ? (
+                        question.parts.map((part, partIdx) => (
+                          <div key={`answer-part-${question.id}-${partIdx}`} className="mb-3">
+                            {part.question_number && (
+                              <motion.h4 className="text-md font-semibold text-primary mb-1 flex items-center" variants={stepAnimation}>
+                                <span className="mr-2">👉</span> Part {part.question_number}:
+                              </motion.h4>
+                            )}
+                            {part.final_answer_array.map((ans, ansIdx) => (
+                              <motion.p key={`answer-${question.id}-${partIdx}-${ansIdx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 ml-6 flex items-start">
+                                <span className="mr-2 mt-[0.1em] text-gray-800">•</span>
+                                <div className="flex-1">
+                                  {typedContent[`answer-${partIdx}-${ansIdx}`] ? (
+                                    <Latex>{ans}</Latex>
+                                  ) : (
+                                    <Typewriter text={ans} speed={20} onComplete={() => handleTypingComplete(`answer-${partIdx}-${ansIdx}`)} />
+                                  )}
+                                </div>
+                              </motion.p>
+                            ))}
+                            {part.final_answer_array.length === 0 && <p className="text-sm text-gray-500 ml-6">No answer for this part.</p>}
+                          </div>
+                        ))
+                      ) : (
+                        question.parts[0]?.final_answer_array.map((ans, idx) => (
+                          <motion.p key={`answer-${question.id}-${idx}`} variants={stepAnimation} className="text-base font-medium text-gray-800 flex items-start">
+                            <span className="mr-2">👉</span>
+                            <div className="flex-1">
+                              {typedContent[`answer-0-${idx}`] ? (
+                                <Latex>{ans}</Latex>
+                              ) : (
+                                <Typewriter text={ans} speed={20} onComplete={() => handleTypingComplete(`answer-0-${idx}`)} />
+                              )}
+                            </div>
+                          </motion.p>
+                        ))
+                      )}
+                      {(!question.parts || question.parts.length === 0 || (question.is_multi_part && question.parts.every(p => p.final_answer_array.length === 0)) || (!question.is_multi_part && question.parts[0]?.final_answer_array.length === 0)) && (
+                        <p className="text-sm text-gray-500">No answer available for this question.</p>
+                      )}
+                    </motion.div>
+                  )}
+
+
+                  {selectedTab === 'Solution' && question.parts && question.parts.length > 0 && (
+                    <motion.div className="space-y-2" variants={staggerContainer} initial="hidden" animate="visible">
+                      {question.parts.map((part, partIdx) => (
+                        <div key={`solution-part-${question.id}-${partIdx}`} className="mb-6">
+                          {question.is_multi_part && part.question_number && (
+                            <motion.h4
+                              className="text-xl font-bold text-primary mb-3 flex items-center"
                               variants={stepAnimation}
                             >
-                              <div className="flex h-8 w-8 items-center justify-center align-middle rounded-full bg-secondary-background text-lg font-bold text-solution-steps">
-                                {step.step}.
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <div className="text-lg font-semibold text-solution-steps [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
-                                    <Latex>{step.title}</Latex>
-                                  </div>
-                                  <div className="flex flex-row cursor-pointer text-gray-600 justify-center align-middle items-center ml-1" onClick={() => onToggleExplanation(step.step)}>
-                                    <span className="rounded-full w-1 h-1 bg-[#A3A6C1]/40"></span>
-                                    <span className="text-sm ml-0.5 text-[#192065]/40">Explanation</span>
-                                    <ChevronDown
-                                      className={`h-5 w-5 transition-transform text-[#192065]/40  ${expandedExplanation === step.step
-                                        ? 'rotate-180'
-                                        : ''
-                                        }`}
-
-                                    />
-                                  </div>
-
+                              <span className="mr-2">👉</span> Part {part.question_number}:
+                            </motion.h4>
+                          )}
+                          {part.complete_solution_steps.map((step) => (
+                            <div key={`solution-step-${question.id}-${part.question_number}-${step.step_id_global}`}>
+                              <motion.div className="flex items-start align-middle gap-4 mb-4" variants={stepAnimation}>
+                                <div className="flex h-8 w-8 items-center justify-center align-middle rounded-full bg-secondary-background text-lg font-bold text-solution-steps">
+                                  {step.step_id_global}.
                                 </div>
-
-                                <motion.div
-                                  className="mt-2 flex gap-4"
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <Separator
-                                    orientation="vertical"
-                                    className="w-0.5 bg-secondary-background"
-                                  />
-                                  <div className="flex-1">
-                                    <div className="text-sm whitespace-pre-wrap">
-                                      {typedContent[`step-content-${step.step}`] ? (
-                                        <div className="text-[16px] font-semibold text-black [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
-                                          <Latex>{step.content || ''}</Latex>
-                                        </div>
-                                      ) : (
-                                        <Typewriter
-                                          text={step.content}
-                                          speed={10}
-                                          onComplete={() =>
-                                            handleTypingComplete(
-                                              `step-content-${step.step}`,
-                                            )
-                                          }
-                                          className="text-[16px] font-semibold text-black"
-                                        />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-lg font-semibold text-solution-steps [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
+                                      {!question.is_multi_part && part.complete_solution_steps.length > 0 && (
+                                        <span className="mr-1">👉</span>
                                       )}
+                                      <Latex>{step.title}</Latex>
                                     </div>
-
-                                    {expandedExplanation === step.step &&
-                                      step.explanation && (
-                                        <motion.div
-                                          className="mt-3 p-3 bg-secondary-background rounded-lg border border-gray-200"
-                                          initial={{ opacity: 0 }}
-                                          animate={{ opacity: 1 }}
-                                          transition={{ delay: 0.2 }}
-                                        >
-                                          <div className="text-sm whitespace-pre-wrap">
-                                            {typedContent[
-                                              `explanation-${step.step}`
-                                            ] ? (
-                                              <div className="text-sm font-medium text-black [&_.katex]:text-inherit [&_.katex]:font-inherit [&_.katex]:text-solution-steps">
-                                                <Latex>{step.explanation}</Latex>
-                                              </div>
-                                            ) : (
-                                              <Typewriter
-                                                text={step.explanation}
-                                                speed={10}
-                                                onComplete={() =>
-                                                  handleTypingComplete(
-                                                    `explanation-${step.step}`,
-                                                  )
-                                                }
-                                                className="text-sm font-medium text-black"
-                                              />
-                                            )}
+                                    {step.explanation && (
+                                      <div className="flex flex-row cursor-pointer text-gray-600 justify-center align-middle items-center ml-1" onClick={() => onToggleExplanation(step.step_id_global)}>
+                                        <span className="rounded-full w-1 h-1 bg-[#A3A6C1]/40"></span>
+                                        <span className="text-sm ml-0.5 text-[#192065]/40">Explanation</span>
+                                        <ChevronDown
+                                          className={`h-5 w-5 transition-transform text-[#192065]/40 ${expandedExplanation === step.step_id_global ? 'rotate-180' : ''}`}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <motion.div className="mt-2 flex gap-4" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
+                                    <Separator orientation="vertical" className="w-0.5 bg-secondary-background" />
+                                    <div className="flex-1">
+                                      <div className="space-y-1 mt-1">
+                                        {step.sub_steps_array && step.sub_steps_array.map((sub_step_text, sub_idx) => (
+                                          <motion.div key={`substep-${step.step_id_global}-${sub_idx}`} className="flex items-start text-[16px] font-semibold text-black">
+                                            <span className="mr-2 mt-[0.1em] text-solution-steps">•</span>
+                                            <div className="flex-1">
+                                              {typedContent[`substep-${step.step_id_global}-${sub_idx}`] ? (
+                                                <Latex>{sub_step_text}</Latex>
+                                              ) : (
+                                                <Typewriter
+                                                  text={sub_step_text}
+                                                  speed={10}
+                                                  onComplete={() => handleTypingComplete(`substep-${step.step_id_global}-${sub_idx}`)}
+                                                />
+                                              )}
+                                            </div>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                      {expandedExplanation === step.step_id_global && step.explanation && (
+                                        <motion.div className="mt-3 p-3 bg-secondary-background rounded-lg border border-gray-200" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                                          <div className="whitespace-pre-wrap flex items-start">
+                                            <span className="mr-2 mt-[0.1em] text-sm font-medium text-black">•</span>
+                                            <div className="flex-1">
+                                              {typedContent[`explanation-${step.step_id_global}`] ? (
+                                                <div className="text-sm font-medium text-black [&_.katex]:text-inherit [&_.katex]:font-inherit">
+                                                  <Latex>{step.explanation}</Latex>
+                                                </div>
+                                              ) : (
+                                                <Typewriter
+                                                  text={step.explanation}
+                                                  speed={10}
+                                                  onComplete={() => handleTypingComplete(`explanation-${step.step_id_global}`)}
+                                                  className="text-sm font-medium text-black"
+                                                />
+                                              )}
+                                            </div>
                                           </div>
                                         </motion.div>
                                       )}
-                                  </div>
-                                </motion.div>
-                              </div>
-                            </motion.div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
+                                    </div>
+                                  </motion.div>
+                                </div>
+                              </motion.div>
+                            </div>
+                          ))}
+                          {part.complete_solution_steps.length === 0 && (
+                            <p className="text-sm text-gray-500 ml-4">No solution steps for this part.</p>
+                          )}
+                        </div>
+                      ))}
+                      {(!question.parts || question.parts.length === 0 || question.parts.every(p => p.complete_solution_steps.length === 0)) && (
+                        <p className="text-sm text-gray-500">No solution steps available for this question.</p>
+                      )}
+                    </motion.div>
+                  )}
                 </>
               )}
             </motion.div>
@@ -1319,6 +1371,8 @@ const LockOverlay = ({ onUnlock, isUnlocking = false, children }) => {
     if (isUnlocking) {
       const timer = setTimeout(() => setShowContent(true), 800);
       return () => clearTimeout(timer);
+    } else {
+      setShowContent(false);
     }
   }, [isUnlocking]);
 
@@ -1437,12 +1491,11 @@ const LockOverlay = ({ onUnlock, isUnlocking = false, children }) => {
               </AnimatePresence>
             </motion.div>
 
-            {/* Lock UI Card */}
             <div className="bg-white backdrop-blur-xl rounded-2xl border border-white/40 shadow-2xl p-8 max-w-sm mx-4 text-center">
               <h3 className="text-2xl font-bold text-gray-800 mb-3">
                 {isUnlocking ? "Unlocking..." : "Premium Content"}
               </h3>
-              
+
               <p className="text-gray-700 text-[14px] mb-6 leading-relaxed">
                 {isUnlocking
                   ? "Getting your content ready..."

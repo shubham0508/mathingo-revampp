@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
 import toast from 'react-hot-toast';
@@ -653,14 +653,14 @@ const MathTutorPage = () => {
 
     return (
         <motion.div
-            className="flex overflow-hidden w-full h-screen"
+            className="flex w-full h-screen"
             variants={containerMotionVariants}
             initial="hidden"
             animate="visible"
             aria-label="Math Tutor Page"
         >
             <motion.main
-                className={`transition-all duration-300 ease-in-out ${isRightPanelCollapsed ? 'w-full' : 'w-[67%]'} p-6 flex flex-col h-full`}
+                className={`transition-all duration-300 ease-in-out ${isRightPanelCollapsed ? 'w-[98%]' : 'w-[65%]'} p-6 flex flex-col h-[90vh] overflow-hidden`}
                 layout
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 aria-labelledby="question-heading"
@@ -683,22 +683,28 @@ const MathTutorPage = () => {
                 </motion.div>
             </motion.main>
 
-            <motion.aside
-                className={`transition-all duration-300 ease-in-out bg-white shadow-2xl relative h-full border-l border-gray-200 ${isRightPanelCollapsed ? 'w-12' : 'w-[33%]'}`}
+            <motion.div
+                className={`transition-all duration-300 ease-in-out bg-white relative h-[87vh] border border-gray-100 ${isRightPanelCollapsed ? 'min-w-[16px]' : 'w-[35%]'}`}
                 layout
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 aria-label="Tutor Interaction Panel"
+                style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
             >
-                <motion.button
+                <motion.div
                     onClick={toggleRightPanel}
-                    className="absolute -left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-16 bg-white flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow rounded-l-md border border-r-0 border-gray-300"
+                    className="absolute -left-4 top-10 z-50 cursor-pointer w-8 h-8 rounded-full bg-gray-100 border border-gray-300 shadow-md flex justify-center items-center"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
                     aria-expanded={!isRightPanelCollapsed}
+                    title={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
                 >
-                    {isRightPanelCollapsed ? <ChevronLeft className="w-5 h-5 text-gray-600 transform rotate-180" /> : <ChevronLeft className="w-5 h-5 text-gray-600" />}
-                </motion.button>
+                    {isRightPanelCollapsed ? (
+                        <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    ) : (
+                        <ChevronRight className="w-5 h-5 text-gray-700" />
+                    )}
+                </motion.div>
 
                 <AnimatePresence mode="wait">
                     {!isRightPanelCollapsed && (
@@ -729,7 +735,7 @@ const MathTutorPage = () => {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </motion.aside>
+            </motion.div>
         </motion.div>
     )
 };

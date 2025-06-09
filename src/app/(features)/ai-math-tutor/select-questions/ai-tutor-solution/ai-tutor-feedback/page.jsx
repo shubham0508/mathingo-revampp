@@ -663,7 +663,7 @@ const MathTutorFeedback = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.6 }}
                                 >
-                                    {feedbackData.mainMessage}
+                                    <Latex>{feedbackData.mainMessage}</Latex>
                                 </motion.p>
                                 {feedbackData.subMessage && (
                                     <motion.p
@@ -672,7 +672,7 @@ const MathTutorFeedback = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.7 }}
                                     >
-                                        {feedbackData.subMessage}
+                                        <Latex>{feedbackData.subMessage}</Latex>
                                     </motion.p>
                                 )}
                             </motion.div>
@@ -716,7 +716,7 @@ const MathTutorFeedback = () => {
                         className="text-[25px] font-bold text-[#1F33E8] mb-6"
                         variants={itemVariants}
                     >
-                        {feedbackData.questionText}
+                        <Latex>{feedbackData.questionText}</Latex>
                     </motion.h2>
 
                     <motion.div

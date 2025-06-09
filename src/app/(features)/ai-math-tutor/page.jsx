@@ -31,7 +31,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAiExtractQuestionMutation } from '@/store/slices/AMT';
-import { setAnswer, setQuestion } from '@/store/reducers/AMT';
+import { resetAnswer, resetQuestion, setAnswer, setQuestion } from '@/store/reducers/AMT';
 import StylusDrawComponentImport from '@/components/shared/SuperInputBox/StylusComponent';
 
 export default function AIMathTutorPage() {
@@ -141,6 +141,11 @@ export default function AIMathTutorPage() {
             toast.dismiss('extraction-toast');
         }
     }, [isExtractingApi]);
+
+    useEffect(()=>{
+        dispatch(resetAnswer())
+        dispatch(resetQuestion())
+    },[])
 
     useEffect(() => {
         if (extractionApiError) {

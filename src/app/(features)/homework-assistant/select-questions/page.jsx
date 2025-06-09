@@ -188,7 +188,6 @@ export default function SelectQuestionsPage() {
 
   const currentFile = fileQuestions[currentFileIndex];
 
-  // Check if current file has a viewable file (not text type)
   const hasViewableFile = currentFile && currentFile.fileType !== 'text' && currentFile.fileUrl;
 
   if (questionsList.length === 0) {
@@ -237,7 +236,6 @@ export default function SelectQuestionsPage() {
           transition={{ delay: 0.2 }}
           className={`flex flex-col ${hasViewableFile ? 'lg:flex-row' : ''} justify-between items-start gap-8 px-4 md:px-16 py-10`}
         >
-          {/* Left section - File Preview (only show if file is viewable) */}
           {hasViewableFile && (
             <div className="w-full lg:w-[45%]">
               <h1 className="font-bold text-3xl md:text-3xl text-action-buttons-foreground mb-8 font-roca">
@@ -256,9 +254,7 @@ export default function SelectQuestionsPage() {
             </div>
           )}
 
-          {/* Right section - Questions List */}
           <div className={`w-full ${hasViewableFile ? 'lg:w-[55%]' : ''} h-full flex flex-col`}>
-            {/* Show title here if no file preview */}
             {!hasViewableFile && (
               <h1 className="font-bold text-3xl md:text-3xl text-action-buttons-foreground mb-8 font-roca">
                 Select Questions to get help 👇
@@ -270,8 +266,8 @@ export default function SelectQuestionsPage() {
                 onClick={handleSolveQuestions}
                 disabled={selectedQuestionCount === 0 || isSolving}
                 className={`bg-action-buttons-foreground hover:bg-action-buttons-foreground text-white font-medium text-lg ${selectedQuestionCount === 0
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
                   }`}
               >
                 {isSolving ? (
