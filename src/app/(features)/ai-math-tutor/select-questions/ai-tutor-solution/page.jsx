@@ -79,7 +79,7 @@ const MathTutorPage = () => {
                 : String(selectedQuestionDetails.question);
 
             return {
-                fileId: selectedQuestionDetails.fileId || "default_question_id",
+                question_id: selectedQuestionDetails.question_id,
                 question: questionTextArray,
                 displayQuestion: `Question: ${questionDisplayString}`,
                 question_url: selectedQuestionDetails.question_url,
@@ -87,7 +87,7 @@ const MathTutorPage = () => {
             };
         }
 
-        const fallbackQuestionId = selectedQuestionDetails?.currentQuestion?.question_id || selectedQuestionDetails?.fileId || "default_question_id";
+        const fallbackQuestionId = selectedQuestionDetails?.currentQuestion?.question_id || selectedQuestionDetails?.question_id;
         const fallbackQuestionText = selectedQuestionDetails?.currentQuestion?.text || "Loading question...";
         const fallbackQuestionUrl = selectedQuestionDetails?.currentQuestion?.file_url || selectedQuestionDetails?.question_url || "";
 
@@ -99,7 +99,7 @@ const MathTutorPage = () => {
             : String(fallbackQuestionText);
 
         return {
-            fileId: fallbackQuestionId,
+            question_id: fallbackQuestionId,
             question: questionTextArray,
             displayQuestion: `Question: ${questionDisplayString}`,
             question_url: fallbackQuestionUrl,
@@ -451,7 +451,7 @@ const MathTutorPage = () => {
             }
 
             const apiPayload = {
-                question_id: currentQuestion.fileId,
+                question_id: currentQuestion.question_id,
                 question: Array.isArray(currentQuestion.question) ? currentQuestion.question.join(' ') : String(currentQuestion.question),
                 question_url: currentQuestion.question_url || "no_input",
                 solution_url: solutionS3Key,
@@ -575,7 +575,7 @@ const MathTutorPage = () => {
 
         const wsPayload = {
             feature: actionType,
-            question_id: currentQuestion.fileId,
+            question_id: currentQuestion.question_id,
             question: Array.isArray(currentQuestion.question) ? currentQuestion.question.join(' ') : String(currentQuestion.question),
             question_url: currentQuestion.question_url || "no_input",
             solution: solutionS3Key,

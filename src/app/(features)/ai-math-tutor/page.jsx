@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useAiExtractQuestionMutation } from '@/store/slices/AMT';
 import { setAnswer, setQuestion } from '@/store/reducers/AMT';
-import StylusDrawComponentImport from '@/components/shared/SuperInputBox/StylusComponent'; // Renamed import
+import StylusDrawComponentImport from '@/components/shared/SuperInputBox/StylusComponent';
 
 export default function AIMathTutorPage() {
     const examples = [
