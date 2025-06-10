@@ -1,10 +1,14 @@
 'use client';
 
 import Head from 'next/head';
+import Script from 'next/script';
 import { motion } from 'framer-motion';
 import { BookOpen, TrendingUp, Sparkles, Users } from 'lucide-react';
 import { getAllBlogs } from '@/lib/blogService';
 import BlogList from '@/components/blog/BlogList';
+import { siteConfig } from "@/config/site";
+import { generateMetadata as generatePageMetadata } from '@/config/seo';
+import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
 
 const BLOGS_PER_PAGE = 6;
 
@@ -46,48 +50,92 @@ const floatingIconVariants = {
 export default function BlogsPage() {
     const { blogs: initialBlogs, hasMore: initialHasMore, total: initialTotal } = getAllBlogs(1, BLOGS_PER_PAGE);
 
+    const pageUrl = `${siteConfig.url}/blogs`;
+    const metadata = generatePageMetadata({
+        title: "Our Blog - Latest Articles and Insights",
+        description: "Discover insightful articles, expert opinions, and latest trends in our comprehensive MathZAI blog. Stay informed with our regularly updated content.",
+        url: pageUrl,
+        image: `${siteConfig.url}/images/blog-og-image.jpg`
+    });
+
+    const blogSchema = {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": `${siteConfig.name} Blog`,
+        "description": "Expert insights and articles on technology, innovation, and industry trends from MathZAI",
+        "url": pageUrl,
+        "image": metadata.openGraph.images[0].url,
+        "publisher": createOrganizationSchema(),
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": pageUrl
+        },
+        "blogPost": initialBlogs?.map(blog => {
+            const postUrl = `${siteConfig.url}/blogs/${blog.slug}`;
+            const authorSchema = blog.author && blog.author.name ? {
+                "@type": blog.author.type || "Person",
+                "name": blog.author.name,
+                ...(blog.author.url && { "url": blog.author.url })
+            } : createOrganizationSchema();
+
+            return {
+                "@type": "BlogPosting",
+                "mainEntityOfPage": {
+                    "@type": "WebPage",
+                    "@id": postUrl
+                },
+                "headline": blog.title,
+                "name": blog.title,
+                "description": blog.excerpt,
+                "image": blog.coverImage ? (blog.coverImage.startsWith('http') ? blog.coverImage : `${siteConfig.url}${blog.coverImage}`) : metadata.openGraph.images[0].url,
+                "url": postUrl,
+                "datePublished": new Date(blog.publishedDate).toISOString(),
+                "dateModified": new Date(blog.modifiedDate || blog.publishedDate).toISOString(),
+                "author": authorSchema,
+                "publisher": createOrganizationSchema()
+            };
+        }) || []
+    };
+
+
     return (
         <>
             <Head>
-                <title>Our Blog - Latest Articles and Insights | Expert Knowledge Hub</title>
-                <meta name="description" content="Discover insightful articles, expert opinions, and latest trends in our comprehensive blog. Stay informed with our regularly updated content covering technology, innovation, and industry insights." />
-                <meta property="og:title" content="Our Blog - Latest Articles and Insights | Expert Knowledge Hub" />
-                <meta property="og:description" content="Discover insightful articles, expert opinions, and latest trends in our comprehensive blog. Stay informed with our regularly updated content." />
-                <meta property="og:type" content="website" />
-                <meta property="og:image" content="https://www.mathzai.com/images/blog-og-image.jpg" />
-                <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content="Our Blog - Latest Articles and Insights" />
-                <meta name="twitter:description" content="Discover insightful articles, expert opinions, and latest trends in our comprehensive blog." />
-                <link rel="canonical" href="https://www.mathzai.com/blogs" />
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            "@context": "https://schema.org",
-                            "@type": "Blog",
-                            "name": "MathZAI Blog",
-                            "description": "Expert insights and articles on technology, innovation, and industry trends",
-                            "url": "https://www.mathzai.com/blogs",
-                            "publisher": {
-                                "@type": "Organization",
-                                "name": "MathZAI",
-                                "url": "https://www.mathzai.com"
-                            },
-                            "blogPost": initialBlogs?.map(blog => ({
-                                "@type": "BlogPosting",
-                                "headline": blog.title,
-                                "description": blog.excerpt,
-                                "url": `https://www.mathzai.com/blogs/${blog.slug}`,
-                                "datePublished": blog.publishedDate,
-                                "author": {
-                                    "@type": "Organization",
-                                    "name": "MathZAI"
-                                }
-                            })) || []
-                        })
-                    }}
-                />
+                <title>{metadata.title}</title>
+                <meta name="description" content={metadata.description} />
+                <meta property="og:type" content={metadata.openGraph.type} />
+                <meta property="og:locale" content={metadata.openGraph.locale} />
+                <meta property="og:url" content={metadata.openGraph.url} />
+                <meta property="og:title" content={metadata.openGraph.title} />
+                <meta property="og:description" content={metadata.openGraph.description} />
+                <meta property="og:site_name" content={metadata.openGraph.siteName} />
+                <meta property="og:image" content={metadata.openGraph.images[0].url} />
+                <meta property="og:image:width" content={String(metadata.openGraph.images[0].width)} />
+                <meta property="og:image:height" content={String(metadata.openGraph.images[0].height)} />
+                <meta property="og:image:alt" content={metadata.openGraph.images[0].alt} />
+
+                <meta name="twitter:card" content={metadata.twitter.card} />
+                <meta name="twitter:title" content={metadata.twitter.title} />
+                <meta name="twitter:description" content={metadata.twitter.description} />
+                <meta name="twitter:image" content={metadata.twitter.images[0]} />
+                <meta name="twitter:creator" content={metadata.twitter.creator} />
+
+                <link rel="canonical" href={metadata.alternates.canonical} />
             </Head>
+            <Script
+                id="blog-list-schema"
+                type="application/ld+json"
+                strategy="afterInteractive"
+            >
+                {JSON.stringify(blogSchema)}
+            </Script>
+            <Script
+                id="website-schema-blogs"
+                type="application/ld+json"
+                strategy="afterInteractive"
+            >
+                {JSON.stringify(createWebsiteSchema())}
+            </Script>
 
             <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
 

@@ -8,13 +8,13 @@ import UniqueFeaturesSection from "@/components/marketing/sections/products-show
 import { siteConfig } from "@/config/site";
 
 export const metadata = {
-  title: `${siteConfig.name} - Your #1 Math Buddy`,
+  title: `${siteConfig.name} – Your #1 Math Buddy`,
   description: siteConfig.description,
   openGraph: {
     type: "website",
     locale: "en_US",
     url: siteConfig.url,
-    title: `${siteConfig.name} - Your #1 Math Buddy`,
+    title: `${siteConfig.name} – Your #1 Math Buddy`,
     description: siteConfig.description,
     siteName: siteConfig.name,
     images: [
@@ -28,10 +28,13 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} - Your #1 Math Buddy`,
+    title: `${siteConfig.name} – Your #1 Math Buddy`,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
     creator: "@mathzai",
+  },
+  alternates: {
+    canonical: siteConfig.url,
   },
 };
 

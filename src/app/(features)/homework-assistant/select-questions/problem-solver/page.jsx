@@ -22,8 +22,13 @@ import {
   useHaRelatedQuestionsMutation,
   useHaRelatedYoutubeVideosMutation,
 } from '@/store/slices/HA';
+import Head from 'next/head';
+import Script from 'next/script';
 import { useSession } from 'next-auth/react';
 import { AuthFlow } from '@/components/auth';
+import { siteConfig } from "@/config/site";
+import { generateMetadata as generatePageMetadata } from '@/config/seo';
+import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -218,7 +223,7 @@ const hashString = (str) => {
   return Math.abs(hash).toString(16).substring(0, 8);
 };
 
-export default function HWAssistantPage() {
+export default function HWProblemSolverPage() {
   const answerList = useSelector(
     (state) => state?.homeworkAssitant?.answers || [],
   );
@@ -388,7 +393,6 @@ export default function HWAssistantPage() {
   };
 
   const handleFeedback = (isPositive) => {
-    // Feedback logic here
   };
 
   const nextVideoCarousel = () => {
@@ -522,81 +526,168 @@ export default function HWAssistantPage() {
   const options = ['Hints', 'Concepts', 'Answer', 'Solution'];
   const assistantLayoutClass = questions.length > 1 ? 'flex-1' : 'w-full';
 
+  const pageUrl = `${siteConfig.url}/homework-assistant/select-questions/problem-solver`;
+  let metadataTitle = "Math Problem Solver | Homework Assistant";
+  let metadataDescription = "Get detailed, step-by-step solutions for your selected math homework problems with MathzAI's AI-powered problem solver.";
+  let learningResourceName = "Math Problem Solution";
+  let questionAboutText = "Selected math problem.";
+
+  if (selectedQuestion && !selectedQuestion.error) {
+    const qTextShort = selectedQuestion.text ? selectedQuestion.text.substring(0, 70) + "..." : "your math problem";
+    metadataTitle = `Solution: ${qTextShort} | Homework Assistant`;
+    metadataDescription = `View step-by-step AI-generated solution for: ${qTextShort}. Understand concepts, hints, and the final answer with MathzAI.`;
+    learningResourceName = `Solution for: ${selectedQuestion.text.replace(/"/g, '\\"')}`;
+    questionAboutText = selectedQuestion.text.replace(/"/g, '\\"');
+  }
+
+  const metadata = generatePageMetadata({
+    title: metadataTitle,
+    description: metadataDescription,
+    url: pageUrl + (selectedQuestion?.id ? `?qid=${selectedQuestion.id}` : ''), // Add QID if available
+  });
+
+  const learningResourceSchema = {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    "name": learningResourceName,
+    "description": metadata.description,
+    "url": metadata.alternates.canonical,
+    "educationalUse": "HomeworkSolution",
+    "learningResourceType": "SolutionExplanation",
+    "inLanguage": "en",
+    "publisher": createOrganizationSchema(),
+    ...(selectedQuestion && !selectedQuestion.error && {
+      "about": {
+        "@type": "Question",
+        "name": questionAboutText,
+        "text": questionAboutText,
+        ...(selectedQuestion.difficulty_level && { "educationalLevel": selectedQuestion.difficulty_level })
+      },
+      ...(selectedQuestion.answer && {
+        "hasPart": {
+          "@type": "Answer",
+          "text": selectedQuestion.answer.substring(0, 250).replace(/"/g, '\\"') + "..." // Truncate for schema
+        }
+      })
+    })
+  };
+
   return (
-    <motion.div
-      className="flex flex-col px-8 py-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.h1
-        initial="hidden"
-        animate="visible"
-        variants={fadeIn}
-        className="font-black text-3xl font-roca"
+    <>
+      <Head>
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <meta name="keywords" content="math problem solution, step-by-step math, homework answers, AI math solutions, mathzai solver" />
+
+        <meta property="og:type" content={metadata.openGraph.type} />
+        <meta property="og:locale" content={metadata.openGraph.locale} />
+        <meta property="og:url" content={metadata.openGraph.url} />
+        <meta property="og:title" content={metadata.openGraph.title} />
+        <meta property="og:description" content={metadata.openGraph.description} />
+        <meta property="og:site_name" content={metadata.openGraph.siteName} />
+        <meta property="og:image" content={metadata.openGraph.images[0].url} />
+        <meta property="og:image:width" content={String(metadata.openGraph.images[0].width)} />
+        <meta property="og:image:height" content={String(metadata.openGraph.images[0].height)} />
+        <meta property="og:image:alt" content={metadata.openGraph.images[0].alt} />
+
+        <meta name="twitter:card" content={metadata.twitter.card} />
+        <meta name="twitter:title" content={metadata.twitter.title} />
+        <meta name="twitter:description" content={metadata.twitter.description} />
+        <meta name="twitter:image" content={metadata.twitter.images[0]} />
+        <meta name="twitter:creator" content={metadata.twitter.creator} />
+
+        <link rel="canonical" href={metadata.alternates.canonical} />
+      </Head>
+      <Script
+        id="problem-solver-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
       >
-        <span className="bg-gradient-secondary bg-clip-text text-transparent">
-          Unlock Your Problem-Solving Superpowers
-        </span>{' '}
-        🎯
-      </motion.h1>
+        {JSON.stringify(learningResourceSchema)}
+      </Script>
+      <Script
+        id="website-schema-solver-ha"
+        type="application/ld+json"
+        strategy="afterInteractive"
+      >
+        {JSON.stringify(createWebsiteSchema())}
+      </Script>
 
-      <div className="flex flex-col gap-8 lg:flex-row mt-10">
-        {questions.length > 1 && (
-          <HomeworkQuestionsSection
-            questions={questions}
-            onQuestionClick={handleQuestionClick}
+      <motion.div
+        className="flex flex-col px-8 py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.h1
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+          className="font-black text-3xl font-roca"
+        >
+          <span className="bg-gradient-secondary bg-clip-text text-transparent">
+            Unlock Your Problem-Solving Superpowers
+          </span>{' '}
+          🎯
+        </motion.h1>
+
+        <div className="flex flex-col gap-8 lg:flex-row mt-10">
+          {questions.length > 1 && (
+            <HomeworkQuestionsSection
+              questions={questions}
+              onQuestionClick={handleQuestionClick}
+            />
+          )}
+
+          {selectedQuestion && !isLoading && (
+            <HomeworkAssistantSection
+              question={selectedQuestion}
+              selectedTab={selectedTab}
+              onTabChange={handleOptionClick}
+              onToggleExplanation={toggleExplanation}
+              onCopy={handleCopyClick}
+              onFeedback={handleFeedback}
+              videoCarouselIndex={videoCarouselIndex}
+              questionCarouselIndex={questionCarouselIndex}
+              nextVideoCarousel={nextVideoCarousel}
+              prevVideoCarousel={prevVideoCarousel}
+              nextQuestionCarousel={nextQuestionCarousel}
+              prevQuestionCarousel={prevQuestionCarousel}
+              isCarouselHovered={isCarouselHovered}
+              setIsCarouselHovered={setIsCarouselHovered}
+              iconMap={iconMap}
+              options={options}
+              expandedExplanation={expandedExplanation}
+              videosLoading={videosLoading}
+              questionsLoading={questionsLoading}
+              layoutClass={assistantLayoutClass}
+              isGuestUser={isGuestUser}
+              onUnlock={handleUnlockClick}
+              isUnlocking={isUnlocking}
+            />
+          )}
+
+          {isLoading && (
+            <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
+              <div className="text-xl font-medium text-gray-600">Loading...</div>
+            </div>
+          )}
+          {!isLoading && !selectedQuestion && (
+            <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
+              <div className="text-xl font-medium text-gray-600">No question selected or available.</div>
+            </div>
+          )}
+        </div>
+        {showSigninModal && (
+          <AuthFlow
+            initialStep="signIn"
+            isPopup={true}
+            onClose={handleSigninModalClose}
+            defaultCallbackUrl='/homework-assistant/select-questions/problem-solver'
           />
         )}
-
-        {selectedQuestion && !isLoading && (
-          <HomeworkAssistantSection
-            question={selectedQuestion}
-            selectedTab={selectedTab}
-            onTabChange={handleOptionClick}
-            onToggleExplanation={toggleExplanation}
-            onCopy={handleCopyClick}
-            onFeedback={handleFeedback}
-            videoCarouselIndex={videoCarouselIndex}
-            questionCarouselIndex={questionCarouselIndex}
-            nextVideoCarousel={nextVideoCarousel}
-            prevVideoCarousel={prevVideoCarousel}
-            nextQuestionCarousel={nextQuestionCarousel}
-            prevQuestionCarousel={prevQuestionCarousel}
-            isCarouselHovered={isCarouselHovered}
-            setIsCarouselHovered={setIsCarouselHovered}
-            iconMap={iconMap}
-            options={options}
-            expandedExplanation={expandedExplanation}
-            videosLoading={videosLoading}
-            questionsLoading={questionsLoading}
-            layoutClass={assistantLayoutClass}
-            isGuestUser={isGuestUser}
-            onUnlock={handleUnlockClick}
-            isUnlocking={isUnlocking}
-          />
-        )}
-
-        {isLoading && (
-          <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
-            <div className="text-xl font-medium text-gray-600">Loading...</div>
-          </div>
-        )}
-        {!isLoading && !selectedQuestion && (
-          <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
-            <div className="text-xl font-medium text-gray-600">No question selected or available.</div>
-          </div>
-        )}
-      </div>
-      {showSigninModal && (
-        <AuthFlow
-          initialStep="signIn"
-          isPopup={true}
-          onClose={handleSigninModalClose}
-          defaultCallbackUrl='/homework-assistant/select-questions/problem-solver'
-        />
-      )}
-    </motion.div>
+      </motion.div>
+    </>
   );
 }
 

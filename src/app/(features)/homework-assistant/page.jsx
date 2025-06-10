@@ -11,6 +11,7 @@ import {
   LoaderCircle,
 } from 'lucide-react';
 import Head from 'next/head';
+import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import {
@@ -25,6 +26,9 @@ import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
 import { getErrorMessage } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { satExamples } from '@/config/constant';
+import { siteConfig } from "@/config/site";
+import { generateMetadata as generatePageMetadata } from '@/config/seo';
+import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
 
 export default function HWAssistant() {
   const examples = [
@@ -42,7 +46,7 @@ export default function HWAssistant() {
   const [activeField, setActiveField] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasContent, setHasContent] = useState(false);
+  const [hasContentState, setHasContentState] = useState(false); // Renamed from hasContent to avoid conflict
   const [disabled, setDisabled] = useState(true);
   const [showExamplesModal, setShowExamplesModal] = useState(false);
 
@@ -124,14 +128,14 @@ export default function HWAssistant() {
     return () => document.removeEventListener('click', handleClick);
   }, [initialized]);
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(resetAnswer())
     dispatch(resetQuestion())
-  },[])
+  }, [dispatch])
 
   useEffect(() => {
     const contentExists = text.trim().length > 0 || files.length > 0;
-    setHasContent(contentExists);
+    setHasContentState(contentExists);
     setDisabled(!contentExists);
   }, [text, files]);
 
@@ -339,7 +343,7 @@ export default function HWAssistant() {
         const validation = validateFile(file);
         if (!validation.isValid) {
           Object.values(validation.errors).forEach((error) =>
-            toast.error(error),
+            toast.error(String(error)),
           );
           return false;
         }
@@ -366,7 +370,7 @@ export default function HWAssistant() {
 
       const validation = validateFile(file);
       if (!validation.isValid) {
-        Object.values(validation.errors).forEach((error) => toast.error(error));
+        Object.values(validation.errors).forEach((error) => toast.error(String(error)));
         return;
       }
 
@@ -403,7 +407,7 @@ export default function HWAssistant() {
       setText('');
     }
     setFiles([]);
-    setHasContent(false);
+    setHasContentState(false);
   };
 
   useEffect(() => {
@@ -439,7 +443,7 @@ export default function HWAssistant() {
         const validation = validateFile(file);
         if (!validation.isValid) {
           Object.values(validation.errors).forEach((error) =>
-            toast.error(error),
+            toast.error(String(error)),
           );
           return false;
         }
@@ -484,7 +488,7 @@ export default function HWAssistant() {
               const validation = validateFile(file);
               if (!validation.isValid) {
                 Object.values(validation.errors).forEach((error) =>
-                  toast.error(error),
+                  toast.error(String(error)),
                 );
                 return;
               }
@@ -679,8 +683,8 @@ export default function HWAssistant() {
   const handleSubmit = async () => {
     if (isProcessing || disabled) return;
 
-    const hasContent = text.trim().length > 0 || files.length > 0;
-    if (!hasContent) {
+    const currentHasContent = text.trim().length > 0 || files.length > 0;
+    if (!currentHasContent) {
       toast.error('Please enter a question or upload files');
       return;
     }
@@ -704,7 +708,7 @@ export default function HWAssistant() {
       if (editorRef.current) editorRef.current.innerHTML = '';
       setFiles([]);
       setShowMathKeyboard(false);
-      setHasContent(false);
+      setHasContentState(false);
     } catch (error) {
       console.error('Submission error:', error);
       setIsProcessing(false);
@@ -763,26 +767,79 @@ export default function HWAssistant() {
     }
   }, [files.length, isProcessing]);
 
+  const pageUrl = `${siteConfig.url}/homework-assistant`;
+  const metadata = generatePageMetadata({
+    title: "Math Homework Assistant - Instant AI Math Problem Solver",
+    description: "Get instant solutions to all your math problems with our AI-powered Math Homework Assistant by MathzAI. Upload images or type your problems for step-by-step solutions.",
+    url: pageUrl,
+    image: `${siteConfig.url}/images/homework-assistant-og.jpg`
+  });
+
+  const softwareAppSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Math Homework Assistant by MathzAI",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "description": "AI-powered math problem solver. Upload images, type problems, and get step-by-step solutions.",
+    "url": pageUrl,
+    "publisher": createOrganizationSchema(),
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Text input for math problems",
+      "Image/PDF upload for math problems (OCR)",
+      "Step-by-step math solutions",
+      "AI-powered problem analysis",
+      "Math keyboard for easy input"
+    ]
+  };
+
   return (
     <>
       <Head>
-        <title>Math Homework Assistant - Instant AI Math Problem Solver</title>
-        <meta
-          name="description"
-          content="Get instant solutions to all your math problems with our AI-powered Math Homework Assistant. Upload images or type your problems for step-by-step solutions."
-        />
-        <meta
-          name="keywords"
-          content="math solver, homework help, AI math tutor, calculus solver, algebra help"
-        />
-        <meta property="og:title" content="Math Homework Assistant" />
-        <meta
-          property="og:description"
-          content="AI-powered math problem solver with step-by-step solutions"
-        />
-        <meta property="og:type" content="website" />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <meta name="keywords" content="math solver, homework help, AI math tutor, calculus solver, algebra help, math problem solver, mathzai, instant math answers" />
+
+        <meta property="og:type" content={metadata.openGraph.type} />
+        <meta property="og:locale" content={metadata.openGraph.locale} />
+        <meta property="og:url" content={metadata.openGraph.url} />
+        <meta property="og:title" content={metadata.openGraph.title} />
+        <meta property="og:description" content={metadata.openGraph.description} />
+        <meta property="og:site_name" content={metadata.openGraph.siteName} />
+        <meta property="og:image" content={metadata.openGraph.images[0].url} />
+        <meta property="og:image:width" content={String(metadata.openGraph.images[0].width)} />
+        <meta property="og:image:height" content={String(metadata.openGraph.images[0].height)} />
+        <meta property="og:image:alt" content={metadata.openGraph.images[0].alt} />
+
+        <meta name="twitter:card" content={metadata.twitter.card} />
+        <meta name="twitter:title" content={metadata.twitter.title} />
+        <meta name="twitter:description" content={metadata.twitter.description} />
+        <meta name="twitter:image" content={metadata.twitter.images[0]} />
+        <meta name="twitter:creator" content={metadata.twitter.creator} />
+
+        <link rel="canonical" href={metadata.alternates.canonical} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
+      <Script
+        id="homework-assistant-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
+      >
+        {JSON.stringify(softwareAppSchema)}
+      </Script>
+      <Script
+        id="website-schema-hw"
+        type="application/ld+json"
+        strategy="afterInteractive"
+      >
+        {JSON.stringify(createWebsiteSchema())}
+      </Script>
+
 
       <div className="flex flex-row justify-center w-full min-h-screen">
         <div className="relative w-full">
@@ -821,7 +878,7 @@ export default function HWAssistant() {
                     : 'border-gray-300'
                     } flex flex-col justify-between p-6 relative`}
                 >
-                  {hasContent && (
+                  {hasContentState && (
                     <motion.div
                       variants={buttonHover}
                       initial="rest"
@@ -935,7 +992,6 @@ export default function HWAssistant() {
               </div>
             </motion.div>
 
-            {/* Examples Section */}
             <motion.div
               initial="hidden"
               animate="visible"
@@ -963,11 +1019,11 @@ export default function HWAssistant() {
                       transition: { duration: 0.2 },
                     }}
                     onClick={() => handleExampleClick(example)}
-                    className={`bg-button-background-question font-semibold text-black text-sm shadow-sm rounded-md border-none py-2 cursor-pointer px-4 ${(hasContent && example !== 'More Examples')
+                    className={`bg-button-background-question font-semibold text-black text-sm shadow-sm rounded-md border-none py-2 cursor-pointer px-4 ${(hasContentState && example !== 'More Examples')
                       ? 'opacity-50 cursor-not-allowed'
                       : ''
                       }`}
-                    disabled={hasContent && example !== 'More Examples'}
+                    disabled={hasContentState && example !== 'More Examples'}
                   >
                     {example}
                   </motion.button>
@@ -1015,7 +1071,7 @@ export default function HWAssistant() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleModalExampleClick(question)}
                         className="w-full text-left p-3 rounded-lg border border-green-200 hover:border-green-300 transition-all duration-200 text-sm text-gray-700 hover:text-green-800"
-                        disabled={hasContent}
+                        disabled={hasContentState}
                       >
                         {question}
                       </motion.button>
@@ -1038,7 +1094,7 @@ export default function HWAssistant() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleModalExampleClick(question)}
                         className="w-full text-left p-3 rounded-lg border border-yellow-200 hover:border-yellow-300 transition-all duration-200 text-sm text-gray-700 hover:text-yellow-800"
-                        disabled={hasContent}
+                        disabled={hasContentState}
                       >
                         {question}
                       </motion.button>
@@ -1061,7 +1117,7 @@ export default function HWAssistant() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleModalExampleClick(question)}
                         className="w-full text-left p-3 rounded-lg border border-red-200 hover:border-red-300 transition-all duration-200 text-sm text-gray-700 hover:text-red-800"
-                        disabled={hasContent}
+                        disabled={hasContentState}
                       >
                         {question}
                       </motion.button>
@@ -1070,7 +1126,7 @@ export default function HWAssistant() {
                 </div>
               </div>
 
-              {hasContent && (
+              {hasContentState && (
                 <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-amber-800 text-sm text-center">
                     Clear your current input to select an example question

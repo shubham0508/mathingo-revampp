@@ -37,7 +37,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useS3Asset } from "@/hooks/useS3Asset";
 import toast from "react-hot-toast";
-import { SUBSCRIPTION_FEATURES } from "@/config/constant";
+import { countryList, SUBSCRIPTION_FEATURES } from "@/config/constant";
 
 const pageVariants = {
     initial: { opacity: 0, y: 20 },
@@ -50,13 +50,6 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120 } },
     exit: { opacity: 0, y: -15, transition: { duration: 0.2 } },
 };
-
-const countryList = [
-    { value: "U.S.A", label: "United States" }, { value: "Canada", label: "Canada" },
-    { value: "India", label: "India" }, { value: "U.K", label: "United Kingdom" },
-    { value: "Australia", label: "Australia" }, { value: "Germany", label: "Germany" },
-    { value: "Singapore", label: "Singapore" }, { value: "Other", label: "Other" },
-];
 
 const AnimatedContentLoader = React.memo(({ isLoading, error, onRetry, children, className }) => {
     const effectiveClassName = className || "min-h-[300px]";
@@ -445,8 +438,6 @@ const ProfileSectionContent = React.memo(() => {
 
     const fullName = useMemo(() => profile?.data?.full_name || "", [profile?.data?.full_name]);
     const countryDisplay = useMemo(() => countryList.find(c => c.value === profile?.data?.country)?.label || profile?.data?.country || "Not specified", [profile?.data?.country]);
-
-    console.log("[ProfileSectionContent] Rendering. profileLoading:", profileLoading, "profileError:", !!profileError, "profile.data exists:", !!profile?.data);
 
     return (
         <AnimatedContentLoader

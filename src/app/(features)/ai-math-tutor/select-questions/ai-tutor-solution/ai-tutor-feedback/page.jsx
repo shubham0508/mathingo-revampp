@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast';
 import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
 import { setAnswer, setQuestion } from '@/store/reducers/AMT';
+import Head from 'next/head';
 
 const MathTutorFeedback = () => {
     const router = useRouter();
@@ -558,7 +559,7 @@ const MathTutorFeedback = () => {
                 toast.error('Failed to fetch related questions', { id: relatedQuestionsToastId });
                 console.error('Error fetching related questions:', error);
             } finally {
-                 toast.dismiss('related-questions-toast');
+                toast.dismiss('related-questions-toast');
             }
         }
     };
@@ -592,295 +593,351 @@ const MathTutorFeedback = () => {
     };
 
     if (!feedbackData) {
-        return <div className="min-h-screen p-8 flex items-center justify-center">Loading feedback...</div>;
+        return (
+            <>
+                <Head>
+                    <title>Loading Feedback... | AI Math Tutor | MathzAI</title>
+                    <meta name="robots" content="noindex" />
+                </Head>
+                <div className="min-h-screen p-8 flex items-center justify-center">Loading feedback...</div>
+            </>
+        );
     }
 
-    return (
-        <main className="min-h-screen p-8" role="main">
-            <div className="border border-gray-100 shadow-md p-14">
-                <AnimatePresence mode="wait">
-                    <motion.section
-                        key={currentState}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        variants={containerVariants}
-                        className="mb-8"
-                        role="region"
-                        aria-label="Math problem feedback summary"
-                    >
-                        <motion.h1
-                            className={`text-[25px] font-bold mb-6 ${getHeaderColor()}`}
-                            variants={titleVariants}
-                        >
-                            {feedbackData.title} {feedbackData.titleIcon}
-                        </motion.h1>
+    const pageTitle = `${feedbackData.title || "Math Solution Feedback"} | AI Math Tutor | MathzAI`;
+    const pageDescription = `Review your performance for the math problem: ${studentFeedbackReport?.question ? studentFeedbackReport.question[0].substring(0, 100) + '...' : 'your recent problem'}. See stats and get suggestions for next steps with MathzAI.`;
 
-                        <motion.article
+    return (
+        <>
+            <Head>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDescription} />
+                <meta name="keywords" content="math feedback, math solution review, practice math, math performance, ai math tutor, mathzai" />
+                <link rel="canonical" href="https://www.mathzai.com/ai-math-tutor/select-questions/ai-tutor-solution/ai-tutor-feedback" />
+                <script type="application/ld+json">
+                    {`
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "WebPage",
+                        "name": "${pageTitle.replace(" | AI Math Tutor | MathzAI", "")}",
+                        "description": "${pageDescription}",
+                        "url": "https://www.mathzai.com/ai-math-tutor/select-questions/ai-tutor-solution/ai-tutor-feedback",
+                        "breadcrumb": {
+                            "@type": "BreadcrumbList",
+                            "itemListElement": [
+                                { "@type": "ListItem", "position": 1, "name": "AI Math Tutor", "item": "https://www.mathzai.com/ai-math-tutor" },
+                                { "@type": "ListItem", "position": 2, "name": "Select Questions", "item": "https://www.mathzai.com/ai-math-tutor/select-questions" },
+                                { "@type": "ListItem", "position": 3, "name": "AI Tutor Solution", "item": "https://www.mathzai.com/ai-math-tutor/select-questions/ai-tutor-solution" },
+                                { "@type": "ListItem", "position": 4, "name": "Solution Feedback" }
+                            ]
+                        },
+                        "publisher": {
+                            "@type": "Organization",
+                            "name": "MathzAI"
+                        }
+                        ${feedbackData.options && feedbackData.options.length > 0 ? `,
+                        "mainEntity": {
+                            "@type": "ItemList",
+                            "name": "Recommended Next Steps",
+                            "itemListElement": [
+                                ${feedbackData.options.map((opt, index) => `{
+                                    "@type": "ListItem",
+                                    "position": ${index + 1},
+                                    "name": "${opt.title.replace(/"/g, '\\"')}",
+                                    "description": "${opt.subtitle.replace(/"/g, '\\"')}"
+                                }`).join(',')}
+                            ]
+                        }` : ''}
+                    }
+                    `}
+                </script>
+            </Head>
+            <main className="min-h-screen p-8" role="main">
+                <div className="border border-gray-100 shadow-md p-14">
+                    <AnimatePresence mode="wait">
+                        <motion.section
                             key={currentState}
                             initial="hidden"
                             animate="visible"
                             exit="hidden"
                             variants={containerVariants}
-                            className="p-4 shadow-md bg-[#FFF0F0]/30 rounded-md"
+                            className="mb-8"
                             role="region"
-                            aria-label="Performance statistics and feedback"
+                            aria-label="Math problem feedback summary"
                         >
-                            <motion.div
-                                className="flex flex-row justify-between mb-6"
-                                variants={itemVariants}
-                                role="group"
-                                aria-label="Problem solving statistics"
+                            <motion.h1
+                                className={`text-[25px] font-bold mb-6 ${getHeaderColor()}`}
+                                variants={titleVariants}
                             >
-                                <StatCard
-                                    title="Time Taken :"
-                                    value={feedbackData.timeTaken}
-                                    subtitle={feedbackData.timeSubtext}
-                                    index={0}
-                                />
-                                <StatCard
-                                    title="Help Count :"
-                                    value={feedbackData.helpCount}
-                                    subtitle={feedbackData.helpSubtext}
-                                    valueColor={feedbackData.helpCount === "0" ? "text-green-600" : "text-black"}
-                                    index={1}
-                                />
-                                <StatCard
-                                    title="Complexity level of Question :"
-                                    value={feedbackData.complexity}
-                                    subtitle={feedbackData.complexitySubtext}
-                                    index={2}
-                                />
-                            </motion.div>
+                                {feedbackData.title} {feedbackData.titleIcon}
+                            </motion.h1>
 
-                            <motion.div
-                                className="mb-4"
-                                variants={itemVariants}
+                            <motion.article
+                                key={currentState}
+                                initial="hidden"
+                                animate="visible"
+                                exit="hidden"
+                                variants={containerVariants}
+                                className="p-4 shadow-md bg-[#FFF0F0]/30 rounded-md"
+                                role="region"
+                                aria-label="Performance statistics and feedback"
                             >
-                                <motion.p
-                                    className="text-[16px] leading-relaxed font-medium"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6 }}
+                                <motion.div
+                                    className="flex flex-row justify-between mb-6"
+                                    variants={itemVariants}
+                                    role="group"
+                                    aria-label="Problem solving statistics"
                                 >
-                                    <Latex>{feedbackData.mainMessage}</Latex>
-                                </motion.p>
-                                {feedbackData.subMessage && (
+                                    <StatCard
+                                        title="Time Taken :"
+                                        value={feedbackData.timeTaken}
+                                        subtitle={feedbackData.timeSubtext}
+                                        index={0}
+                                    />
+                                    <StatCard
+                                        title="Help Count :"
+                                        value={feedbackData.helpCount}
+                                        subtitle={feedbackData.helpSubtext}
+                                        valueColor={feedbackData.helpCount === "0" ? "text-green-600" : "text-black"}
+                                        index={1}
+                                    />
+                                    <StatCard
+                                        title="Complexity level of Question :"
+                                        value={feedbackData.complexity}
+                                        subtitle={feedbackData.complexitySubtext}
+                                        index={2}
+                                    />
+                                </motion.div>
+
+                                <motion.div
+                                    className="mb-4"
+                                    variants={itemVariants}
+                                >
                                     <motion.p
-                                        className="text-[16px] leading-relaxed mt-2 font-medium"
+                                        className="text-[16px] leading-relaxed font-medium"
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.7 }}
+                                        transition={{ delay: 0.6 }}
                                     >
-                                        <Latex>{feedbackData.subMessage}</Latex>
+                                        <Latex>{feedbackData.mainMessage}</Latex>
                                     </motion.p>
-                                )}
-                            </motion.div>
+                                    {feedbackData.subMessage && (
+                                        <motion.p
+                                            className="text-[16px] leading-relaxed mt-2 font-medium"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.7 }}
+                                        >
+                                            <Latex>{feedbackData.subMessage}</Latex>
+                                        </motion.p>
+                                    )}
+                                </motion.div>
 
-                            <motion.div
-                                variants={itemVariants}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <Button
-                                    variant="outline"
-                                    className="border-gray-700 text-gray-700 hover:bg-gray-100 shadow-none focus:ring-2 focus:ring-blue-500"
-                                    onClick={handleButtonClick}
-                                    aria-label={`${feedbackData.buttonText} - View detailed solution analysis`}
+                                <motion.div
+                                    variants={itemVariants}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                 >
-                                    {feedbackData.buttonText}
-                                    <motion.div
-                                        animate={{ x: [0, 3, 0] }}
-                                        transition={{
-                                            repeat: Infinity,
-                                            duration: 1.5,
-                                            ease: "easeInOut"
-                                        }}
+                                    <Button
+                                        variant="outline"
+                                        className="border-gray-700 text-gray-700 hover:bg-gray-100 shadow-none focus:ring-2 focus:ring-blue-500"
+                                        onClick={handleButtonClick}
+                                        aria-label={`${feedbackData.buttonText} - View detailed solution analysis`}
                                     >
-                                        <ChevronRight className="w-4 h-4 ml-2" />
-                                    </motion.div>
-                                </Button>
-                            </motion.div>
-                        </motion.article>
-                    </motion.section>
-                </AnimatePresence>
+                                        {feedbackData.buttonText}
+                                        <motion.div
+                                            animate={{ x: [0, 3, 0] }}
+                                            transition={{
+                                                repeat: Infinity,
+                                                duration: 1.5,
+                                                ease: "easeInOut"
+                                            }}
+                                        >
+                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                        </motion.div>
+                                    </Button>
+                                </motion.div>
+                            </motion.article>
+                        </motion.section>
+                    </AnimatePresence>
 
-                <motion.section
-                    initial="hidden"
-                    animate="visible"
-                    variants={containerVariants}
-                    role="region"
-                    aria-label="Next steps and learning options"
-                >
-                    <motion.h2
-                        className="text-[25px] font-bold text-[#1F33E8] mb-6"
-                        variants={itemVariants}
-                    >
-                        <Latex>{feedbackData.questionText}</Latex>
-                    </motion.h2>
-
-                    <motion.div
-                        className="grid grid-cols-2 gap-4"
-                        variants={containerVariants}
-                        role="group"
-                        aria-label="Available learning options"
-                    >
-                        {feedbackData.options.map((option, index) => (
-                            <OptionCard
-                                key={`${currentState}-${option.id}`}
-                                option={option}
-                                onClick={handleOptionClick}
-                                index={index}
-                            />
-                        ))}
-                    </motion.div>
-                </motion.section>
-
-                {relatedQuestions && (
                     <motion.section
-                        className="mt-8"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
+                        initial="hidden"
+                        animate="visible"
+                        variants={containerVariants}
+                        role="region"
+                        aria-label="Next steps and learning options"
                     >
-                        <motion.h3
-                            className="text-2xl font-bold mb-6 text-gray-800 text-center"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
+                        <motion.h2
+                            className="text-[25px] font-bold text-[#1F33E8] mb-6"
+                            variants={itemVariants}
                         >
-                            {selectedOption === 'levelUp' ? '🚀 Challenge Yourself' :
-                                selectedOption === 'buildConfidence' ? '💪 Build Your Confidence' :
-                                    '📚 Practice Similar Questions'}
-                        </motion.h3>
+                            <Latex>{feedbackData.questionText}</Latex>
+                        </motion.h2>
 
                         <motion.div
-                            className="space-y-8"
-                            initial="hidden"
-                            animate="visible"
-                            variants={{
-                                hidden: { opacity: 0 },
-                                visible: {
-                                    opacity: 1,
-                                    transition: {
-                                        staggerChildren: 0.1
-                                    }
-                                }
-                            }}
+                            className="grid grid-cols-2 gap-4"
+                            variants={containerVariants}
+                            role="group"
+                            aria-label="Available learning options"
                         >
-                            {relatedQuestions.map((category, catIndex) => (
-                                <motion.div
-                                    key={`cat-${catIndex}`}
-                                    className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-lg"
-                                    variants={{
-                                        hidden: { opacity: 0, y: 20 },
-                                        visible: {
-                                            opacity: 1,
-                                            y: 0,
-                                            transition: {
-                                                duration: 0.5
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <motion.div
-                                        className="flex items-center justify-center mb-6"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 0.3 + catIndex * 0.05 }}
-                                    >
-                                        <div className={`px-6 py-2 rounded-full text-white font-semibold text-lg ${category.difficulty === 'easy' ? 'bg-green-500' :
-                                                category.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
-                                            }`}>
-                                            {category.difficulty === 'easy' ? '🟢 Easy Level' :
-                                                category.difficulty === 'medium' ? '🟡 Medium Level' : '🔴 Hard Level'}
-                                        </div>
-                                    </motion.div>
+                            {feedbackData.options.map((option, index) => (
+                                <OptionCard
+                                    key={`${currentState}-${option.id}`}
+                                    option={option}
+                                    onClick={handleOptionClick}
+                                    index={index}
+                                />
+                            ))}
+                        </motion.div>
+                    </motion.section>
 
+                    {relatedQuestions && (
+                        <motion.section
+                            className="mt-8"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <motion.h3
+                                className="text-2xl font-bold mb-6 text-gray-800 text-center"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                {selectedOption === 'levelUp' ? '🚀 Challenge Yourself' :
+                                    selectedOption === 'buildConfidence' ? '💪 Build Your Confidence' :
+                                        '📚 Practice Similar Questions'}
+                            </motion.h3>
+
+                            <motion.div
+                                className="space-y-8"
+                                initial="hidden"
+                                animate="visible"
+                                variants={{
+                                    hidden: { opacity: 0 },
+                                    visible: {
+                                        opacity: 1,
+                                        transition: {
+                                            staggerChildren: 0.1
+                                        }
+                                    }
+                                }}
+                            >
+                                {relatedQuestions.map((category, catIndex) => (
                                     <motion.div
-                                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                                        key={`cat-${catIndex}`}
+                                        className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-lg"
                                         variants={{
-                                            hidden: { opacity: 0 },
+                                            hidden: { opacity: 0, y: 20 },
                                             visible: {
                                                 opacity: 1,
+                                                y: 0,
                                                 transition: {
-                                                    staggerChildren: 0.05
+                                                    duration: 0.5
                                                 }
                                             }
                                         }}
                                     >
-                                        {category.questions.map((question, qIndex) => (
-                                            <motion.div
-                                                key={`q-${catIndex}-${qIndex}`}
-                                                custom={qIndex}
-                                                initial="hidden"
-                                                animate="visible"
-                                                variants={{
-                                                    hidden: { opacity: 0, y: 20, scale: 0.9 },
-                                                    visible: (i) => ({
-                                                        opacity: 1,
-                                                        y: 0,
-                                                        scale: 1,
-                                                        transition: {
-                                                            delay: i * 0.05,
-                                                            duration: 0.4,
-                                                            ease: "easeOut"
-                                                        }
-                                                    })
-                                                }}
-                                                whileHover={{
-                                                    scale: 1.03,
-                                                    y: -5,
-                                                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                                                    transition: { duration: 0.2 }
-                                                }}
-                                                whileTap={{ scale: 0.98 }}
-                                                onClick={() => handleQuestionClick(question)}
-                                                className="bg-white rounded-lg shadow-md cursor-pointer transition-all duration-200 hover:shadow-xl border border-gray-100 h-32 flex flex-col justify-between"
-                                            >
-                                                <div className="p-4 flex-1 flex flex-col justify-center">
-                                                    <div className="flex items-start mb-2">
-                                                        <div className="flex-shrink-0 mr-3">
-                                                            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                                                                <span className="text-white text-sm font-bold">
-                                                                    {qIndex + 1}
-                                                                </span>
+                                        <motion.div
+                                            className="flex items-center justify-center mb-6"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.3 + catIndex * 0.05 }}
+                                        >
+                                            <div className={`px-6 py-2 rounded-full text-white font-semibold text-lg ${category.difficulty === 'easy' ? 'bg-green-500' :
+                                                category.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
+                                                }`}>
+                                                {category.difficulty === 'easy' ? '🟢 Easy Level' :
+                                                    category.difficulty === 'medium' ? '🟡 Medium Level' : '🔴 Hard Level'}
+                                            </div>
+                                        </motion.div>
+
+                                        <motion.div
+                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                                            variants={{
+                                                hidden: { opacity: 0 },
+                                                visible: {
+                                                    opacity: 1,
+                                                    transition: {
+                                                        staggerChildren: 0.05
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            {category.questions.map((question, qIndex) => (
+                                                <motion.div
+                                                    key={`q-${catIndex}-${qIndex}`}
+                                                    custom={qIndex}
+                                                    initial="hidden"
+                                                    animate="visible"
+                                                    variants={{
+                                                        hidden: { opacity: 0, y: 20, scale: 0.9 },
+                                                        visible: (i) => ({
+                                                            opacity: 1,
+                                                            y: 0,
+                                                            scale: 1,
+                                                            transition: {
+                                                                delay: i * 0.05,
+                                                                duration: 0.4,
+                                                                ease: "easeOut"
+                                                            }
+                                                        })
+                                                    }}
+                                                    whileHover={{
+                                                        scale: 1.03,
+                                                        y: -5,
+                                                        boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                                                        transition: { duration: 0.2 }
+                                                    }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => handleQuestionClick(question)}
+                                                    className="bg-white rounded-lg shadow-md cursor-pointer transition-all duration-200 hover:shadow-xl border border-gray-100 h-32 flex flex-col justify-between"
+                                                >
+                                                    <div className="p-4 flex-1 flex flex-col justify-center">
+                                                        <div className="flex items-start mb-2">
+                                                            <div className="flex-shrink-0 mr-3">
+                                                                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                                                                    <span className="text-white text-sm font-bold">
+                                                                        {qIndex + 1}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-gray-800 font-medium text-sm leading-tight line-clamp-3">
+                                                                    <Latex>{question}</Latex>
+                                                                </p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-gray-800 font-medium text-sm leading-tight line-clamp-3">
-                                                                <Latex>{question}</Latex>
-                                                            </p>
+                                                    </div>
+                                                    <div className="px-4 pb-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs text-gray-500 font-medium">
+                                                                Click to solve
+                                                            </span>
+                                                            <motion.div
+                                                                animate={{ x: [0, 3, 0] }}
+                                                                transition={{
+                                                                    repeat: Infinity,
+                                                                    duration: 2,
+                                                                    ease: "easeInOut"
+                                                                }}
+                                                            >
+                                                                <ChevronRight className="w-4 h-4 text-blue-500" />
+                                                            </motion.div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="px-4 pb-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-xs text-gray-500 font-medium">
-                                                            Click to solve
-                                                        </span>
-                                                        <motion.div
-                                                            animate={{ x: [0, 3, 0] }}
-                                                            transition={{
-                                                                repeat: Infinity,
-                                                                duration: 2,
-                                                                ease: "easeInOut"
-                                                            }}
-                                                        >
-                                                            <ChevronRight className="w-4 h-4 text-blue-500" />
-                                                        </motion.div>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        ))}
+                                                </motion.div>
+                                            ))}
+                                        </motion.div>
                                     </motion.div>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    </motion.section>
-                )}
-            </div>
-        </main>
+                                ))}
+                            </motion.div>
+                        </motion.section>
+                    )}
+                </div>
+            </main>
+        </>
     );
 };
 

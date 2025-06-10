@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useCheckMySolutionMutation } from '@/store/slices/AMT';
 import { setSolutionFeedback } from '@/store/reducers/AMT';
 import { useSession } from 'next-auth/react';
+import Head from 'next/head';
 
 const createVerifyStepResponseStructure = (steps, allStepsCorrect, response) => {
     return {
@@ -651,92 +652,129 @@ const MathTutorPage = () => {
     const containerMotionVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
     const itemMotionVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
+    const questionTextForTitle = currentQuestion.displayQuestion ? currentQuestion.displayQuestion.replace("Question: ", "").substring(0, 50) + "..." : "Your Math Problem";
+    const pageTitle = `Solve: ${questionTextForTitle} | AI Math Tutor | MathzAI`;
+    const pageDescription = `Get interactive, step-by-step AI tutoring for your math problem: ${questionTextForTitle}. Use our digital whiteboard and get hints from MathzAI.`;
+
+
     return (
-        <motion.div
-            className="flex w-full h-screen"
-            variants={containerMotionVariants}
-            initial="hidden"
-            animate="visible"
-            aria-label="Math Tutor Page"
-        >
-            <motion.main
-                className={`transition-all duration-300 ease-in-out ${isRightPanelCollapsed ? 'w-[98%]' : 'w-[65%]'} p-6 flex flex-col h-[90vh] overflow-hidden`}
-                layout
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                aria-labelledby="question-heading"
-            >
-                <motion.div className="mb-4" variants={itemMotionVariants}>
-                    <motion.h2 id="question-heading" className="text-xl font-semibold text-gray-800">
-                        <Latex>{currentQuestion.displayQuestion || "Question: Solve for x."}</Latex>
-                    </motion.h2>
-                </motion.div>
-                <motion.div className="mb-4 text-gray-600" variants={itemMotionVariants}>
-                    <p>✍️ <span className="text-md">Start solving here. I'm right here</span> ➡️ <span className="text-md">with hints and reviews!</span></p>
-                </motion.div>
-                <motion.div className="flex-grow rounded-lg shadow-lg overflow-hidden bg-white border border-gray-200" variants={itemMotionVariants} style={{ minHeight: '50vh' }} role="application" aria-label="Whiteboard Area">
-                    <StylusDrawComponent
-                        ref={stylusDrawRef}
-                        onContentChange={handleDrawingChange}
-                        height="100%"
-                        placeholder="Start solving on the whiteboard..."
-                    />
-                </motion.div>
-            </motion.main>
-
+        <>
+            <Head>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDescription} />
+                <meta name="keywords" content={`interactive math tutor, solve math problem, math steps, math hints, whiteboard math, math problem solver, mathzai, ${currentQuestion.question_id || ''}`} />
+                <link rel="canonical" href={`https://www.mathzai.com/ai-math-tutor/select-questions/ai-tutor-solution${currentQuestion.question_id ? '?qid=' + currentQuestion.question_id : ''}`} />
+                <script type="application/ld+json">
+                    {`
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "LearningResource",
+                        "name": "Interactive AI Math Tutoring Session: ${questionTextForTitle.replace(/"/g, '\\"')}",
+                        "description": "${pageDescription.replace(/"/g, '\\"')}",
+                        "url": "https://www.mathzai.com/ai-math-tutor/select-questions/ai-tutor-solution${currentQuestion.question_id ? '?qid=' + currentQuestion.question_id : ''}",
+                        "educationalUse": "Tutoring",
+                        "learningResourceType": "Interactive Lesson",
+                        "inLanguage": "en",
+                        "publisher": {
+                            "@type": "Organization",
+                            "name": "MathzAI"
+                        },
+                        "about": {
+                            "@type": "Question",
+                            "name": "${currentQuestion.displayQuestion ? currentQuestion.displayQuestion.replace(/"/g, '\\"') : "Math Problem"}",
+                            "text": "${currentQuestion.question ? (Array.isArray(currentQuestion.question) ? currentQuestion.question.join(' ') : String(currentQuestion.question)).replace(/"/g, '\\"') : "Selected math problem."}"
+                            ${currentQuestion.question_url && currentQuestion.question_url !== 'no_input' ? `, "image": "${currentQuestion.question_url}"` : ''}
+                        }
+                    }
+                    `}
+                </script>
+            </Head>
             <motion.div
-                className={`transition-all duration-300 ease-in-out bg-white relative h-[87vh] border border-gray-100 ${isRightPanelCollapsed ? 'min-w-[16px]' : 'w-[35%]'}`}
-                layout
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                aria-label="Tutor Interaction Panel"
-                style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
+                className="flex w-full h-screen"
+                variants={containerMotionVariants}
+                initial="hidden"
+                animate="visible"
+                aria-label="Math Tutor Page"
             >
-                <motion.div
-                    onClick={toggleRightPanel}
-                    className="absolute -left-4 top-10 z-50 cursor-pointer w-8 h-8 rounded-full bg-gray-100 border border-gray-300 shadow-md flex justify-center items-center"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
-                    aria-expanded={!isRightPanelCollapsed}
-                    title={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
+                <motion.main
+                    className={`transition-all duration-300 ease-in-out ${isRightPanelCollapsed ? 'w-[98%]' : 'w-[65%]'} p-6 flex flex-col h-[90vh] overflow-hidden`}
+                    layout
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    aria-labelledby="question-heading"
                 >
-                    {isRightPanelCollapsed ? (
-                        <ChevronLeft className="w-5 h-5 text-gray-700" />
-                    ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-700" />
-                    )}
-                </motion.div>
+                    <motion.div className="mb-4" variants={itemMotionVariants}>
+                        <motion.h2 id="question-heading" className="text-xl font-semibold text-gray-800">
+                            <Latex>{currentQuestion.displayQuestion || "Question: Solve for x."}</Latex>
+                        </motion.h2>
+                    </motion.div>
+                    <motion.div className="mb-4 text-gray-600" variants={itemMotionVariants}>
+                        <p>✍️ <span className="text-md">Start solving here. I'm right here</span> ➡️ <span className="text-md">with hints and reviews!</span></p>
+                    </motion.div>
+                    <motion.div className="flex-grow rounded-lg shadow-lg overflow-hidden bg-white border border-gray-200" variants={itemMotionVariants} style={{ minHeight: '50vh' }} role="application" aria-label="Whiteboard Area">
+                        <StylusDrawComponent
+                            ref={stylusDrawRef}
+                            onContentChange={handleDrawingChange}
+                            height="100%"
+                            placeholder="Start solving on the whiteboard..."
+                        />
+                    </motion.div>
+                </motion.main>
 
-                <AnimatePresence mode="wait">
-                    {!isRightPanelCollapsed && (
-                        <motion.div
-                            className="h-full overflow-y-auto"
-                            initial={{ opacity: 0, x: "100%" }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: "100%" }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                            role="region"
-                            aria-live="polite"
-                        >
-                            <TutorInteractionPanel
-                                isLoading={isLoading || isCheckingSolutionApi}
-                                currentButtonType={currentButtonType}
-                                audioStatus={pageAudioStatus}
-                                onAudioControl={onAudioControlObj}
-                                onTutorAction={memoizedHandleTutorAction}
-                                tutorResponse={tutorResponse}
-                                contentState={contentState}
-                                onContentItemAction={memoizedHandleContentItemAction}
-                                onExplanationAudio={memoizedHandleExplanationAudio}
-                                isWhiteboardDirty={isWhiteboardDirty}
-                                formatTime={formatTime}
-                                timer={timer}
-                                isGuestUser={isGuestUser}
-                            />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <motion.div
+                    className={`transition-all duration-300 ease-in-out bg-white relative h-[87vh] border border-gray-100 ${isRightPanelCollapsed ? 'min-w-[16px]' : 'w-[35%]'}`}
+                    layout
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    aria-label="Tutor Interaction Panel"
+                    style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
+                >
+                    <motion.div
+                        onClick={toggleRightPanel}
+                        className="absolute -left-4 top-10 z-50 cursor-pointer w-8 h-8 rounded-full bg-gray-100 border border-gray-300 shadow-md flex justify-center items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
+                        aria-expanded={!isRightPanelCollapsed}
+                        title={isRightPanelCollapsed ? "Expand tutor panel" : "Collapse tutor panel"}
+                    >
+                        {isRightPanelCollapsed ? (
+                            <ChevronLeft className="w-5 h-5 text-gray-700" />
+                        ) : (
+                            <ChevronRight className="w-5 h-5 text-gray-700" />
+                        )}
+                    </motion.div>
+
+                    <AnimatePresence mode="wait">
+                        {!isRightPanelCollapsed && (
+                            <motion.div
+                                className="h-full overflow-y-auto"
+                                initial={{ opacity: 0, x: "100%" }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: "100%" }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                role="region"
+                                aria-live="polite"
+                            >
+                                <TutorInteractionPanel
+                                    isLoading={isLoading || isCheckingSolutionApi}
+                                    currentButtonType={currentButtonType}
+                                    audioStatus={pageAudioStatus}
+                                    onAudioControl={onAudioControlObj}
+                                    onTutorAction={memoizedHandleTutorAction}
+                                    tutorResponse={tutorResponse}
+                                    contentState={contentState}
+                                    onContentItemAction={memoizedHandleContentItemAction}
+                                    onExplanationAudio={memoizedHandleExplanationAudio}
+                                    isWhiteboardDirty={isWhiteboardDirty}
+                                    formatTime={formatTime}
+                                    timer={timer}
+                                    isGuestUser={isGuestUser}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
             </motion.div>
-        </motion.div>
+        </>
     )
 };
 

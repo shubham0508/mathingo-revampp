@@ -142,10 +142,10 @@ export default function AIMathTutorPage() {
         }
     }, [isExtractingApi]);
 
-    useEffect(()=>{
+    useEffect(() => {
         dispatch(resetAnswer())
         dispatch(resetQuestion())
-    },[])
+    }, [])
 
     useEffect(() => {
         if (extractionApiError) {
@@ -804,10 +804,39 @@ export default function AIMathTutorPage() {
     return (
         <>
             <Head>
-                <title>AI Math Tutor - Solve Math Problems with AI</title>
-                <meta name="description" content="Our AI Math Tutor helps you solve complex math problems. Type, upload, or draw your problem for step-by-step solutions and guidance." />
-                <meta name="keywords" content="ai math tutor, math problem solver, stylus math input, online math help, homework assistance, algebra, calculus, geometry, math OCR" />
+                <title>AI Math Tutor - Solve Math Problems with AI | MathzAI</title>
+                <meta name="description" content="Our AI Math Tutor helps you solve complex math problems. Type, upload, or draw your problem for step-by-step solutions and guidance from MathzAI." />
+                <meta name="keywords" content="ai math tutor, math problem solver, stylus math input, online math help, homework assistance, algebra, calculus, geometry, math OCR, mathzai" />
                 <link rel="canonical" href="https://www.mathzai.com/ai-math-tutor" />
+                <script type="application/ld+json">
+                    {`
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": "AI Math Tutor by MathzAI",
+                        "applicationCategory": "EducationalApplication",
+                        "operatingSystem": "Web",
+                        "description": "Solve complex math problems by typing, uploading, or drawing. Get AI-powered step-by-step solutions and guidance.",
+                        "url": "https://www.mathzai.com/ai-math-tutor",
+                        "publisher": {
+                            "@type": "Organization",
+                            "name": "MathzAI"
+                        },
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "USD"
+                        },
+                        "featureList": [
+                            "Text input for math problems",
+                            "Image/PDF upload for math problems",
+                            "Stylus drawing input for math problems",
+                            "AI-powered problem analysis",
+                            "Step-by-step solutions (on subsequent pages)"
+                        ]
+                    }
+                    `}
+                </script>
             </Head>
 
             <div className="flex flex-row justify-center w-full min-h-screen">

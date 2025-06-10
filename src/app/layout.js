@@ -15,22 +15,10 @@ export const metadata = {
   },
   description: siteConfig.description,
   keywords: [
-    'math',
-    'education',
-    'AI',
-    'problem solving',
-    'learning',
-    'mathematics',
-    'calculus',
-    'algebra',
-    'geometry',
+    'math', 'AI tutor', 'step-by-step math', 'homework help',
+    'algebra', 'geometry', 'calculus', 'real-time tutoring',
   ],
-  authors: [
-    {
-      name: 'Mathz AI',
-      url: 'https://mathzai.com',
-    },
-  ],
+  authors: [{ name: 'Mathz AI', url: 'https://mathzai.com' }],
   creator: 'Mathz AI',
   openGraph: {
     type: 'website',
@@ -41,7 +29,7 @@ export const metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: `${siteConfig.url}/opengraph-image.png`,
+        url: `${siteConfig.ogImage}`,
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -52,7 +40,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [`${siteConfig.url}/opengraph-image.png`],
+    images: [siteConfig.ogImage],
     creator: '@mathzai',
   },
   icons: {
@@ -66,18 +54,41 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <meta name="google-site-verification" content={process.env.GOOGLE_SEARCH_CONSOLE_ID} />
+      </head>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
           fontSans.variable,
-          fontMono.variable,
+          fontMono.variable
         )}
       >
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GOOGLE_ANALYTICS_ID}`}
+        />
+        <Script
+          id="ga-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);} 
+              gtag('js', new Date());
+              gtag('config', ${process.env.GOOGLE_ANALYTICS_ID}, {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />  
+
+        {/* ✅ Razorpay Checkout */}
         <Script
           id="razorpay-checkout-js"
           src="https://checkout.razorpay.com/v1/checkout.js"
         />
+
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>

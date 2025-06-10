@@ -3,7 +3,7 @@ import SmartBreadcrumb from "@/components/layout/breadCrumb";
 import Footer from "@/components/layout/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export default function Layout({ children }) {
+export default function FeaturesLayout({ children }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
