@@ -1,8 +1,8 @@
 import { AuthFlow } from "@/components/auth";
 import Script from 'next/script';
 import { siteConfig } from "@/config/site";
-import { generateMetadata as generatePageMetadata } from '@/lib/metadataUtils';
-import { createOrganizationSchema, createWebsiteSchema } from '@/lib/schemaUtils';
+import { generateMetadata as generatePageMetadata } from '@/config/seo';
+import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
 
 export async function generateMetadata() {
   const pageUrl = `${siteConfig.url}/signup`;
