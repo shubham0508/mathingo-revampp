@@ -45,6 +45,10 @@ const mergeUserData = (baseData, profileData, fallbackData = {}) => {
     startDate:
       profile.start_date || baseData.start_date || fallbackData.startDate,
     endDate: profile.end_date || baseData.end_date || fallbackData.endDate,
+    journey_level:
+      profile.journey_level ||
+      baseData.journey_level ||
+      fallbackData.journey_level,
   };
 };
 
@@ -237,6 +241,7 @@ const handler = NextAuth({
           planType: user.planType,
           level: user.level,
           purpose: user.purpose,
+          journey_level: user.journey_level,
           startDate: user.startDate,
           endDate: user.endDate,
           accessToken: account?.backendToken || user.accessToken,
@@ -297,6 +302,7 @@ const handler = NextAuth({
           plan_type: token.planType,
           level: token.level,
           purpose: token.purpose,
+          journey_level: token.journey_level,
           start_date: token.startDate,
           end_date: token.endDate,
         };
@@ -317,6 +323,7 @@ const handler = NextAuth({
           planType: updatedUserData.planType,
           level: updatedUserData.level,
           purpose: updatedUserData.purpose,
+          journey_level: updatedUserData.journey_level,
           startDate: updatedUserData.startDate,
           endDate: updatedUserData.endDate,
           accessToken: response.access_token,
@@ -347,6 +354,7 @@ const handler = NextAuth({
         planType: token.planType,
         level: token.level,
         purpose: token.purpose,
+        journey_level: token.journey_level,
         startDate: token.startDate,
         endDate: token.endDate,
         accessToken: token.accessToken,
@@ -378,6 +386,7 @@ const handler = NextAuth({
               'planType',
               'level',
               'purpose',
+              'journey_level',
               'startDate',
               'endDate',
             ].includes(key) &&

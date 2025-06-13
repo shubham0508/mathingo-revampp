@@ -466,6 +466,9 @@ const MathTutorPage = () => {
                 dispatch(setSolutionFeedback({
                     help_count: requestCount,
                     question: currentQuestion?.question,
+                    question_url: currentQuestion.question_url || "no_input",
+                    solution_url: solutionS3Key,
+                    question_id: currentQuestion.question_id,
                     ...result?.data
                 }));
                 toast.success("Solution submitted successfully! Redirecting to dashboard...");

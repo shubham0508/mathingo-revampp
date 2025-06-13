@@ -1,4 +1,4 @@
-import { rawBlogsData } from "@/components/blog/blog";
+import { rawBlogsData } from '@/components/blog/blog';
 
 function extractHeadingsFromHtml(htmlContent) {
   if (!htmlContent) return [];
@@ -15,7 +15,7 @@ function extractHeadingsFromHtml(htmlContent) {
   return headings;
 }
 
-const allBlogs = rawBlogsData.map((blog) => ({
+export const allBlogs = rawBlogsData.map((blog) => ({
   ...blog,
   headings: extractHeadingsFromHtml(blog.contentHTML),
 }));

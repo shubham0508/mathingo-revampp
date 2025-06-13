@@ -3,14 +3,15 @@
 import Head from 'next/head';
 import Script from 'next/script';
 import { motion } from 'framer-motion';
-import { BookOpen, TrendingUp, Sparkles, Users } from 'lucide-react';
-import { getAllBlogs } from '@/lib/blogService';
-import BlogList from '@/components/blog/BlogList';
+import { useState, useEffect, useMemo } from 'react';
+import { BookOpen, TrendingUp, Sparkles, Users, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { allBlogs } from '@/lib/blogService';
+import BlogCard from '@/components/blog/BlogCard';
 import { siteConfig } from "@/config/site";
 import { generateMetadata as generatePageMetadata } from '@/config/seo';
 import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
 
-const BLOGS_PER_PAGE = 6;
+const BLOGS_PER_PAGE = 12;
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -18,7 +19,7 @@ const containerVariants = {
         opacity: 1,
         transition: {
             duration: 0.6,
-            staggerChildren: 0.2
+            staggerChildren: 0.1
         }
     }
 };
@@ -30,6 +31,18 @@ const itemVariants = {
         y: 0,
         transition: {
             duration: 0.6,
+            ease: 'easeOut'
+        }
+    }
+};
+
+const blogCardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.4,
             ease: 'easeOut'
         }
     }
@@ -47,8 +60,142 @@ const floatingIconVariants = {
     }
 };
 
+function Pagination({ currentPage, totalPages, onPageChange }) {
+    const getPageNumbers = () => {
+        const pages = [];
+        const showPages = 5;
+
+        if (totalPages <= showPages) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 5; i++) {
+                    pages.push(i);
+                }
+                if (totalPages > 5) pages.push('...');
+                pages.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1);
+                if (totalPages > 5) pages.push('...');
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(1);
+                pages.push('...');
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+
+        return pages;
+    };
+
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className="flex items-center justify-center space-x-2 mt-12">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {getPageNumbers().map((page, index) => (
+                <button
+                    key={index}
+                    onClick={() => typeof page === 'number' ? onPageChange(page) : null}
+                    disabled={page === '...'}
+                    className={`px-4 py-2 rounded-lg transition-colors ${page === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : page === '...'
+                            ? 'cursor-default'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                >
+                    {page}
+                </button>
+            ))}
+
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                <ChevronRight className="w-5 h-5" />
+            </button>
+        </div>
+    );
+}
+
+function SearchBar({ searchTerm, onSearchChange, totalResults }) {
+    const [isFocused, setIsFocused] = useState(false);
+
+    return (
+        <div className="max-w-2xl mx-auto mb-8">
+            <div className={`relative transition-all duration-300 ${isFocused ? 'transform scale-105' : ''}`}>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className={`h-5 w-5 transition-colors ${isFocused ? 'text-blue-500' : 'text-gray-400'}`} />
+                </div>
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Search blogs by title, keywords, or tags..."
+                    className="block w-full pl-10 pr-12 py-4 border border-gray-300 rounded-xl text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                />
+                {searchTerm && (
+                    <button
+                        onClick={() => onSearchChange('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                )}
+            </div>
+            {searchTerm && (
+                <div className="mt-2 text-center text-gray-600">
+                    Found {totalResults} result{totalResults !== 1 ? 's' : ''} for "{searchTerm}"
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function BlogsPage() {
-    const { blogs: initialBlogs, hasMore: initialHasMore, total: initialTotal } = getAllBlogs(1, BLOGS_PER_PAGE);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const filteredBlogs = useMemo(() => {
+        if (!searchTerm.trim()) return allBlogs;
+
+        const searchLower = searchTerm.toLowerCase();
+        return allBlogs.filter(blog => {
+            const titleMatch = blog.title?.toLowerCase().includes(searchLower);
+            const excerptMatch = blog.excerpt?.toLowerCase().includes(searchLower);
+            const tagsMatch = blog.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+            const authorMatch = blog.author?.name?.toLowerCase().includes(searchLower);
+
+            return titleMatch || excerptMatch || tagsMatch || authorMatch;
+        });
+    }, [searchTerm]);
+
+    const totalPages = Math.ceil(filteredBlogs.length / BLOGS_PER_PAGE);
+    const startIndex = (currentPage - 1) * BLOGS_PER_PAGE;
+    const paginatedBlogs = filteredBlogs.slice(startIndex, startIndex + BLOGS_PER_PAGE);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const pageUrl = `${siteConfig.url}/blogs`;
     const metadata = generatePageMetadata({
@@ -70,7 +217,7 @@ export default function BlogsPage() {
             "@type": "WebPage",
             "@id": pageUrl
         },
-        "blogPost": initialBlogs?.map(blog => {
+        "blogPost": allBlogs?.map(blog => {
             const postUrl = `${siteConfig.url}/blogs/${blog.slug}`;
             const authorSchema = blog.author && blog.author.name ? {
                 "@type": blog.author.type || "Person",
@@ -96,7 +243,6 @@ export default function BlogsPage() {
             };
         }) || []
     };
-
 
     return (
         <>
@@ -138,9 +284,8 @@ export default function BlogsPage() {
             </Script>
 
             <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
-
                 <motion.section
-                    className="relative py-16 md:py-24 overflow-hidden"
+                    className="relative py-6 overflow-hidden"
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
@@ -151,7 +296,7 @@ export default function BlogsPage() {
                         <motion.div className="absolute bottom-20 left-20 w-24 h-24 bg-green-100 rounded-full blur-xl" variants={floatingIconVariants} animate="animate" style={{ animationDelay: '2s' }} />
                     </div>
 
-                    <div className="container mx-auto px-4 text-center relative z-10">
+                    <div className="container px-4 text-center relative z-10">
                         <motion.div className="mb-6" variants={itemVariants}>
                             <motion.div
                                 className="inline-flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-full text-blue-600 text-sm font-medium mb-6"
@@ -161,14 +306,14 @@ export default function BlogsPage() {
                                 <Sparkles className="w-4 h-4" />
                                 <span>Knowledge Hub</span>
                             </motion.div>
-                            <h1 className="bg-gradient-secondary bg-clip-text text-transparent font-black text-4xl md:text-6xl lg:text-7xl mb-4 font-roca leading-tight h-24">
+                            <h1 className="bg-gradient-secondary bg-clip-text text-transparent font-black text-5xl mb-4 font-roca leading-tight h-16">
                                 Our Blogs
                             </h1>
                         </motion.div>
 
                         <motion.h2
                             variants={itemVariants}
-                            className="text-heading-ha text-xl md:text-2xl font-semibold mb-6 max-w-3xl mx-auto leading-relaxed"
+                            className="text-heading-ha text-xl font-semibold mb-6 max-w-3xl mx-auto leading-relaxed"
                         >
                             Dive into our collection of insightful articles, expert opinions, and the latest industry trends
                         </motion.h2>
@@ -183,7 +328,7 @@ export default function BlogsPage() {
                                 transition={{ type: 'spring', stiffness: 300 }}
                             >
                                 <BookOpen className="w-5 h-5" />
-                                <span className="font-medium">{initialTotal || 0}+ Articles</span>
+                                <span className="font-medium">{allBlogs?.length || 0}+ Articles</span>
                             </motion.div>
 
                             <motion.div
@@ -221,17 +366,63 @@ export default function BlogsPage() {
                     </div>
                 </motion.section>
 
-                <section id="blog-content" className="container mx-auto px-4 pb-16">
+                <section id="blog-content" className="container mx-auto px-4">
                     <motion.div
                         initial="hidden"
                         animate="visible"
-                        variants={itemVariants}
+                        variants={containerVariants}
                     >
-                        <BlogList
-                            initialBlogs={initialBlogs}
-                            initialHasMore={initialHasMore}
-                            initialTotal={initialTotal}
-                        />
+                        <motion.div variants={itemVariants}>
+                            <SearchBar
+                                searchTerm={searchTerm}
+                                onSearchChange={setSearchTerm}
+                                totalResults={filteredBlogs.length}
+                            />
+                        </motion.div>
+
+                        {paginatedBlogs.length > 0 ? (
+                            <>
+                                <motion.div
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-10"
+                                    variants={containerVariants}
+                                >
+                                    {paginatedBlogs.map((blog, index) => (
+                                        <motion.div
+                                            key={blog.slug}
+                                            variants={blogCardVariants}
+                                            custom={index}
+                                        >
+                                            <BlogCard blog={blog} animate={false} />
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+
+                                <motion.div variants={itemVariants}>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={setCurrentPage}
+                                    />
+                                </motion.div>
+                            </>
+                        ) : (
+                            <motion.div
+                                className="text-center py-12"
+                                variants={itemVariants}
+                            >
+                                <div className="text-gray-500 text-lg mb-4">
+                                    {searchTerm ? `No blogs found for "${searchTerm}"` : 'No blogs available'}
+                                </div>
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                        Clear search and view all blogs
+                                    </button>
+                                )}
+                            </motion.div>
+                        )}
                     </motion.div>
                 </section>
             </main>

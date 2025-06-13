@@ -10,9 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
 import {
     useCreateOrderMutation,
     useVerifyPaymentMutation,
@@ -23,8 +21,8 @@ import {
 } from "@/store/slices/profile";
 import {
     AlertCircle, CheckCircle, CreditCard, Loader2, Ticket, XCircle,
-    Mail, User, Building2, Phone, Globe, ArrowRight, Info,
-    ChevronsUpDown, Check // Added for Combobox
+    Mail, User, Phone, Globe, DollarSign,
+    ChevronsUpDown, Check
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,9 +30,8 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactConfetti from "react-confetti";
-import { paymentPlans, RAZORPAY_KEY } from "@/config/constant";
+import { countryList, paymentPlans, RAZORPAY_KEY } from "@/config/constant";
 
-// Imports for Combobox
 import {
     Command,
     CommandEmpty,
@@ -48,7 +45,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-
 
 const START_IMMEDIATELY = "start_immediately";
 const START_AFTER_EXPIRY = "start_after_expiry";
@@ -72,19 +68,7 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } },
 };
 
-const countries = [
-    { code: "", name: "Select Country..." },
-    { code: "US", name: "United States" },
-    { code: "CA", name: "Canada" },
-    { code: "GB", name: "United Kingdom" },
-    { code: "AU", name: "Australia" },
-    { code: "IN", name: "India" },
-    { code: "DE", name: "Germany" },
-    { code: "FR", name: "France" },
-    // Add more countries as needed
-];
-const searchableCountries = countries.filter(country => country.code !== "");
-
+const searchableCountries = countryList.filter(country => country.code !== "");
 
 const UpgradeModal = ({ isOpen, onClose, onOptionSelect }) => (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -161,9 +145,8 @@ const NewStyledCheckoutForm = ({
 }) => {
     const [formData, setFormData] = useState({
         email: userProfile?.email || "",
-        sendExclusiveEmails: true,
         name: userProfile?.name || "",
-        country: "US", // Default to US or ensure it's a valid code from `countries`
+        country: "US",
         mobileNumber: userProfile?.phone || "",
         couponCodeInput: ""
     });
@@ -171,6 +154,24 @@ const NewStyledCheckoutForm = ({
     const [formErrors, setFormErrors] = useState({});
     const [formTouched, setFormTouched] = useState({});
     const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
+
+    const planIcons = useMemo(() => ({
+        free: '/images/icons/free-plan.gif',
+        pro: '/images/icons/pro-plan.gif',
+        premium: '/images/icons/premium-plan.gif',
+        default: DollarSign
+    }), []);
+
+    const PlanIconDisplay = useMemo(() => {
+        const planKey = plan?.title?.toLowerCase();
+        const iconSrc = planIcons[planKey];
+        if (iconSrc && typeof iconSrc === 'string') {
+            return <img src={iconSrc} alt={`${plan.title} plan icon`} className="w-full h-full object-contain" />;
+        }
+        const IconComponent = planIcons.default;
+        return <IconComponent size={28} className="text-primary" />;
+    }, [plan, planIcons]);
+
 
     useEffect(() => {
         if (userProfile) {
@@ -206,18 +207,11 @@ const NewStyledCheckoutForm = ({
     };
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: value
         }));
-        if (formErrors[name]) {
-            setFormErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
-
-    const handleCheckboxChange = (name, checked) => {
-        setFormData(prev => ({ ...prev, [name]: checked }));
         if (formErrors[name]) {
             setFormErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -321,7 +315,6 @@ const NewStyledCheckoutForm = ({
             name: formData.name,
             country: formData.country,
             mobileNumber: formData.mobileNumber,
-            sendExclusiveEmails: formData.sendExclusiveEmails,
             couponCode: appliedCouponDetails ? appliedCouponDetails.code : "",
         };
         onFormSubmit(submissionData);
@@ -381,7 +374,7 @@ const NewStyledCheckoutForm = ({
                 <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
                     <motion.div className="space-y-6" variants={itemVariants}>
                         <motion.div variants={itemVariants}>
-                            <h2 className="text-xl font-medium text-black mb-1">Contact Information</h2>
+                            <h2 className="text-xl font-medium text-black mb-1">Billing Information</h2>
                             <div className="space-y-4">
                                 <FormField label="Email address" id="email" icon={Mail} error={formTouched.email && formErrors.email} required>
                                     <Input
@@ -391,24 +384,6 @@ const NewStyledCheckoutForm = ({
                                             ${formTouched.email && formErrors.email ? 'border-red-500 ring-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary focus:ring-1'}`}
                                     />
                                 </FormField>
-                                <div className="flex items-center space-x-2 align-middle pt-1">
-                                    <Checkbox
-                                        id="sendExclusiveEmails"
-                                        name="sendExclusiveEmails"
-                                        checked={formData.sendExclusiveEmails}
-                                        onCheckedChange={(checked) => handleCheckboxChange('sendExclusiveEmails', checked)}
-                                        className="rounded-sm w-4 h-4 border-gray-400 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                    />
-                                    <Label htmlFor="sendExclusiveEmails" className="text-sm font-normal text-black cursor-pointer">
-                                        Email me with news and offers
-                                    </Label>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        <motion.div variants={itemVariants}>
-                            <h2 className="text-xl font-medium text-black mb-1">Billing Information</h2>
-                            <div className="space-y-4">
                                 <FormField label="Full Name" id="name" icon={User} error={formTouched.name && formErrors.name} required>
                                     <Input
                                         type="text" name="name" id="name" placeholder="Your full name"
@@ -442,8 +417,8 @@ const NewStyledCheckoutForm = ({
                                             >
                                                 <span className="truncate">
                                                     {formData.country
-                                                        ? countries.find((country) => country.code === formData.country)?.name
-                                                        : "Select Country..."}
+                                                        ? countryList.find((country) => country.code === formData.country)?.name
+                                                        : "Select a Country"}
                                                 </span>
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -457,7 +432,7 @@ const NewStyledCheckoutForm = ({
                                                         {searchableCountries.map((country) => (
                                                             <CommandItem
                                                                 key={country.code}
-                                                                value={country.name} // Use name for search, but handle selection with code
+                                                                value={country.name}
                                                                 onSelect={() => {
                                                                     handleCountryChange(country.code);
                                                                 }}
@@ -482,8 +457,8 @@ const NewStyledCheckoutForm = ({
                         <motion.div variants={itemVariants} className="p-5 rounded-lg shadow-lg border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4 text-black">Order Summary</h2>
                             <div className="flex items-center space-x-4 mb-4 pb-4 border-b border-gray-200">
-                                <div className="w-16 h-16 bg-blue-100 rounded-md flex items-center justify-center">
-                                    <Info size={28} className="text-primary" />
+                                <div className="w-16 h-16 bg-blue-100 rounded-md flex items-center justify-center overflow-hidden">
+                                    {PlanIconDisplay}
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-black">{plan.title} Plan</h3>
@@ -581,7 +556,6 @@ const NewStyledCheckoutForm = ({
         </motion.div>
     );
 };
-
 
 const PaymentStatusDisplay = ({ status, orderId, errorMsg, router, searchParams }) => {
     const statusConfig = {
@@ -735,6 +709,7 @@ const Checkout = () => {
     const [apiError, setApiError] = useState(null);
     const [showConfetti, setShowConfetti] = useState(false);
     const [couponDetails, setCouponDetails] = useState(null);
+    const [paymentInitialized, setPaymentInitialized] = useState(false);
 
     const [createOrder, {
         data: checkoutOrder,
@@ -787,6 +762,9 @@ const Checkout = () => {
         };
 
         setSelectedPlan(planDetails);
+        setPaymentStatus(null);
+        setOrderId(null);
+        setIsProcessingState(false);
     }, [searchParams, router]);
 
     const combinedIsProcessing = isCreatingOrder || isVerifyingPayment || isProcessingState;
@@ -808,7 +786,6 @@ const Checkout = () => {
             toast.error(verifyPaymentError?.data?.message || "Payment verification failed.");
         }
     }, [verifyPaymentError]);
-
 
     const updateSessionAndProfile = useCallback(async () => {
         setIsProcessingState(true);
@@ -850,12 +827,10 @@ const Checkout = () => {
             }, 200);
 
             return () => clearInterval(timer);
-        } else if (verifyPaymentData && !isProcessingState && paymentStatus !== 'success' && paymentStatus !== 'hold') {
-            setIsProcessingState(true);
-            setProgress(100);
-            setTimeout(updateSessionAndProfile, 300);
+        } else if (verifyPaymentData && paymentStatus === null && !isProcessingState) {
+            updateSessionAndProfile();
         }
-    }, [isVerifyingPayment, verifyPaymentData, isProcessingState, updateSessionAndProfile, paymentStatus]);
+    }, [isVerifyingPayment, verifyPaymentData, updateSessionAndProfile, paymentStatus, isProcessingState]);
 
     const initializeRazorpay = useCallback(async (orderIdToPay, amount) => {
         if (!window.Razorpay || !RAZORPAY_KEY) {
@@ -885,12 +860,14 @@ const Checkout = () => {
                     plan: selectedPlan.title.toLowerCase(),
                     interval: selectedPlan.selectedDuration,
                     coupon_code: couponDetails?.code,
-                }).unwrap().catch(() => { setIsProcessingState(false); });
+                }).unwrap().catch(() => {
+                    setIsProcessingState(false);
+                });
             },
             modal: {
                 escape: false,
                 ondismiss: function () {
-                    if (!verifyPaymentData && !isVerifyingPayment && paymentStatus !== 'success') {
+                    if (!isVerifyingPayment && paymentStatus === null) {
                         setPaymentStatus("error");
                         setApiError("Payment was cancelled or closed.");
                         toast.error("Payment cancelled.");
@@ -923,10 +900,16 @@ const Checkout = () => {
             setIsProcessingState(false);
             toast.error("Payment initialization failed.");
         }
-    }, [selectedPlan, paymentDetails, userProfile, verifyPayment, couponDetails, verifyPaymentData, isVerifyingPayment, paymentStatus]);
+    }, [selectedPlan, paymentDetails, userProfile, verifyPayment, couponDetails, isVerifyingPayment, paymentStatus]);
 
     useEffect(() => {
-        if (checkoutOrder?.data?.order_id?.order_id && selectedPlan && !isVerifyingPayment && paymentStatus !== 'success' && paymentStatus !== 'hold' && !isCreatingOrder) {
+        if (checkoutOrder?.data?.order_id?.order_id &&
+            selectedPlan &&
+            !isCreatingOrder &&
+            !isVerifyingPayment &&
+            paymentStatus === null &&
+            !paymentInitialized) {
+
             let amountToPay = selectedPlan.price;
             if (couponDetails) {
                 if (couponDetails.discount) {
@@ -935,25 +918,32 @@ const Checkout = () => {
                     amountToPay = Math.max(0, selectedPlan.price - couponDetails.discountValue);
                 }
             }
+            setPaymentInitialized(true);
             initializeRazorpay(checkoutOrder.data.order_id.order_id, amountToPay);
         }
-    }, [checkoutOrder, selectedPlan, initializeRazorpay, couponDetails, isVerifyingPayment, paymentStatus, isCreatingOrder]);
+    }, [checkoutOrder, selectedPlan, initializeRazorpay, couponDetails, isCreatingOrder, isVerifyingPayment, paymentStatus, paymentInitialized]);
+
 
     const handleUpgradeOption = (option) => {
         setShowUpgradeModal(false);
         setIsProcessingState(true);
+        setPaymentInitialized(false);
         createOrder({
             plan: selectedPlan.title.toLowerCase(),
             duration: selectedPlan.selectedDuration,
             plan_upgrade: true,
             upgrade_option: option,
             coupon_code: couponDetails?.code,
-        }).unwrap().catch(() => { setIsProcessingState(false); });
+        }).unwrap().catch(() => {
+            setIsProcessingState(false);
+        });
     };
 
     const handlePaymentSubmit = (checkoutFormData) => {
         setPaymentDetails(checkoutFormData);
         setIsProcessingState(true);
+        setPaymentStatus(null);
+        setPaymentInitialized(false);
 
         const isUpgradingToPremium =
             userProfile?.plan_type === "pro" &&
@@ -969,10 +959,11 @@ const Checkout = () => {
                 plan_upgrade: false,
                 upgrade_option: "null",
                 coupon_code: couponDetails?.code,
-            }).unwrap().catch(() => { setIsProcessingState(false); });
+            }).unwrap().catch(() => {
+                setIsProcessingState(false);
+            });
         }
     };
-
     const handleCouponApplication = (couponCodeInput, onSuccessCallback) => {
         if (couponCodeInput === null) {
             setCouponDetails(null);
@@ -1057,7 +1048,11 @@ const Checkout = () => {
                                 isOpen={showUpgradeModal}
                                 onClose={() => {
                                     setShowUpgradeModal(false);
-                                    if (!isCreatingOrder && !checkoutOrder) setIsProcessingState(false);
+                                    if (!isCreatingOrder && !checkoutOrder && !isProcessingState && !orderId) {
+                                        setIsProcessingState(false);
+                                    } else if (!isCreatingOrder && !checkoutOrder && isProcessingState && !orderId) {
+                                        setIsProcessingState(false);
+                                    }
                                 }}
                                 onOptionSelect={handleUpgradeOption}
                             />

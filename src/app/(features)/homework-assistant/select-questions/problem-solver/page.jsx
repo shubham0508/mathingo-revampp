@@ -14,21 +14,31 @@ import {
   ChevronLeft,
   ChevronDown,
   Lock,
+  LoaderCircle,
 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   useHaRelatedQuestionsMutation,
   useHaRelatedYoutubeVideosMutation,
+  useHaQuestionExtractionMutation,
+  useHaSolutionExtractionMutation,
 } from '@/store/slices/HA';
+import { setQuestion, setAnswer, resetAnswer, resetQuestion } from '@/store/reducers/HA';
+import { setQuestion as setQuestionAmt, setAnswer as setAnswerAmt } from '@/store/reducers/AMT';
 import Head from 'next/head';
 import Script from 'next/script';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { AuthFlow } from '@/components/auth';
 import { siteConfig } from "@/config/site";
 import { generateMetadata as generatePageMetadata } from '@/config/seo';
 import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
+import { getErrorMessage } from '@/lib/utils';
+import { useAiExtractQuestionMutation } from '@/store/slices/AMT';
+import { useFeedbackVoteMutation } from '@/store/slices/feedback';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -102,7 +112,7 @@ const transformApiResponseToQuestionData = (questionData) => {
     return {
       id: questionData.question_id,
       text: questionData.question,
-      difficulty_level: questionData?.difficulty_level,
+      difficulty_level: questionData?.question_difficulty_level,
       error: questionData.error,
       is_multi_part: false,
       parts: [],
@@ -119,7 +129,7 @@ const transformApiResponseToQuestionData = (questionData) => {
     return {
       id: questionData.question_id,
       text: questionData.question,
-      difficulty_level: questionData?.difficulty_level,
+      difficulty_level: questionData?.question_difficulty_level,
       error: 'Failed to generate solution for this question or solution data is invalid.',
       is_multi_part: false,
       parts: [],
@@ -172,7 +182,7 @@ const transformApiResponseToQuestionData = (questionData) => {
   return {
     id: questionData.question_id,
     text: questionData.question,
-    difficulty_level: questionData?.difficulty_level,
+    difficulty_level: questionData?.question_difficulty_level,
     is_multi_part: isMultiPart,
     parts: processedParts,
     hints: processedParts.flatMap(p => p.hints),
@@ -183,7 +193,6 @@ const transformApiResponseToQuestionData = (questionData) => {
     relatedQuestions: [],
   };
 };
-
 
 const transformYouTubeResponse = (data) => {
   if (!data || !Array.isArray(data)) return [];
@@ -202,17 +211,6 @@ const transformYouTubeResponse = (data) => {
   });
 };
 
-const transformRelatedQuestionsResponse = (data) => {
-  if (!data || !data.response || !data.response.similar_questions) return [];
-  const { hard = [], medium = [], easy = [] } = data.response.similar_questions;
-  const allQuestions = [
-    ...hard.map((q) => ({ id: `hard-${hashString(q)}`, text: q, difficulty: 'Hard' })),
-    ...medium.map((q) => ({ id: `medium-${hashString(q)}`, text: q, difficulty: 'Medium' })),
-    ...easy.map((q) => ({ id: `easy-${hashString(q)}`, text: q, difficulty: 'Easy' })),
-  ];
-  return allQuestions;
-};
-
 const hashString = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -222,6 +220,17 @@ const hashString = (str) => {
   }
   return Math.abs(hash).toString(16).substring(0, 8);
 };
+
+const transformRelatedQuestionsResponse = (responseData) => {
+  if (!responseData || !Array.isArray(responseData.data)) return [];
+
+  return responseData.data.map((qText) => ({
+    id: `related-${hashString(qText)}`,
+    text: qText,
+    difficulty: 'easy',
+  }));
+};
+
 
 export default function HWProblemSolverPage() {
   const answerList = useSelector(
@@ -242,10 +251,22 @@ export default function HWProblemSolverPage() {
   const [questionQueryMade, setQuestionQueryMade] = useState({});
   const [showSigninModal, setShowSigninModal] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [isProcessingRelatedQuestion, setIsProcessingRelatedQuestion] = useState(false);
+
 
   const { data: session } = useSession();
   const isGuestUser = session?.user?.isGuest || false;
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const MODEL_NAME = 'alpha';
 
+
+  const [haQuestionExtraction] = useHaQuestionExtractionMutation();
+  const [haSolutionExtraction] = useHaSolutionExtractionMutation();
+  const [
+    extractQuestionAndAnswers,
+    { data: buddyPromptList, isLoading: isBuddyExtractingApi, error: buddyExtractionApiError }
+  ] = useAiExtractQuestionMutation();
 
   const handleSigninModalClose = () => {
     setShowSigninModal(false);
@@ -259,18 +280,25 @@ export default function HWProblemSolverPage() {
 
   useEffect(() => {
     if (answerList && answerList.length > 0) {
+      const currentAnswerItem = answerList.find(item => item.question_id === currentQuestionId) || answerList[0];
+
+      const activeIndex = answerList.findIndex(item => item.question_id === currentAnswerItem.question_id);
+
       const generatedQuestions = answerList.map((item, index) => ({
         number: `Q${index + 1}.`,
         text: item.question,
-        active: index === 0,
+        active: index === activeIndex,
+        id: item.question_id,
       }));
       setQuestions(generatedQuestions);
 
-      if (answerList[0]) {
-        const formattedData = transformApiResponseToQuestionData(answerList[0]);
+      if (currentAnswerItem) {
+        const formattedData = transformApiResponseToQuestionData(currentAnswerItem);
         if (formattedData) {
           setSelectedQuestion(formattedData);
-          setCurrentQuestionId(formattedData.id);
+          if (!currentQuestionId) {
+            setCurrentQuestionId(formattedData.id);
+          }
           if (formattedData.solution && formattedData.solution.length > 0) {
             setExpandedSteps(formattedData.solution.map((step) => step.step));
           }
@@ -279,8 +307,11 @@ export default function HWProblemSolverPage() {
       setIsLoading(false);
     } else if (answerList) {
       setIsLoading(false);
+      setSelectedQuestion(null);
+      setQuestions([]);
     }
-  }, [answerList]);
+  }, [answerList, currentQuestionId]);
+
 
   const [getRelatedVideos, { data: videosApiData, isLoading: videosLoading }] =
     useHaRelatedYoutubeVideosMutation();
@@ -289,6 +320,7 @@ export default function HWProblemSolverPage() {
     getRelatedQuestions,
     { data: questionsApiData, isLoading: questionsLoading },
   ] = useHaRelatedQuestionsMutation();
+
 
   useEffect(() => {
     if (
@@ -306,7 +338,13 @@ export default function HWProblemSolverPage() {
       }
 
       if (!questionQueryMade[questionId]) {
-        getRelatedQuestions({ query: conceptsQuery, limit: 10, level: 'LEVEL_UP', difficulty_level: selectedQuestion?.difficulty_level, feature: 'HA' });
+        getRelatedQuestions({
+          query: conceptsQuery,
+          limit: 10,
+          level: 'SAME',
+          difficulty_level: selectedQuestion?.difficulty_level,
+          feature: 'HA'
+        });
         setQuestionQueryMade((prev) => ({ ...prev, [questionId]: true }));
       }
     }
@@ -327,7 +365,7 @@ export default function HWProblemSolverPage() {
   useEffect(() => {
     if (selectedQuestion && questionsApiData && questionsApiData.data && !selectedQuestion.error) {
       const formattedQuestions = transformRelatedQuestionsResponse(
-        questionsApiData.data,
+        questionsApiData,
       );
       setSelectedQuestion((prev) => {
         if (prev && prev.id === selectedQuestion.id) {
@@ -338,42 +376,34 @@ export default function HWProblemSolverPage() {
     }
   }, [questionsApiData, selectedQuestion?.id, selectedQuestion?.error]);
 
-  const handleQuestionClick = (index) => {
-    if (questions[index]?.active) return;
-    const updatedQuestions = questions.map((q, i) => ({
+
+  const handleQuestionListItemClick = (index) => {
+    if (questions[index]?.active || !answerList || answerList.length <= index) return;
+
+    const questionData = answerList[index];
+    if (!questionData) return;
+
+    setIsLoading(true);
+
+    const updatedQuestionsUI = questions.map((q, i) => ({
       ...q,
       active: i === index,
     }));
-    setQuestions(updatedQuestions);
-    setIsLoading(true);
+    setQuestions(updatedQuestionsUI);
+
+    setCurrentQuestionId(questionData.question_id);
+
     setSelectedTab('Hints');
     setExpandedExplanation(null);
+    setVideoCarouselIndex(0);
+    setQuestionCarouselIndex(0);
 
-    if (answerList && answerList.length > index) {
-      const questionData = answerList[index];
-      if (questionData) {
-        const formattedData = transformApiResponseToQuestionData(questionData);
-        if (formattedData) {
-          setSelectedQuestion({
-            ...formattedData,
-            relatedVideos: [],
-            relatedQuestions: [],
-          });
-          setCurrentQuestionId(formattedData.id);
-          if (!formattedData.error) {
-            setVideoQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
-            setQuestionQueryMade((prev) => ({ ...prev, [formattedData.id]: false }));
-          }
-          if (formattedData.solution && formattedData.solution.length > 0) {
-            setExpandedSteps(formattedData.solution.map((step) => step.step));
-          } else {
-            setExpandedSteps([]);
-          }
-        }
-      }
-    }
-    setIsLoading(false);
+    setSelectedQuestion(prev => prev ? { ...prev, relatedVideos: [], relatedQuestions: [] } : null);
+
+    setVideoQueryMade((prev) => ({ ...prev, [questionData.question_id]: false }));
+    setQuestionQueryMade((prev) => ({ ...prev, [questionData.question_id]: false }));
   };
+
 
   const toggleExplanation = (stepId) => {
     if (expandedExplanation === stepId) {
@@ -389,10 +419,63 @@ export default function HWProblemSolverPage() {
   };
 
   const handleCopyClick = () => {
-    navigator.clipboard.writeText(selectedQuestion?.answer || '');
-  };
+    if (!selectedQuestion) return;
 
-  const handleFeedback = (isPositive) => {
+    let textToCopy = '';
+    const { parts, is_multi_part, solution, answer: finalAnswer, hints, concepts: allConcepts } = selectedQuestion;
+
+    switch (selectedTab) {
+      case 'Hints':
+        if (is_multi_part) {
+          textToCopy = parts.map(part =>
+            (part.question_number ? `Part ${part.question_number}:\n` : '') +
+            (part.hints.length > 0 ? part.hints.map(h => `  • ${h}`).join('\n') : "  No hints for this part.")
+          ).join('\n\n');
+        } else {
+          textToCopy = hints.length > 0 ? hints.map(h => `• ${h}`).join('\n') : "No hints available.";
+        }
+        break;
+      case 'Concepts':
+        if (is_multi_part) {
+          textToCopy = parts.map(part =>
+            (part.question_number ? `Part ${part.question_number}:\n` : '') +
+            (part.concepts.length > 0 ? part.concepts.map(c => `  • ${c}`).join('\n') : "  No concepts for this part.")
+          ).join('\n\n');
+        } else {
+          textToCopy = allConcepts.length > 0 ? allConcepts.map(c => `• ${c}`).join('\n') : "No concepts available.";
+        }
+        break;
+      case 'Answer':
+        textToCopy = finalAnswer;
+        break;
+      case 'Solution':
+        let currentPartNumSolution = null;
+        textToCopy = solution.map(stepObj => {
+          let stepStr = "";
+          if (is_multi_part && stepObj.question_part_number && stepObj.question_part_number !== currentPartNumSolution) {
+            stepStr += `Part ${stepObj.question_part_number}:\n`;
+            currentPartNumSolution = stepObj.question_part_number;
+          }
+          stepStr += `Step ${stepObj.step_id_global}: ${stepObj.title}\n`;
+          if (stepObj.sub_steps_array && stepObj.sub_steps_array.length > 0) {
+            stepStr += stepObj.sub_steps_array.map(s => `  • ${s}`).join('\n') + "\n";
+          }
+          if (stepObj.explanation) {
+            stepStr += `  Explanation: ${stepObj.explanation}\n`;
+          }
+          return stepStr.trim();
+        }).join('\n\n').trim();
+        break;
+      default:
+        textToCopy = finalAnswer;
+    }
+
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      toast.success("Copied to clipboard!");
+    } else {
+      toast.error("Nothing to copy for this tab.");
+    }
   };
 
   const nextVideoCarousel = () => {
@@ -447,6 +530,133 @@ export default function HWProblemSolverPage() {
       );
     }
   };
+
+  const extractQuestionDetailsFromExtraction = (extractionData) => {
+    if (!extractionData?.files || extractionData.files.length === 0) return [];
+    return extractionData.files.flatMap(file =>
+      file.pages.flatMap(page =>
+        page.questions.map(qText => ({
+          question_id: page.question_id,
+          question_text: qText,
+          file_url: file.file_url,
+          file_type: file.file_type,
+          difficulty_level: page.question_difficulty_level || 'easy',
+          all_questions_on_page: page.questions,
+        }))
+      )
+    );
+  };
+
+  const handleRelatedQuestionItemClick = async (questionText) => {
+    if (isProcessingRelatedQuestion) return;
+    setIsProcessingRelatedQuestion(true);
+    dispatch(resetAnswer());
+    dispatch(resetQuestion());
+    const toastId = toast.loading('Processing related question...', { id: 'related-q-process' });
+
+    try {
+      const extractionResponse = await haQuestionExtraction({
+        model_name: MODEL_NAME,
+        inputs: [{ data: questionText, input_type: 'text', file_url: 'no_input' }],
+      }).unwrap();
+
+      if (extractionResponse?.status_code === 201 && extractionResponse.data) {
+        const extractedQuestions = extractQuestionDetailsFromExtraction(extractionResponse.data);
+
+        if (extractedQuestions.length > 1) {
+          dispatch(setQuestion(extractionResponse.data));
+          router.push('/homework-assistant/select-questions');
+          toast.success('Multiple questions found. Please select one.', { id: toastId });
+        } else if (extractedQuestions.length === 1) {
+          const singleExtractedQ = extractedQuestions[0];
+          const solutionPayload = {
+            model_name: MODEL_NAME,
+            inputs: [
+              {
+                question_id: singleExtractedQ.question_id,
+                questions_selected: singleExtractedQ.all_questions_on_page,
+                question_url: singleExtractedQ.file_url || 'no_input',
+                difficulty_level: singleExtractedQ.difficulty_level,
+              },
+            ],
+          };
+
+          const solutionResponse = await haSolutionExtraction(solutionPayload).unwrap();
+          if (solutionResponse?.status_code === 201 && solutionResponse.data) {
+            dispatch(setQuestion(extractionResponse.data));
+            dispatch(setAnswer(solutionResponse.data));
+            setCurrentQuestionId(solutionResponse.data[0]?.question_id);
+            router.push('/homework-assistant/select-questions/problem-solver');
+            toast.success('Solution ready!', { id: toastId });
+          } else {
+            throw new Error(solutionResponse?.error?.[0] || 'Failed to get solution for related question.');
+          }
+        } else {
+          toast.error('No questions were found in the related item.', { id: toastId });
+        }
+      } else {
+        throw new Error(extractionResponse?.error?.[0] || 'Failed to process related question.');
+      }
+    } catch (error) {
+      console.error('Related question processing error:', error);
+      const errorMessage = getErrorMessage(error?.data?.error || error.message);
+      toast.error(errorMessage || 'Failed to process related question.', { id: toastId });
+    } finally {
+      setIsProcessingRelatedQuestion(false);
+    }
+  };
+
+  const handleTryWithBuddy = async () => {
+    if (!selectedQuestion || !selectedQuestion.text || isBuddyExtractingApi) return;
+    const questionText = selectedQuestion.text;
+    toast.loading('Processing your question for AI Math Tutor...', { id: 'buddy-extraction-toast' });
+    try {
+      await extractQuestionAndAnswers({ model_name: 'alpha', inputs: [{ data: questionText, input_type: 'text', file_url: 'no_file_text_input' }] }).unwrap();
+    } catch (error) {
+      console.error('AI Tutor question processing initiation error:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (buddyPromptList) {
+      toast.dismiss('buddy-extraction-toast');
+      if (buddyPromptList?.status_code === 201) {
+        dispatch(setQuestionAmt(buddyPromptList?.data));
+        if (
+          buddyPromptList?.data?.files?.length === 1 &&
+          buddyPromptList?.data?.files[0]?.pages[0]?.questions?.length === 1
+        ) {
+          dispatch(
+            setAnswerAmt({
+              fileId: buddyPromptList?.data?.files[0]?.file_id,
+              question: buddyPromptList?.data?.files[0]?.pages[0]?.questions,
+              question_url: buddyPromptList?.data?.files[0]?.file_url || 'no_input',
+              question_difficulty_level: buddyPromptList?.data?.files[0]?.pages[0]?.question_difficulty_level,
+              question_id: buddyPromptList?.data?.files[0]?.pages[0]?.question_id
+            })
+          );
+          router.push("/ai-math-tutor/select-questions/ai-tutor-solution");
+        } else {
+          router.push("/ai-math-tutor/select-questions");
+        }
+        toast.success('Analysis complete! Redirecting to AI Math Tutor...', { duration: 2000 });
+      } else if (buddyPromptList?.status_code === 200 && buddyPromptList?.error_code === "E001") {
+        const errorMsg = buddyPromptList.error?.[0] || "Please provide valid math questions only";
+        toast.error(errorMsg);
+      } else if (buddyPromptList?.status_code === 200 && buddyPromptList?.error_code === "E002") {
+        const errorMsg = buddyPromptList.error?.[0] || "An issue occurred with your input.";
+        toast.error(errorMsg);
+      } else {
+        toast.error(buddyPromptList?.message || "Something went wrong with AI Tutor! Please try again later");
+      }
+    }
+    if (buddyExtractionApiError) {
+      toast.dismiss('buddy-extraction-toast');
+      const errorMessage = getErrorMessage(buddyExtractionApiError?.data?.error);
+      toast.error(errorMessage || "Failed to process question for AI Tutor. Please try again.");
+    }
+  }, [buddyPromptList, buddyExtractionApiError, dispatch, router]);
+
 
   const iconMap = {
     Hints: {
@@ -543,7 +753,7 @@ export default function HWProblemSolverPage() {
   const metadata = generatePageMetadata({
     title: metadataTitle,
     description: metadataDescription,
-    url: pageUrl + (selectedQuestion?.id ? `?qid=${selectedQuestion.id}` : ''), // Add QID if available
+    url: pageUrl + (selectedQuestion?.id ? `?qid=${selectedQuestion.id}` : ''),
   });
 
   const learningResourceSchema = {
@@ -566,7 +776,7 @@ export default function HWProblemSolverPage() {
       ...(selectedQuestion.answer && {
         "hasPart": {
           "@type": "Answer",
-          "text": selectedQuestion.answer.substring(0, 250).replace(/"/g, '\\"') + "..." // Truncate for schema
+          "text": selectedQuestion.answer.substring(0, 250).replace(/"/g, '\\"') + "..."
         }
       })
     })
@@ -635,18 +845,17 @@ export default function HWProblemSolverPage() {
           {questions.length > 1 && (
             <HomeworkQuestionsSection
               questions={questions}
-              onQuestionClick={handleQuestionClick}
+              onQuestionClick={handleQuestionListItemClick}
             />
           )}
 
-          {selectedQuestion && !isLoading && (
+          {selectedQuestion && !isLoading && !isProcessingRelatedQuestion && (
             <HomeworkAssistantSection
               question={selectedQuestion}
               selectedTab={selectedTab}
               onTabChange={handleOptionClick}
               onToggleExplanation={toggleExplanation}
               onCopy={handleCopyClick}
-              onFeedback={handleFeedback}
               videoCarouselIndex={videoCarouselIndex}
               questionCarouselIndex={questionCarouselIndex}
               nextVideoCarousel={nextVideoCarousel}
@@ -664,20 +873,25 @@ export default function HWProblemSolverPage() {
               isGuestUser={isGuestUser}
               onUnlock={handleUnlockClick}
               isUnlocking={isUnlocking}
+              onRelatedQuestionClick={handleRelatedQuestionItemClick}
+              isProcessingRelatedQuestion={isProcessingRelatedQuestion}
+              onTryWithBuddy={handleTryWithBuddy}
+              isBuddyProcessing={isBuddyExtractingApi}
+              session={session}
             />
           )}
 
-          {isLoading && (
-            <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
-              <div className="text-xl font-medium text-gray-600">Loading...</div>
-            </div>
-          )}
-          {!isLoading && !selectedQuestion && (
-            <div className={`flex items-center justify-center ${assistantLayoutClass}`}>
-              <div className="text-xl font-medium text-gray-600">No question selected or available.</div>
+          {(isProcessingRelatedQuestion || isLoading || (!isProcessingRelatedQuestion && !isLoading && questions.length === 0 && !selectedQuestion)) && (
+            <div className={`flex items-center justify-center ${assistantLayoutClass} min-h-[400px]`}>
+              {(isProcessingRelatedQuestion || isLoading) ? (
+                <LoaderCircle className="w-12 h-12 animate-spin text-primary" />
+              ) : (
+                <div className="text-xl font-medium text-gray-600">No question selected or available.</div>
+              )}
             </div>
           )}
         </div>
+
         {showSigninModal && (
           <AuthFlow
             initialStep="signIn"
@@ -697,7 +911,6 @@ function HomeworkAssistantSection({
   onTabChange,
   onToggleExplanation,
   onCopy,
-  onFeedback,
   videoCarouselIndex,
   questionCarouselIndex,
   nextVideoCarousel,
@@ -715,6 +928,11 @@ function HomeworkAssistantSection({
   isGuestUser,
   onUnlock,
   isUnlocking: isUnlockingProp,
+  onRelatedQuestionClick,
+  isProcessingRelatedQuestion,
+  onTryWithBuddy,
+  isBuddyProcessing,
+  session,
 }) {
   const displayedVideos =
     question.relatedVideos?.slice(videoCarouselIndex, videoCarouselIndex + 3) ||
@@ -760,7 +978,13 @@ function HomeworkAssistantSection({
     downvoted: false,
   });
 
+  const [feedbackVote, { isLoading: isVoting }] = useFeedbackVoteMutation();
+
   const handleCopyClickInternal = () => {
+    if (isGuestUser) {
+      onUnlock();
+      return;
+    }
     onCopy();
     setActionStates((prev) => ({ ...prev, copied: true }));
     setTimeout(
@@ -769,14 +993,41 @@ function HomeworkAssistantSection({
     );
   };
 
-  const handleFeedbackInternal = (isPositive) => {
-    onFeedback(isPositive);
+  const handleFeedbackInternal = async (isPositive) => {
+    if (isGuestUser) {
+      onUnlock();
+      return;
+    }
+    if (isVoting) return;
+
+    if (!session?.user?.id || !question?.id) {
+      toast.error("Cannot submit feedback now. Please ensure you are logged in.");
+      return;
+    }
+
+    const voteType = isPositive ? 'up' : 'down';
+    const originalActionStates = { ...actionStates };
+
     if (isPositive) {
-      setActionStates((prev) => ({ ...prev, upvoted: !prev.upvoted, downvoted: false }));
+      setActionStates(prev => ({ ...prev, upvoted: !prev.upvoted, downvoted: false }));
     } else {
-      setActionStates((prev) => ({ ...prev, downvoted: !prev.downvoted, upvoted: false }));
+      setActionStates(prev => ({ ...prev, downvoted: !prev.downvoted, upvoted: false }));
+    }
+
+    try {
+      await feedbackVote({
+        user_id: session.user.id,
+        question_id: question.id,
+        vote_type: voteType,
+        feature_type: "HA_ANSWER"
+      }).unwrap();
+      toast.success("Feedback submitted successfully!");
+    } catch (error) {
+      toast.error(getErrorMessage(error?.data?.error || error.message) || "Failed to submit feedback.");
+      setActionStates(originalActionStates);
     }
   };
+
 
   if (question.error) {
     return (
@@ -800,20 +1051,28 @@ function HomeworkAssistantSection({
       animate="visible"
       exit="exit"
     >
-      <div className="space-y-8">
+      <div className="space-y-4">
         <div className="flex justify-end items-end">
-          <Button className="bg-primary hover:bg-action-buttons-hover text-white">
-            <Image
-              src="/images/icons/math_tutor.png"
-              width={24}
-              height={24}
-              alt="Math Tutor"
-              className="mr-2"
-            />{' '}
-            Try it Live with Buddy
+          <Button
+            className="bg-primary hover:bg-action-buttons-hover text-white"
+            onClick={onTryWithBuddy}
+            disabled={isBuddyProcessing || isVoting}
+          >
+            {isBuddyProcessing ? (
+              <LoaderCircle className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Image
+                src="/images/icons/math_tutor.png"
+                width={24}
+                height={24}
+                alt="AI Math Tutor Buddy"
+                className="mr-2"
+              />
+            )}
+            {isBuddyProcessing ? 'Processing...' : 'Try it Live with Buddy'}
           </Button>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <motion.h1
             className="text-xl font-extrabold text-gray-900"
             initial={{ opacity: 0 }}
@@ -1094,13 +1353,14 @@ function HomeworkAssistantSection({
           </AnimatePresence>
         </div>
         {!isCurrentTabRestricted && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-2">
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label="Copy answer"
                 title="Copy"
+                disabled={actionStates.copied}
               >
                 <motion.div
                   whileHover={{ scale: 1.15, y: -2 }}
@@ -1123,6 +1383,7 @@ function HomeworkAssistantSection({
                 size="icon"
                 aria-label="Dislike"
                 title="Dislike"
+                disabled={isVoting}
               >
                 <motion.div
                   whileHover={{ scale: 1.15, y: -2 }}
@@ -1140,7 +1401,7 @@ function HomeworkAssistantSection({
                 </motion.div>
               </Button>
 
-              <Button variant="ghost" size="icon" aria-label="Like" title="Like">
+              <Button variant="ghost" size="icon" aria-label="Like" title="Like" disabled={isVoting}>
                 <motion.div
                   whileHover={{ scale: 1.15, y: -2 }}
                   whileTap={{ scale: 0.95, y: 0 }}
@@ -1288,26 +1549,17 @@ function HomeworkAssistantSection({
                   {displayedQuestions.map((relatedQ) => (
                     <motion.div
                       key={`related-q-${relatedQ.id}`}
-                      className="p-4 bg-secondary-background rounded-lg border border-gray-200 hover:accent-action-buttons-hover cursor-pointer"
-                      whileHover={{ scale: 1.02, backgroundColor: '#EEF2FF' }}
+                      className={`p-10 bg-secondary-background rounded-lg border border-gray-200 hover:accent-action-buttons-hover ${isProcessingRelatedQuestion ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      whileHover={{ scale: isProcessingRelatedQuestion ? 1 : 1.02, backgroundColor: isProcessingRelatedQuestion ? '#EEF2FF' : '#E0E7FF' }}
                       transition={{
                         type: 'spring',
                         stiffness: 400,
                         damping: 10,
                       }}
+                      onClick={() => !isProcessingRelatedQuestion && onRelatedQuestionClick(relatedQ.text)}
                     >
                       <div className="flex flex-col items-center text-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${relatedQ.difficulty === 'Hard'
-                            ? 'bg-red-100 text-red-800'
-                            : relatedQ.difficulty === 'Medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
-                            }`}
-                        >
-                          {relatedQ.difficulty}
-                        </span>
-                        <Latex className="font-medium">
+                        <Latex className="font-medium text-sm">
                           {relatedQ.text || ''}
                         </Latex>
                       </div>
@@ -1381,7 +1633,7 @@ function HomeworkQuestionsSection({ questions, onQuestionClick }) {
       >
         {questions.map((question, index) => (
           <motion.div
-            key={`question-${index}`}
+            key={`question-${index}-${question.id}`}
             className={`flex items-start gap-2 cursor-pointer p-3 rounded-lg relative ${question.active ? 'text-primary' : 'hover:bg-gray-50'
               }`}
             onClick={() => onQuestionClick(index)}
@@ -1395,12 +1647,12 @@ function HomeworkQuestionsSection({ questions, onQuestionClick }) {
                 {question.number}
               </p>
               <Latex
-                className={`text-base font-medium ${question.active ? 'text-primary' : 'text-gray-700'}`}
+                className={`text-base font-medium line-clamp-2 ${question.active ? 'text-primary' : 'text-gray-700'}`}
               >
                 {question.text || ''}
               </Latex>
             </div>
-            {question.active && <ChevronsLeft className="w-7 h-7 text-black" />}
+            {question.active && <ChevronsLeft className="w-7 h-7 text-black shrink-0" />}
           </motion.div>
         ))}
       </motion.div>

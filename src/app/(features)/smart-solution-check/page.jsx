@@ -4,53 +4,41 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Camera,
+    ChevronRight,
     Upload,
     X,
     Trash2,
     LoaderCircle,
-    CheckCircle,
-    XCircle,
 } from 'lucide-react';
-import Head from 'next/head';
+import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
+import {
+    useSscQNAExtractionMutation,
+    useSscExtractTextMutation,
+} from '@/store/slices/SSC';
 import { createFileData, validateFile } from '@/lib/fileUtils';
 import MathKeyboard from '@/components/shared/SuperInputBox/math-keyboard';
 import FilePreviews from '@/components/shared/SuperInputBox/file-previews';
+import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
+import { getErrorMessage } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-export default function SmartSolutionCheckPage() {
-    const examples = [
-        {
-            question: 'Find the integral of 2x + 4',
-            answer: 'x² + 4x + C'
-        },
-        {
-            question: 'Factor: x² - 5x + 6',
-            answer: '(x - 2)(x - 3)'
-        },
-        {
-            question: 'Derivative of 2x³ + 4x',
-            answer: '6x² + 4'
-        },
-        {
-            question: 'Solve: 2x + 8 = 16',
-            answer: 'x = 4'
-        }
-    ];
-
+export default function SmartSolutionCheck() {
     const [questionText, setQuestionText] = useState('');
     const [answerText, setAnswerText] = useState('');
     const [questionFiles, setQuestionFiles] = useState([]);
     const [answerFiles, setAnswerFiles] = useState([]);
-    const [questionIsDragging, setQuestionIsDragging] = useState(false);
-    const [answerIsDragging, setAnswerIsDragging] = useState(false);
-    const [showQuestionMathKeyboard, setShowQuestionMathKeyboard] = useState(false);
-    const [showAnswerMathKeyboard, setShowAnswerMathKeyboard] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [activeDropArea, setActiveDropArea] = useState(null);
+    const [showMathKeyboard, setShowMathKeyboard] = useState(false);
     const [activeTab, setActiveTab] = useState('ΣΠ');
     const [activeField, setActiveField] = useState(null);
     const [initialized, setInitialized] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [containsAnswers, setContainsAnswers] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
+    const [showAnswerInput, setShowAnswerInput] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
+    const [dialogShownForSession, setDialogShownForSession] = useState(false);
+    const [currentInputType, setCurrentInputType] = useState('question');
 
     const questionFileInputRef = useRef(null);
     const answerFileInputRef = useRef(null);
@@ -61,6 +49,13 @@ export default function SmartSolutionCheckPage() {
     const questionEditorRef = useRef(null);
     const answerEditorRef = useRef(null);
     const MQRef = useRef(null);
+
+    const [sscQNAExtraction] = useSscQNAExtractionMutation();
+    const [sscExtractText] = useSscExtractTextMutation();
+    const { ensureAuthenticated } = useGuestUserAuth();
+    const router = useRouter();
+    const dispatch = useDispatch();
+    const MODEL_NAME = 'alpha';
 
     const fadeIn = {
         hidden: { opacity: 0, y: 20 },
@@ -76,39 +71,30 @@ export default function SmartSolutionCheckPage() {
         hover: { scale: 1.05, transition: { duration: 0.2 } },
     };
 
-    const staggerChildren = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1,
-            },
-        },
-    };
+    const hasQuestionContent = questionText.trim().length > 0 || questionFiles.length > 0;
+    const hasAnswerContent = answerText.trim().length > 0 || answerFiles.length > 0;
+    const canProceed = hasQuestionContent && (showAnswerInput ? hasAnswerContent : true);
 
     useEffect(() => {
         const loadMathQuill = async () => {
             if (typeof window === 'undefined' || initialized) return;
 
             const jqueryScript = document.createElement('script');
-            jqueryScript.src =
-                'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
+            jqueryScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
             jqueryScript.async = true;
             jqueryScript.crossOrigin = 'anonymous';
             document.body.appendChild(jqueryScript);
 
             jqueryScript.onload = () => {
                 const mathquillScript = document.createElement('script');
-                mathquillScript.src =
-                    'https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js';
+                mathquillScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js';
                 mathquillScript.async = true;
                 mathquillScript.crossOrigin = 'anonymous';
                 document.body.appendChild(mathquillScript);
 
                 const mathquillCSS = document.createElement('link');
                 mathquillCSS.rel = 'stylesheet';
-                mathquillCSS.href =
-                    'https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css';
+                mathquillCSS.href = 'https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css';
                 document.head.appendChild(mathquillCSS);
 
                 mathquillScript.onload = initEditor;
@@ -126,6 +112,12 @@ export default function SmartSolutionCheckPage() {
         document.addEventListener('click', handleClick);
         return () => document.removeEventListener('click', handleClick);
     }, [initialized]);
+
+    useEffect(() => {
+        if (hasQuestionContent && !showAnswerInput && !showDialog && !dialogShownForSession) {
+            setShowDialog(true);
+        }
+    }, [hasQuestionContent, showAnswerInput, showDialog, dialogShownForSession]);
 
     const initEditor = useCallback(() => {
         if (typeof window !== 'undefined' && window.MathQuill) {
@@ -145,10 +137,9 @@ export default function SmartSolutionCheckPage() {
     const handleEditorInput = useCallback((type) => {
         updateContent(type);
         const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        const setShowKeyboard = type === 'question' ? setShowQuestionMathKeyboard : setShowAnswerMathKeyboard;
-
         if (editorRef.current && editorRef.current.textContent.trim().length > 0) {
-            setShowKeyboard(true);
+            setShowMathKeyboard(true);
+            setCurrentInputType(type);
         }
     }, []);
 
@@ -173,56 +164,54 @@ export default function SmartSolutionCheckPage() {
         setText(fullContent.trim());
     }, []);
 
-    const placeCaretAfter = useCallback((node, editorRef) => {
+    const placeCaretAfter = useCallback((node, type) => {
         const range = document.createRange();
         const sel = window.getSelection();
         range.setStartAfter(node);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
         if (editorRef.current) editorRef.current.focus();
     }, []);
 
-    const insertMathFieldAtCaret = useCallback(
-        (latex = '', type) => {
-            const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-            const editor = editorRef.current;
-            if (!editor || !MQRef.current) return;
+    const insertMathFieldAtCaret = useCallback((latex = '', type) => {
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+        const editor = editorRef.current;
+        if (!editor || !MQRef.current) return;
 
-            const span = document.createElement('span');
-            span.className = 'math-field';
-            span.setAttribute('contenteditable', 'false');
+        const span = document.createElement('span');
+        span.className = 'math-field';
+        span.setAttribute('contenteditable', 'false');
 
-            const innerSpan = document.createElement('span');
-            span.appendChild(innerSpan);
+        const innerSpan = document.createElement('span');
+        span.appendChild(innerSpan);
 
-            const mathField = MQRef.current.MathField(innerSpan, {
-                handlers: {
-                    edit: () => {
-                        setActiveField(mathField);
-                        updateContent(type);
-                    },
+        const mathField = MQRef.current.MathField(innerSpan, {
+            handlers: {
+                edit: () => {
+                    setActiveField(mathField);
+                    updateContent(type);
                 },
-            });
+            },
+        });
 
-            mathField.latex(latex);
-            setActiveField(mathField);
+        mathField.latex(latex);
+        setActiveField(mathField);
 
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(span);
-                placeCaretAfter(span, editorRef);
-            } else {
-                editor.appendChild(span);
-                placeCaretAfter(span, editorRef);
-            }
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(span);
+            placeCaretAfter(span, type);
+        } else {
+            editor.appendChild(span);
+            placeCaretAfter(span, type);
+        }
 
-            updateContent(type);
-        },
-        [updateContent, placeCaretAfter],
-    );
+        updateContent(type);
+    }, [updateContent, placeCaretAfter]);
 
     const handleEditorKeyDown = (e, type) => {
         if (e.key === '`' || e.key === '$' || e.key === '\\') {
@@ -231,139 +220,137 @@ export default function SmartSolutionCheckPage() {
         }
     };
 
-    const insertSymbol = useCallback(
-        (symbol, type) => {
-            if (activeField && document.activeElement.closest('.math-field')) {
-                if (symbol.startsWith('\\')) {
-                    activeField.write(symbol);
-                } else {
-                    activeField.typedText(symbol);
-                }
-                activeField.focus();
+    const insertSymbol = useCallback((symbol) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            if (symbol.startsWith('\\')) {
+                activeField.write(symbol);
             } else {
-                insertMathFieldAtCaret(symbol, type);
+                activeField.typedText(symbol);
             }
-            updateContent(type);
-        },
-        [activeField, insertMathFieldAtCaret, updateContent],
-    );
+            activeField.focus();
+        } else {
+            insertMathFieldAtCaret(symbol, currentInputType);
+        }
+        updateContent(currentInputType);
+    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
 
-    const insertCommand = useCallback(
-        (cmd, type) => {
-            if (activeField && document.activeElement.closest('.math-field')) {
-                switch (cmd) {
-                    case 'frac':
-                        activeField.cmd('\\frac');
-                        break;
-                    case 'sqrt':
-                        activeField.cmd('\\sqrt');
-                        break;
-                    case 'nthroot':
-                        activeField.cmd('\\nthroot');
-                        break;
-                    case 'times':
-                        activeField.cmd('\\times');
-                        break;
-                    case 'div':
-                        activeField.cmd('\\div');
-                        break;
-                    default:
-                        activeField.cmd('\\' + cmd);
-                }
-                activeField.focus();
-            } else {
-                const cmdLatex =
-                    cmd === 'frac'
-                        ? '\\frac{}{}'
-                        : cmd === 'sqrt'
-                            ? '\\sqrt{}'
-                            : cmd === 'nthroot'
-                                ? '\\sqrt[]{}'
-                                : cmd === 'times'
-                                    ? '\\times'
-                                    : cmd === 'div'
-                                        ? '\\div'
-                                        : `\\${cmd}`;
-                insertMathFieldAtCaret(cmdLatex, type);
+    const insertCommand = useCallback((cmd) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            switch (cmd) {
+                case 'frac':
+                    activeField.cmd('\\frac');
+                    break;
+                case 'sqrt':
+                    activeField.cmd('\\sqrt');
+                    break;
+                case 'nthroot':
+                    activeField.cmd('\\nthroot');
+                    break;
+                case 'times':
+                    activeField.cmd('\\times');
+                    break;
+                case 'div':
+                    activeField.cmd('\\div');
+                    break;
+                default:
+                    activeField.cmd('\\' + cmd);
             }
-            updateContent(type);
-        },
-        [activeField, insertMathFieldAtCaret, updateContent],
-    );
+            activeField.focus();
+        } else {
+            const cmdLatex = cmd === 'frac' ? '\\frac{}{}' : cmd === 'sqrt' ? '\\sqrt{}' : cmd === 'nthroot' ? '\\sqrt[]{}' : cmd === 'times' ? '\\times' : cmd === 'div' ? '\\div' : `\\${cmd}`;
+            insertMathFieldAtCaret(cmdLatex, currentInputType);
+        }
+        updateContent(currentInputType);
+    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
 
-    const insertExponent = useCallback(
-        (exp, type) => {
-            if (activeField && document.activeElement.closest('.math-field')) {
-                activeField.typedText(exp === '^2' ? '^2' : '^');
-                activeField.focus();
-            } else {
-                insertMathFieldAtCaret(exp === '^2' ? 'x^2' : 'x^{}', type);
-            }
-            updateContent(type);
-        },
-        [activeField, insertMathFieldAtCaret, updateContent],
-    );
+    const insertExponent = useCallback((exp) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            activeField.typedText(exp === '^2' ? '^2' : '^');
+            activeField.focus();
+        } else {
+            insertMathFieldAtCaret(exp === '^2' ? 'x^2' : 'x^{}', currentInputType);
+        }
+        updateContent(currentInputType);
+    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
 
-    const insertSubscript = useCallback((type) => {
+    const insertSubscript = useCallback(() => {
         if (activeField && document.activeElement.closest('.math-field')) {
             activeField.typedText('_');
             activeField.focus();
         } else {
-            insertMathFieldAtCaret('x_{}', type);
+            insertMathFieldAtCaret('x_{}', currentInputType);
         }
-        updateContent(type);
-    }, [activeField, insertMathFieldAtCaret, updateContent]);
+        updateContent(currentInputType);
+    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
 
-    const insertComplexExpression = useCallback(
-        (latexTemplate, type) => {
-            if (activeField && document.activeElement.closest('.math-field')) {
-                activeField.write(latexTemplate);
-                activeField.focus();
-            } else {
-                insertMathFieldAtCaret(latexTemplate, type);
-            }
-            updateContent(type);
-        },
-        [activeField, insertMathFieldAtCaret, updateContent],
-    );
+    const insertComplexExpression = useCallback((latexTemplate) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            activeField.write(latexTemplate);
+            activeField.focus();
+        } else {
+            insertMathFieldAtCaret(latexTemplate, currentInputType);
+        }
+        updateContent(currentInputType);
+    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
 
-    const handleFileUpload = useCallback(
-        (e, type) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
+    const handleFileUpload = useCallback((e, type) => {
+        const newFiles = Array.from(e.target.files || []);
+        if (newFiles.length === 0) return;
 
+        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
+        const files = type === 'question' ? questionFiles : answerFiles;
+        const text = type === 'question' ? questionText : answerText;
+        const setText = type === 'question' ? setQuestionText : setAnswerText;
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+
+        if (files.length + newFiles.length > 1) {
+            toast.error('Maximum 1 file can be uploaded');
+            return;
+        }
+
+        const validFiles = newFiles.filter((file) => {
             const validation = validateFile(file);
             if (!validation.isValid) {
-                Object.values(validation.errors).forEach((error) => toast.error(error));
-                return;
+                Object.values(validation.errors).forEach((error) => toast.error(String(error)));
+                return false;
             }
+            return true;
+        });
 
-            if (!file.type.startsWith('image/')) {
-                toast.error('Only image files are allowed');
-                return;
-            }
+        if (validFiles.length === 0) return;
 
-            const fileData = createFileData(file);
-            const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-            const setText = type === 'question' ? setQuestionText : setAnswerText;
-            const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+        const filesData = validFiles.map((file) => createFileData(file));
+        setFiles((prev) => [...prev, ...filesData]);
 
-            setFiles([fileData]);
+        if (text.trim().length > 0) {
+            setText('');
+            if (editorRef.current) editorRef.current.innerHTML = '';
+        }
+    }, [questionFiles, answerFiles, questionText, answerText]);
 
-            if ((type === 'question' ? questionText : answerText).trim().length > 0) {
-                setText('');
-                if (editorRef.current) editorRef.current.innerHTML = '';
-            }
-        },
-        [questionText, answerText],
-    );
+    const handleCameraInput = useCallback((e, type) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-    const handleCameraInput = useCallback(
-        (e, type) => {
-            handleFileUpload(e, type);
-        },
-        [handleFileUpload],
-    );
+        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
+        const text = type === 'question' ? questionText : answerText;
+        const setText = type === 'question' ? setQuestionText : setAnswerText;
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+
+        const validation = validateFile(file);
+        if (!validation.isValid) {
+            Object.values(validation.errors).forEach((error) => toast.error(String(error)));
+            return;
+        }
+
+        const fileData = createFileData(file);
+        setFiles((prev) => [...prev, fileData]);
+
+        if (text.trim().length > 0) {
+            setText('');
+            if (editorRef.current) editorRef.current.innerHTML = '';
+        }
+    }, [questionText, answerText]);
 
     const triggerFileInput = useCallback((type) => {
         const inputRef = type === 'question' ? questionFileInputRef : answerFileInputRef;
@@ -377,13 +364,11 @@ export default function SmartSolutionCheckPage() {
 
     const removeFile = useCallback((fileId, type) => {
         const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-        setFiles([]);
+        setFiles((prev) => prev.filter((file) => file.id !== fileId));
     }, []);
 
-    const toggleMathKeyboard = (type) => {
-        const setShowKeyboard = type === 'question' ? setShowQuestionMathKeyboard : setShowAnswerMathKeyboard;
-        const showKeyboard = type === 'question' ? showQuestionMathKeyboard : showAnswerMathKeyboard;
-        setShowKeyboard(!showKeyboard);
+    const toggleMathKeyboard = () => {
+        setShowMathKeyboard(!showMathKeyboard);
     };
 
     const handleClear = (type) => {
@@ -398,9 +383,8 @@ export default function SmartSolutionCheckPage() {
         setFiles([]);
     };
 
-    const setupDragAndDrop = useCallback((type) => {
+    const setupDropHandlers = useCallback((type) => {
         const dropAreaRef = type === 'question' ? questionDropAreaRef : answerDropAreaRef;
-        const setIsDragging = type === 'question' ? setQuestionIsDragging : setAnswerIsDragging;
         const files = type === 'question' ? questionFiles : answerFiles;
         const text = type === 'question' ? questionText : answerText;
         const setText = type === 'question' ? setQuestionText : setAnswerText;
@@ -414,36 +398,43 @@ export default function SmartSolutionCheckPage() {
             e.preventDefault();
             e.stopPropagation();
             setIsDragging(true);
+            setActiveDropArea(type);
         };
 
         const handleDragLeave = (e) => {
             e.preventDefault();
             e.stopPropagation();
             setIsDragging(false);
+            setActiveDropArea(null);
         };
 
         const handleDrop = (e) => {
             e.preventDefault();
             e.stopPropagation();
             setIsDragging(false);
+            setActiveDropArea(null);
 
             const droppedFiles = Array.from(e.dataTransfer?.files || []);
             if (droppedFiles.length === 0) return;
 
-            const file = droppedFiles[0];
-            if (!file.type.startsWith('image/')) {
-                toast.error('Only image files are allowed');
+            if (files.length + droppedFiles.length > 1) {
+                toast.error('Maximum 1 file can be uploaded');
                 return;
             }
 
-            const validation = validateFile(file);
-            if (!validation.isValid) {
-                Object.values(validation.errors).forEach((error) => toast.error(error));
-                return;
-            }
+            const validFiles = droppedFiles.filter((file) => {
+                const validation = validateFile(file);
+                if (!validation.isValid) {
+                    Object.values(validation.errors).forEach((error) => toast.error(String(error)));
+                    return false;
+                }
+                return true;
+            });
 
-            const fileData = createFileData(file);
-            setFiles([fileData]);
+            if (validFiles.length === 0) return;
+
+            const filesData = validFiles.map((file) => createFileData(file));
+            setFiles((prev) => [...prev, ...filesData]);
 
             if (text.trim().length > 0) {
                 setText('');
@@ -463,552 +454,444 @@ export default function SmartSolutionCheckPage() {
     }, [questionFiles, answerFiles, questionText, answerText]);
 
     useEffect(() => {
-        const cleanupQuestion = setupDragAndDrop('question');
-        const cleanupAnswer = setupDragAndDrop('answer');
+        const questionCleanup = setupDropHandlers('question');
+        const answerCleanup = showAnswerInput ? setupDropHandlers('answer') : null;
 
         return () => {
-            cleanupQuestion?.();
-            cleanupAnswer?.();
+            questionCleanup?.();
+            answerCleanup?.();
         };
-    }, [setupDragAndDrop]);
+    }, [setupDropHandlers, showAnswerInput]);
 
-    const handlePaste = useCallback(
-        async (e, type) => {
-            e.preventDefault();
+    const handlePaste = useCallback(async (e, type) => {
+        e.preventDefault();
 
-            const clipboardItems = e.clipboardData?.items;
-            if (clipboardItems) {
-                for (let i = 0; i < clipboardItems.length; i++) {
-                    if (clipboardItems[i].type.indexOf('image') !== -1) {
-                        const blob = clipboardItems[i].getAsFile();
-                        if (blob) {
-                            const fileName = `pasted-image-${Date.now()}.png`;
-                            const file = new File([blob], fileName, { type: 'image/png' });
+        const files = type === 'question' ? questionFiles : answerFiles;
+        const text = type === 'question' ? questionText : answerText;
+        const setText = type === 'question' ? setQuestionText : setAnswerText;
+        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
 
-                            const validation = validateFile(file);
-                            if (!validation.isValid) {
-                                Object.values(validation.errors).forEach((error) =>
-                                    toast.error(error),
-                                );
-                                return;
-                            }
+        const clipboardItems = e.clipboardData?.items;
+        if (clipboardItems) {
+            for (let i = 0; i < clipboardItems.length; i++) {
+                if (clipboardItems[i].type.indexOf('image') !== -1) {
+                    const blob = clipboardItems[i].getAsFile();
+                    if (blob) {
+                        const fileName = `pasted-image-${Date.now()}.png`;
+                        const file = new File([blob], fileName, { type: 'image/png' });
 
-                            const fileData = createFileData(file);
-                            const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-                            const setText = type === 'question' ? setQuestionText : setAnswerText;
-                            const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-                            const text = type === 'question' ? questionText : answerText;
-
-                            setFiles([fileData]);
-
-                            if (text.trim().length > 0) {
-                                setText('');
-                                if (editorRef.current) editorRef.current.innerHTML = '';
-                            }
+                        const validation = validateFile(file);
+                        if (!validation.isValid) {
+                            Object.values(validation.errors).forEach((error) => toast.error(String(error)));
                             return;
                         }
-                    }
-                }
-            }
 
-            const pastedText = e.clipboardData.getData('text');
-            if (pastedText?.length > 2000) {
-                toast.error('Maximum 2000 characters can be added!!');
-            } else {
-                const files = type === 'question' ? questionFiles : answerFiles;
-                const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-                const setShowKeyboard = type === 'question' ? setShowQuestionMathKeyboard : setShowAnswerMathKeyboard;
+                        const fileData = createFileData(file);
+                        setFiles((prev) => [...prev, fileData]);
 
-                if (files.length === 0) {
-                    if (activeField && document.activeElement.closest('.math-field')) {
-                        if (pastedText.includes('\\') || pastedText.includes('$')) {
-                            activeField.latex(pastedText);
-                        } else {
-                            activeField.write(pastedText);
+                        if (text.trim().length > 0) {
+                            setText('');
+                            if (editorRef.current) editorRef.current.innerHTML = '';
                         }
-                    } else {
-                        editorRef.current.textContent += pastedText;
+                        return;
                     }
-                    updateContent(type);
-                    setShowKeyboard(true);
                 }
-            }
-        },
-        [activeField, questionFiles, answerFiles, questionText, answerText, updateContent],
-    );
-
-    const hasQuestion = questionText.trim().length > 0 || questionFiles.length > 0;
-    const hasAnswer = answerText.trim().length > 0 || answerFiles.length > 0;
-    const canSubmit = hasQuestion && (containsAnswers && questionFiles.length > 0 ? true : hasAnswer);
-
-    const questionInputType = questionFiles.length > 0 ? 'image' : 'text';
-    const answerInputType = answerFiles.length > 0 ? 'image' : 'text';
-    const answerDisabled = !hasQuestion || (questionInputType !== answerInputType);
-
-    const handleSubmit = async () => {
-        if (isProcessing || !canSubmit) return;
-
-        setIsProcessing(true);
-
-        setTimeout(() => {
-            const isCorrect = Math.random() > 0.5;
-            toast.success(isCorrect ? 'Solution is correct!' : 'Solution needs review', {
-                icon: isCorrect ? '✅' : '❌',
-            });
-            setIsProcessing(false);
-        }, 2000);
-    };
-
-    const handleExampleClick = (example, field) => {
-        if (field === 'question') {
-            if (questionFiles.length > 0) {
-                toast.error('Please remove uploaded files first to use examples');
-                return;
-            }
-            if (questionEditorRef.current) {
-                questionEditorRef.current.textContent = example.question;
-                updateContent('question');
-                setShowQuestionMathKeyboard(true);
-                questionEditorRef.current.focus();
-            }
-        } else {
-            if (answerFiles.length > 0) {
-                toast.error('Please remove uploaded files first to use examples');
-                return;
-            }
-            if (answerEditorRef.current) {
-                answerEditorRef.current.textContent = example.answer;
-                updateContent('answer');
-                setShowAnswerMathKeyboard(true);
-                answerEditorRef.current.focus();
             }
         }
+
+        const pastedText = e.clipboardData.getData('text');
+        if (pastedText?.length > 2000) {
+            toast.error('Maximum 2000 characters can be added!');
+        } else if (files.length === 0) {
+            if (activeField && document.activeElement.closest('.math-field')) {
+                if (pastedText.includes('\\') || pastedText.includes('$')) {
+                    activeField.latex(pastedText);
+                } else {
+                    activeField.write(pastedText);
+                }
+            } else {
+                editorRef.current.textContent += pastedText;
+            }
+            updateContent(type);
+            setShowMathKeyboard(true);
+            setCurrentInputType(type);
+        }
+    }, [activeField, questionFiles, answerFiles, questionText, answerText, updateContent]);
+
+    const submitFiles = async () => {
+        try {
+            toast.loading('Uploading files...', { id: 'file-upload' });
+
+            const formData = new FormData();
+            formData.append('type', 'ssc_files');
+
+            if (questionFiles.length > 0) {
+                formData.append('files', questionFiles[0]?.file, `question_${questionFiles[0]?.file.name}`);
+            }
+            if (answerFiles.length > 0) {
+                formData.append('files', answerFiles[0]?.file, `answer_${answerFiles[0]?.file.name}`);
+            }
+
+            const response = await fetch('/api/s3/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                toast.error('Upload failed', { id: 'file-upload' });
+                throw new Error(`Failed to upload files: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            if (!result?.success) {
+                toast.error(result?.message || 'Failed to upload files', { id: 'file-upload' });
+                throw new Error(result?.message || 'Failed to upload files');
+            }
+
+            toast.success('Files uploaded successfully', { id: 'file-upload' });
+
+            const questionUrl = result?.files?.find(f => f.originalName.startsWith('question_'))?.fileKey || 'no_input';
+            const answerUrl = result?.files?.find(f => f.originalName.startsWith('answer_'))?.fileKey || 'no_input';
+
+            toast.loading('Checking your solution...', { id: 'extraction' });
+            const extractionResponse = await sscQNAExtraction({
+                model_name: MODEL_NAME,
+                scc_question_url: questionUrl,
+                scc_solution_url: answerUrl,
+                input_type: 'image'
+            }).unwrap();
+
+            toast.success('Check complete!', { id: 'extraction' });
+            handleExtractionResponse(extractionResponse);
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.dismiss();
+            const errorMessage = getErrorMessage(error?.data?.error);
+            if (errorMessage) {
+                toast.error(errorMessage);
+            } else {
+                toast.error('Failed to process files. Please try again.');
+            }
+            throw error;
+        }
+    };
+
+    const submitTextData = async () => {
+        try {
+            toast.loading('Checking your solution...', { id: 'extraction' });
+            const response = await sscExtractText({
+                model_name: MODEL_NAME,
+                input_type: 'text',
+                grade: 'high_school',
+                text_question: questionText,
+                text_answer: answerText,
+                question_url: 'no_input',
+                solution_url: 'no_input'
+            }).unwrap();
+            toast.success('Check complete!', { id: 'extraction' });
+            handleExtractionResponse(response);
+        } catch (error) {
+            console.error('Text submission error:', error);
+            toast.dismiss();
+            const errorMessage = getErrorMessage(error?.data?.error);
+            if (errorMessage) {
+                toast.error(errorMessage);
+            } else {
+                toast.error('Failed to process your input. Please try again.');
+            }
+            throw error;
+        }
+    };
+
+    const handleExtractionResponse = (response) => {
+        if (response?.status_code === 201) {
+            // dispatch(setSscResult(response.data)); // Example of storing result in redux
+            router.push('/smart-solution-check/results'); // Navigate to results page
+        } else {
+            setIsProcessing(false);
+            throw new Error(response?.error || 'Failed to process input');
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (isProcessing || !canProceed || !hasAnswerContent) {
+            if (!hasAnswerContent) {
+                toast.error("Please provide a solution to check.");
+            }
+            return;
+        };
+
+        try {
+            setIsProcessing(true);
+
+            const isReady = await ensureAuthenticated();
+            if (!isReady) {
+                toast.error('Something went wrong! Please try again later');
+                setIsProcessing(false);
+                return;
+            }
+
+            const hasFiles = questionFiles.length > 0 || answerFiles.length > 0;
+
+            if (hasFiles) {
+                await submitFiles();
+            } else {
+                await submitTextData();
+            }
+
+            setQuestionText('');
+            setAnswerText('');
+            if (questionEditorRef.current) questionEditorRef.current.innerHTML = '';
+            if (answerEditorRef.current) answerEditorRef.current.innerHTML = '';
+            setQuestionFiles([]);
+            setAnswerFiles([]);
+            setShowMathKeyboard(false);
+            setShowAnswerInput(false);
+            setDialogShownForSession(false);
+        } catch (error) {
+            console.error('Submission error:', error);
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDialogResponse = (hasAnswer) => {
+        setShowDialog(false);
+        setDialogShownForSession(true);
+        if (hasAnswer) {
+            setShowAnswerInput(true);
+        }
+    };
+
+    const renderInputBox = (type, title, placeholder) => {
+        const text = type === 'question' ? questionText : answerText;
+        const files = type === 'question' ? questionFiles : answerFiles;
+        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+        const dropAreaRef = type === 'question' ? questionDropAreaRef : answerDropAreaRef;
+        const hasContent = text.trim().length > 0 || files.length > 0;
+
+        const isCurrentDropArea = activeDropArea === type;
+
+        return (
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={fadeIn}
+                className="w-full rounded-lg bg-white mb-6"
+                style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+                    <motion.div
+                        ref={dropAreaRef}
+                        transition={{ duration: 0.3 }}
+                        className={`w-full min-h-[200px] rounded-md border-2 border-dashed ${isDragging && isCurrentDropArea
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-300'
+                            } flex flex-col justify-between p-6 relative`}
+                    >
+                        {hasContent && (
+                            <motion.div
+                                variants={buttonHover}
+                                initial="rest"
+                                whileHover="hover"
+                                className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer"
+                                onClick={() => handleClear(type)}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </motion.div>
+                        )}
+
+                        <FilePreviews files={files} removeFile={(fileId) => removeFile(fileId, type)} />
+
+                        <div className="flex flex-col flex-1">
+                            <div
+                                ref={editorRef}
+                                className="flex-1 outline-none relative"
+                                contentEditable={files.length === 0 && !isProcessing}
+                                onKeyDown={(e) => handleEditorKeyDown(e, type)}
+                                onPaste={(e) => handlePaste(e, type)}
+                                onFocus={() => setCurrentInputType(type)}
+                                style={{
+                                    minHeight: '60px',
+                                    pointerEvents: (files.length > 0 || isProcessing) ? 'none' : 'auto',
+                                    opacity: (files.length > 0 || isProcessing) ? 0.7 : 1,
+                                }}
+                            />
+                            {text?.length === 0 && files?.length === 0 && (
+                                <div className="flex flex-col absolute text-gray-500 text-sm w-full pointer-events-none">
+                                    <span>{placeholder}</span>
+                                    <span className="mt-2 text-xs">
+                                        or drag and drop/ paste an image here
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-between items-center mt-4">
+                            <div className="flex gap-2">
+                                <motion.button
+                                    variants={buttonHover}
+                                    initial="rest"
+                                    whileHover="hover"
+                                    className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${(isProcessing || files.length > 0) ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
+                                    onClick={() => triggerFileInput(type)}
+                                    disabled={isProcessing || files.length > 0}
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Upload File
+                                </motion.button>
+
+                                <motion.button
+                                    variants={buttonHover}
+                                    initial="rest"
+                                    whileHover="hover"
+                                    className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${(isProcessing || files.length > 0) ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
+                                    onClick={() => triggerCameraInput(type)}
+                                    disabled={isProcessing || files.length > 0}
+                                >
+                                    <Camera className="w-4 h-4" />
+                                    Take a snap
+                                </motion.button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </motion.div>
+        );
     };
 
     return (
         <>
-            <Head>
-                <title>Smart Solution Check - Verify Your Math Solutions</title>
-                <meta
-                    name="description"
-                    content="Verify the correctness of your math solutions with our AI-powered Smart Solution Check. Upload questions and answers for instant verification."
-                />
-                <meta
-                    name="keywords"
-                    content="solution checker, math verification, homework checker, AI math validator"
-                />
-                <meta property="og:title" content="Smart Solution Check" />
-                <meta
-                    property="og:description"
-                    content="AI-powered solution verification for math problems"
-                />
-                <meta property="og:type" content="website" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-            </Head>
-
-            <div className="flex flex-row justify-center w-full min-h-screen">
-                <div className="relative w-full">
+            <div className="flex flex-row justify-center w-full min-h-screen px-4">
+                <div className="relative w-full max-w-4xl py-10">
                     <div className="flex flex-col items-center">
                         <motion.h1
                             initial="hidden"
                             animate="visible"
                             variants={fadeIn}
-                            className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent font-black text-4xl font-roca"
+                            className="bg-gradient-secondary bg-clip-text text-transparent font-black text-4xl font-roca text-center"
                         >
                             Smart Solution Check
                         </motion.h1>
-
                         <motion.h2
                             initial="hidden"
                             animate="visible"
                             variants={fadeIn}
-                            className="mt-4 text-blue-600 text-xl font-semibold"
+                            className="mt-4 text-heading-ha text-xl font-semibold text-center mb-8"
                         >
                             Get even your handwritten answers checked here
                         </motion.h2>
 
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            variants={fadeIn}
-                            className="mt-8 w-full max-w-6xl"
-                        >
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <motion.div
-                                    variants={fadeIn}
-                                    className="rounded-lg bg-white shadow-lg border border-blue-200"
-                                >
-                                    <div className="p-6">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <h3 className="text-lg font-semibold text-blue-600">Question 💡</h3>
-                                        </div>
+                        {renderInputBox('question', 'Submit Question(s)', 'Type a math problem....')}
 
-                                        <motion.div
-                                            ref={questionDropAreaRef}
-                                            transition={{ duration: 0.3 }}
-                                            className={`w-full min-h-[250px] rounded-md border-2 border-dashed ${questionIsDragging
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-300'
-                                                } flex flex-col justify-between p-6 relative`}
-                                        >
-                                            {(questionText.trim().length > 0 || questionFiles.length > 0) && (
-                                                <motion.div
-                                                    variants={buttonHover}
-                                                    initial="rest"
-                                                    whileHover="hover"
-                                                    className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer z-10"
-                                                    onClick={() => handleClear('question')}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </motion.div>
-                                            )}
+                        {showAnswerInput && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="w-full">
+                                {renderInputBox('answer', 'Upload Solution(s) for getting checked.', 'Type your solution here....')}
+                            </motion.div>
+                        )}
 
-                                            <FilePreviews files={questionFiles} removeFile={(id) => removeFile(id, 'question')} />
-
-                                            <div className="flex flex-col flex-1">
-                                                <div
-                                                    ref={questionEditorRef}
-                                                    className="flex-1 outline-none relative"
-                                                    contentEditable={questionFiles.length === 0 && !isProcessing}
-                                                    onKeyDown={(e) => handleEditorKeyDown(e, 'question')}
-                                                    onPaste={(e) => handlePaste(e, 'question')}
-                                                    style={{
-                                                        minHeight: '60px',
-                                                        pointerEvents: (questionFiles.length > 0 || isProcessing) ? 'none' : 'auto',
-                                                        opacity: (questionFiles.length > 0 || isProcessing) ? 0.7 : 1,
-                                                    }}
-                                                />
-                                                {questionText?.length === 0 && questionFiles?.length === 0 && (
-                                                    <div className="flex flex-col absolute text-gray-700 text-sm w-full">
-                                                        <span>Type a math problem....</span>
-                                                        <span className="mt-2">or drag and drop/ paste an image here</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {questionFiles.length > 0 && (
-                                                <div className="mt-4 flex items-center">
-                                                    <label className="flex items-center space-x-2 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={containsAnswers}
-                                                            onChange={(e) => setContainsAnswers(e.target.checked)}
-                                                            className="rounded border-gray-300"
-                                                        />
-                                                        <span className="text-sm text-gray-700">Contains answers as well</span>
-                                                    </label>
-                                                </div>
-                                            )}
-
-                                            <div className="flex justify-between items-center mt-4">
-                                                <div className="flex gap-2">
-                                                    <motion.button
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className={`flex items-center gap-2 h-9 bg-blue-100 text-blue-700 font-medium rounded-md border-none px-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                                                            }`}
-                                                        onClick={() => triggerFileInput('question')}
-                                                        disabled={isProcessing}
-                                                    >
-                                                        <Upload className="w-4 h-4" />
-                                                        Upload Files
-                                                    </motion.button>
-
-                                                    <motion.button
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className={`flex items-center gap-2 h-9 bg-blue-100 text-blue-700 font-medium rounded-md border-none px-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                                                            }`}
-                                                        onClick={() => triggerCameraInput('question')}
-                                                        disabled={isProcessing}
-                                                    >
-                                                        <Camera className="w-4 h-4" />
-                                                        Take a snap
-                                                    </motion.button>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-
-                                        {showQuestionMathKeyboard && questionFiles.length === 0 && questionText.trim().length > 0 && (
-                                            <div className="relative mt-4">
-                                                <button
-                                                    className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1 z-10"
-                                                    onClick={() => toggleMathKeyboard('question')}
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                                <MathKeyboard
-                                                    activeTab={activeTab}
-                                                    setActiveTab={setActiveTab}
-                                                    insertSymbol={(symbol) => insertSymbol(symbol, 'question')}
-                                                    insertCommand={(cmd) => insertCommand(cmd, 'question')}
-                                                    insertExponent={(exp) => insertExponent(exp, 'question')}
-                                                    insertSubscript={() => insertSubscript('question')}
-                                                    insertComplexExpression={(expr) => insertComplexExpression(expr, 'question')}
-                                                    disabled={false}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-
-                                <motion.div
-                                    variants={fadeIn}
-                                    className="rounded-lg bg-white shadow-lg border border-cyan-200 relative"
-                                >
-                                    <div className="p-6">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <h3 className="text-lg font-semibold text-cyan-600">Answer 💡</h3>
-                                        </div>
-
-                                        <motion.div
-                                            ref={answerDropAreaRef}
-                                            transition={{ duration: 0.3 }}
-                                            className={`w-full min-h-[250px] rounded-md border-2 border-dashed ${answerIsDragging
-                                                ? 'border-cyan-500 bg-cyan-50'
-                                                : answerDisabled
-                                                    ? 'border-gray-200 bg-gray-50'
-                                                    : 'border-gray-300'
-                                                } flex flex-col justify-between p-6 relative`}
-                                            style={{
-                                                pointerEvents: answerDisabled ? 'none' : 'auto',
-                                                opacity: answerDisabled ? 0.5 : 1,
-                                            }}
-                                        >
-                                            {answerDisabled && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-90 z-10">
-                                                    <div className="bg-white p-3 rounded-lg shadow-md border">
-                                                        <p className="text-sm text-gray-600">Complete adding your question first!</p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {(answerText.trim().length > 0 || answerFiles.length > 0) && !answerDisabled && (
-                                                <motion.div
-                                                    variants={buttonHover}
-                                                    initial="rest"
-                                                    whileHover="hover"
-                                                    className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer z-10"
-                                                    onClick={() => handleClear('answer')}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </motion.div>
-                                            )}
-
-                                            <FilePreviews files={answerFiles} removeFile={(id) => removeFile(id, 'answer')} />
-
-                                            <div className="flex flex-col flex-1">
-                                                <div
-                                                    ref={answerEditorRef}
-                                                    className="flex-1 outline-none relative"
-                                                    contentEditable={answerFiles.length === 0 && !answerDisabled && !isProcessing}
-                                                    onKeyDown={(e) => handleEditorKeyDown(e, 'answer')}
-                                                    onPaste={(e) => handlePaste(e, 'answer')}
-                                                    style={{
-                                                        minHeight: '60px',
-                                                        pointerEvents: (answerFiles.length > 0 || answerDisabled || isProcessing) ? 'none' : 'auto',
-                                                        opacity: (answerFiles.length > 0 || answerDisabled || isProcessing) ? 0.7 : 1,
-                                                    }}
-                                                />
-                                                {answerText?.length === 0 && answerFiles?.length === 0 && !answerDisabled && (
-                                                    <div className="flex flex-col absolute text-gray-700 text-sm w-full">
-                                                        <span>Start Solving here or give me a</span>
-                                                        <span className="mt-2">photo of your solution</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex justify-between items-center mt-4">
-                                                <div className="flex gap-2">
-                                                    <motion.button
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className={`flex items-center gap-2 h-9 bg-cyan-100 text-cyan-700 font-medium rounded-md border-none px-3 ${answerDisabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                                                            }`}
-                                                        onClick={() => triggerFileInput('answer')}
-                                                        disabled={answerDisabled || isProcessing}
-                                                    >
-                                                        <Upload className="w-4 h-4" />
-                                                        Upload Files
-                                                    </motion.button>
-
-                                                    <motion.button
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className={`flex items-center gap-2 h-9 bg-cyan-100 text-cyan-700 font-medium rounded-md border-none px-3 ${answerDisabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                                                            }`}
-                                                        onClick={() => triggerCameraInput('answer')}
-                                                        disabled={answerDisabled || isProcessing}
-                                                    >
-                                                        <Camera className="w-4 h-4" />
-                                                        Take a snap
-                                                    </motion.button>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-
-                                        {showAnswerMathKeyboard && answerFiles.length === 0 && answerText.trim().length > 0 && !answerDisabled && (
-                                            <div className="relative mt-4">
-                                                <button
-                                                    className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1 z-10"
-                                                    onClick={() => toggleMathKeyboard('answer')}
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                                <MathKeyboard
-                                                    activeTab={activeTab}
-                                                    setActiveTab={setActiveTab}
-                                                    insertSymbol={(symbol) => insertSymbol(symbol, 'answer')}
-                                                    insertCommand={(cmd) => insertCommand(cmd, 'answer')}
-                                                    insertExponent={(exp) => insertExponent(exp, 'answer')}
-                                                    insertSubscript={() => insertSubscript('answer')}
-                                                    insertComplexExpression={(expr) => insertComplexExpression(expr, 'answer')}
-                                                    disabled={false}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            </div>
-
+                        {showAnswerInput && (
                             <motion.div
                                 initial="hidden"
                                 animate="visible"
                                 variants={fadeIn}
-                                className="mt-6 flex justify-center"
+                                className="w-full flex justify-end mt-4"
                             >
                                 <motion.button
                                     variants={buttonHover}
                                     initial="rest"
-                                    whileHover={canSubmit && !isProcessing ? "hover" : "rest"}
-                                    className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300 ${canSubmit && !isProcessing
-                                        ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 cursor-pointer shadow-lg hover:shadow-xl'
-                                        : 'bg-gray-400 cursor-not-allowed'
-                                        }`}
+                                    whileHover="hover"
+                                    whileTap={{ scale: 0.95 }}
+                                    className={`flex items-center gap-1 ${isProcessing || !canProceed || !hasAnswerContent ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'bg-action-buttons-foreground'
+                                        } text-white font-medium rounded-md h-11 px-6`}
                                     onClick={handleSubmit}
-                                    disabled={!canSubmit || isProcessing}
+                                    disabled={isProcessing || !canProceed || !hasAnswerContent}
                                 >
                                     {isProcessing ? (
-                                        <>
-                                            <LoaderCircle className="w-5 h-5 animate-spin" />
-                                            Checking Solution...
-                                        </>
+                                        <div className="flex items-center">
+                                            <LoaderCircle className="size-5 mr-3 animate-spin text-white" />
+                                            Processing...
+                                        </div>
                                     ) : (
                                         <>
-                                            <CheckCircle className="w-5 h-5" />
-                                            Check My Solution
+                                            Proceed
+                                            <ChevronRight className="w-5 h-5" />
                                         </>
                                     )}
                                 </motion.button>
                             </motion.div>
+                        )}
 
-                            <motion.div
-                                initial="hidden"
-                                animate="visible"
-                                variants={fadeIn}
-                                className="mt-12"
-                            >
-                                <h3 className="text-center text-xl font-semibold text-gray-800 mb-8">
-                                    Explore a few solved examples ✨
-                                </h3>
-
-                                <motion.div
-                                    variants={staggerChildren}
-                                    initial="hidden"
-                                    animate="visible"
-                                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                        {(showMathKeyboard && (hasQuestionContent || hasAnswerContent)) && (
+                            <div className="relative w-full mt-6">
+                                <button
+                                    className="absolute right-2 -top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1 z-10"
+                                    onClick={toggleMathKeyboard}
                                 >
-                                    {examples.map((example, index) => (
-                                        <motion.div
-                                            key={index}
-                                            variants={fadeIn}
-                                            className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
-                                        >
-                                            <div className="p-4">
-                                                <div className="mb-4">
-                                                    <h4 className="text-sm font-medium text-gray-600 mb-2">Question:</h4>
-                                                    <motion.div
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className="bg-blue-50 p-3 rounded-md cursor-pointer border border-blue-200 hover:border-blue-300 transition-colors"
-                                                        onClick={() => handleExampleClick(example, 'question')}
-                                                    >
-                                                        <p className="text-gray-800 font-mono text-sm">{example.question}</p>
-                                                    </motion.div>
-                                                </div>
-
-                                                <div>
-                                                    <h4 className="text-sm font-medium text-gray-600 mb-2">Answer:</h4>
-                                                    <motion.div
-                                                        variants={buttonHover}
-                                                        initial="rest"
-                                                        whileHover="hover"
-                                                        className="bg-cyan-50 p-3 rounded-md cursor-pointer border border-cyan-200 hover:border-cyan-300 transition-colors"
-                                                        onClick={() => handleExampleClick(example, 'answer')}
-                                                    >
-                                                        <p className="text-gray-800 font-mono text-sm">{example.answer}</p>
-                                                    </motion.div>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
-                                                <motion.button
-                                                    variants={buttonHover}
-                                                    initial="rest"
-                                                    whileHover="hover"
-                                                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-2 px-4 rounded-md font-medium hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
-                                                    onClick={() => {
-                                                        handleExampleClick(example, 'question');
-                                                        setTimeout(() => handleExampleClick(example, 'answer'), 100);
-                                                    }}
-                                                >
-                                                    Try this solved problem
-                                                </motion.button>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                            </motion.div>
-                        </motion.div>
+                                    <X className="w-4 h-4" />
+                                </button>
+                                <MathKeyboard
+                                    activeTab={activeTab}
+                                    setActiveTab={setActiveTab}
+                                    insertSymbol={insertSymbol}
+                                    insertCommand={insertCommand}
+                                    insertExponent={insertExponent}
+                                    insertSubscript={insertSubscript}
+                                    insertComplexExpression={insertComplexExpression}
+                                    disabled={isProcessing}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                <input
-                    ref={questionFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handleFileUpload(e, 'question')}
-                />
-                <input
-                    ref={answerFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handleFileUpload(e, 'answer')}
-                />
-                <input
-                    ref={questionCameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handleCameraInput(e, 'question')}
-                />
-                <input
-                    ref={answerCameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: 'none' }}
-                    onChange={(e) => handleCameraInput(e, 'answer')}
-                />
             </div>
+
+            {showDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+                    >
+                        <h3 className="text-lg font-bold text-gray-900">Have you submitted all the solutions along with the corresponding Questions</h3>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <motion.button
+                                variants={buttonHover} whileHover="hover"
+                                onClick={() => handleDialogResponse(true)}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold"
+                            >
+                                Yes, verify now
+                            </motion.button>
+                            <motion.button
+                                variants={buttonHover} whileHover="hover"
+                                onClick={() => handleDialogResponse(true)}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold"
+                            >
+                                No, I will add Questions separately
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            <input ref={questionFileInputRef} type="file" accept="image/jpeg,image/png,image/gif" onChange={(e) => handleFileUpload(e, 'question')} className="hidden" />
+            <input ref={answerFileInputRef} type="file" accept="image/jpeg,image/png,image/gif" onChange={(e) => handleFileUpload(e, 'answer')} className="hidden" />
+            <input ref={questionCameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleCameraInput(e, 'question')} className="hidden" />
+            <input ref={answerCameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleCameraInput(e, 'answer')} className="hidden" />
+
+            <style jsx global>{`
+        .math-field {
+          display: inline-block;
+          padding: 1px;
+          background: rgba(59, 130, 246, 0.08);
+        }
+        .mq-editable-field {
+          border: none;
+        }
+      `}</style>
         </>
     );
 }

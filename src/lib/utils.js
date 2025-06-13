@@ -67,3 +67,12 @@ export const getErrorMessage = (error) => {
   }
   return 'Something went wrong! Please try again later.';
 };
+
+export const capitalizeName = (name) => {
+  if (!name || typeof name !== 'string') return name;
+
+  return name
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};

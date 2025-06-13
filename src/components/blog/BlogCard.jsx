@@ -2,8 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Clock, Calendar, ArrowRight, Eye, Bookmark } from 'lucide-react';
-import { fadeInUp, cardHover } from '@/lib/framer-animations';
+import { Clock, Calendar, ArrowRight } from 'lucide-react';
 
 const cardVariants = {
     hidden: {
@@ -76,7 +75,6 @@ export default function BlogCard({ blog, animate = true }) {
             <Link href={`/blogs/${blog.slug}`} legacyBehavior>
                 <a className="block h-full">
                     <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:border-blue-200">
-                        {/* Image Container */}
                         <div className="relative w-full h-48 md:h-56 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                             <motion.div variants={imageVariants} className="w-full h-full">
                                 <Image
@@ -90,25 +88,13 @@ export default function BlogCard({ blog, animate = true }) {
                                 />
                             </motion.div>
 
-                            {/* Overlay gradient */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                            {/* Floating action button */}
-                            <motion.div
-                                className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <Bookmark className="w-4 h-4 text-gray-700" />
-                            </motion.div>
                         </div>
 
-                        {/* Content */}
                         <motion.div
                             variants={contentVariants}
                             className="p-6 flex flex-col flex-grow"
                         >
-                            {/* Meta Information */}
                             <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
                                 <motion.div
                                     className="flex items-center space-x-1"
@@ -126,7 +112,6 @@ export default function BlogCard({ blog, animate = true }) {
                                 </motion.div>
                             </div>
 
-                            {/* Title */}
                             <motion.h3
                                 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300"
                                 layoutId={`title-${blog.slug}`}
@@ -134,41 +119,12 @@ export default function BlogCard({ blog, animate = true }) {
                                 {blog.title}
                             </motion.h3>
 
-                            {/* Excerpt */}
                             <motion.p
                                 className="text-gray-600 text-sm mb-4 line-clamp-3 flex-grow leading-relaxed"
                                 layoutId={`excerpt-${blog.slug}`}
                             >
                                 {blog.excerpt}
                             </motion.p>
-
-                            {/* Read More Section */}
-                            <motion.div
-                                className="mt-auto pt-4 border-t border-gray-100"
-                                initial="rest"
-                                whileHover="hover"
-                                animate="rest"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3 text-xs text-gray-500">
-                                        <motion.div
-                                            className="flex items-center space-x-1"
-                                            whileHover={{ scale: 1.05 }}
-                                        >
-                                            <Eye className="w-3 h-3" />
-                                            <span>{blog.views || '0'} views</span>
-                                        </motion.div>
-                                    </div>
-
-                                    <motion.div
-                                        className="flex items-center space-x-1 text-sm font-medium text-blue-600"
-                                        variants={arrowVariants}
-                                    >
-                                        <span>Read more</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </motion.div>
-                                </div>
-                            </motion.div>
                         </motion.div>
                     </article>
                 </a>

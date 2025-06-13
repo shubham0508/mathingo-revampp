@@ -291,7 +291,7 @@ export default function FeaturesSection() {
             </p>
             <div className="mt-8 flex flex-wrap gap-4 justify-center items-center text-center">
               <Button variant="outline" className="border-black text-lg shadow-none py-5 px-2">
-                <span>Know More</span>
+                <Link href="/ai-solution-check">Know More</Link>
               </Button>
               <Button
                 shape="round"

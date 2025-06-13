@@ -690,13 +690,14 @@ export default function HWAssistant() {
     }
 
     try {
+      setIsProcessing(true);
+
       const isReady = await ensureAuthenticated();
       if (!isReady) {
         toast.error('Something went wrong! Please try again later');
+        setIsProcessing(false);
         return;
       }
-
-      setIsProcessing(true);
 
       if (files.length > 0) {
         await submitFiles();
