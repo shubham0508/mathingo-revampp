@@ -185,7 +185,7 @@ export default function BlogLayout({ blog, relatedBlogs }) {
                     {blog.author.expertise.map((skill, index) => (
                       <span
                         key={index}
-                        className="px-4 py-2 bg-secondary-background text-primary border-2 border-primary rounded-full text-sm"
+                        className="px-4 py-2 bg-secondary-background text-primary rounded-full text-sm"
                       >
                         {skill}
                       </span>
@@ -204,12 +204,12 @@ export default function BlogLayout({ blog, relatedBlogs }) {
               viewport={{ once: true, amount: 0.2 }}
               variants={sectionFadeIn}
             >
-              <h3 className="text-lg font-semibold mb-3 text-gray-900">Tags</h3>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Tags</h2>
               <div className="flex flex-wrap gap-2">
                 {blog.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm cursor-pointer hover:bg-gray-200 transition-colors"
                   >
                     {tag}
                   </span>
@@ -221,7 +221,7 @@ export default function BlogLayout({ blog, relatedBlogs }) {
           {/* Related Blogs Section */}
           {relatedBlogs && relatedBlogs.length > 0 && (
             <motion.section
-              className="mt-16 pt-8 border-t border-gray-200"
+              className="mt-5 pt-8 border-t border-gray-200"
               initial="initial"
               whileInView="animate"
               viewport={{ once: true, amount: 0.2 }}

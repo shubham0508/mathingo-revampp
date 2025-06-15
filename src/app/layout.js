@@ -85,6 +85,7 @@ export default function RootLayout({ children }) {
 
         {/* ✅ Razorpay Checkout */}
         <Script
+          strategy="afterInteractive"
           id="razorpay-checkout-js"
           src="https://checkout.razorpay.com/v1/checkout.js"
         />

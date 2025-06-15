@@ -202,7 +202,7 @@ export default function BlogsPage() {
         title: "Our Blog - Latest Articles and Insights",
         description: "Discover insightful articles, expert opinions, and latest trends in our comprehensive MathZAI blog. Stay informed with our regularly updated content.",
         url: pageUrl,
-        image: `${siteConfig.url}/images/blog-og-image.jpg`
+        image: `${siteConfig.url}/images/og-image.png`
     });
 
     const blogSchema = {

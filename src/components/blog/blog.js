@@ -367,7 +367,7 @@ export const rawBlogsData = [
       </blockquote>
       <h2 id="getting-started-steps" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Getting Started in Three Simple Steps</h2>
       <div class="space-y-6 mb-10">
-        <div class="p-5 rounded-lg bg-gray-50 border border-gray-200"><h4 class="font-semibold mb-2 text-primary">Step 1: Create Your Free Account</h4><p class="leading-relaxed">Visit <a href="https://mathzai.com" class="text-primary underline font-medium">mathzai.com</a> and sign up with your email or Google account. It takes less than a minute.</p></div>
+        <div class="p-5 rounded-lg bg-gray-50 border border-gray-200"><h4 class="font-semibold mb-2 text-primary">Step 1: Create Your Free Account</h4><p class="leading-relaxed">Visit <a href="https://mathzai.com" class="text-primary underline font-medium inline">mathzai.com</a> and sign up with your email or Google account. It takes less than a minute.</p></div>
         <div class="p-5 rounded-lg bg-gray-50 border border-gray-200"><h4 class="font-semibold mb-2 text-primary">Step 2: Choose Your Tool</h4><p class="leading-relaxed">Select the tool that best matches your immediate need: Homework Assistant for problem-solving, Solution Check for answer verification, or AI Tutor for deep learning.</p></div>
         <div class="p-5 rounded-lg bg-gray-50 border border-gray-200"><h4 class="font-semibold mb-2 text-primary">Step 3: Upload or Input Your Math Problem</h4><p class="leading-relaxed">Take a photo, upload a file, or type in your math problem. Our AI will process it instantly and provide the support you need.</p></div>
       </div>
@@ -538,7 +538,7 @@ export const rawBlogsData = [
     `,
     coverImage:
       '/images/blogs/ai-transforms-math-tutoring/ai-transforms-math-tutoring_1.webp',
-    publishedDate: 'October 27, 2024',
+    publishedDate: 'May 04, 2025',
     readTime: '4 min read',
     author: {
       name: 'Mathz AI Educational Team',
@@ -681,7 +681,7 @@ export const rawBlogsData = [
     `,
     coverImage:
       '/images/blogs/ai-math-tutor-child-confidence/ai-math-tutor-child-confidence_1.webp',
-    publishedDate: 'October 24, 2024',
+    publishedDate: 'May 10, 2025',
     readTime: '4 min read',
     author: {
       name: 'Mathz AI Educational Team',
@@ -766,7 +766,7 @@ export const rawBlogsData = [
     contentHTML: `
     <div class="mb-8 text-xl">
       <p class="text-xl leading-relaxed mb-6">
-        Let's face it, we've all been there: staring at a math problem, completely stuck, with the homework deadline looming. It's a frustrating feeling that millions of students experience. According to a 2022 NCES report, nearly <a href="https://nces.ed.gov/programs/coe/indicator/cmb" class="text-primary underline" target="_blank" rel="nofollow noopener noreferrer">60% of U.S. students</a> struggle with math homework at least once a week. This is exactly why digital math solvers have become so popular.
+        Let's face it, we've all been there: staring at a math problem, completely stuck, with the homework deadline looming. It's a frustrating feeling that millions of students experience. According to a 2022 NCES report, nearly <a href="https://nces.ed.gov/programs/coe/indicator/cmb" class="text-primary underline inline" target="_blank" rel="nofollow noopener noreferrer">60% of U.S. students</a> struggle with math homework at least once a week. This is exactly why digital math solvers have become so popular.
       </p>
       <p class="leading-relaxed mb-6 text-xl">
         Today, we're comparing two major players: <strong>Photomath</strong>, the well-known name for its camera feature, and <strong>Mathz AI</strong>, a comprehensive learning platform powered by the latest artificial intelligence. Which one is just for answers, and which one truly helps you <em>learn</em>? Let's break it down.
@@ -865,7 +865,7 @@ export const rawBlogsData = [
     `,
     coverImage:
       '/images/blogs/mathz-ai-vs-photomath-learning-comparison/mathz-ai-vs-photomath-learning-comparison_1.webp',
-    publishedDate: 'May 13, 2024',
+    publishedDate: 'May 13, 2025',
     readTime: '5 min read',
     author: {
       name: 'Mathz AI Educational Team',
@@ -940,7 +940,7 @@ export const rawBlogsData = [
     contentHTML: `
     <div class="mb-8 text-xl">
       <p class="text-xl leading-relaxed mb-6">
-        When most people think of Mathz AI, they imagine a math helper for students stuck on tricky homework problems. But this <span class="font-bold">math learning AI tool</span> goes far beyond that. Whether you're a parent trying to support your child, a professional brushing up on forgotten skills, or a student preparing for a big test — <span class="font-bold">Mathz AI beyond homework</span> is your ultimate math companion. It's aligned with modern research on AI-assisted learning like <a href="https://www.ed.gov/sites/ed/files/documents/ai-report/ai-report.pdf" target="_blank" rel="nofollow noopener noreferrer" class="text-primary underline">this study by the Stanford HAI</a> that emphasizes the value of personalized education.
+        When most people think of Mathz AI, they imagine a math helper for students stuck on tricky homework problems. But this <span class="font-bold">math learning AI tool</span> goes far beyond that. Whether you're a parent trying to support your child, a professional brushing up on forgotten skills, or a student preparing for a big test — <span class="font-bold">Mathz AI beyond homework</span> is your ultimate math companion. It's aligned with modern research on AI-assisted learning like <a href="https://www.ed.gov/sites/ed/files/documents/ai-report/ai-report.pdf" target="_blank" rel="nofollow noopener noreferrer" class="text-primary underline inline">this study by the Stanford HAI</a> that emphasizes the value of personalized education.
       </p>
       
       <figure class="mb-10">
@@ -1144,7 +1144,7 @@ export const rawBlogsData = [
   `,
     coverImage:
       '/images/blogs/mathz-ai-beyond-homework-comprehensive-learning/mathz-ai-beyond-homework-comprehensive-learning_1.webp',
-    publishedDate: 'May 27, 2024',
+    publishedDate: 'May 27, 2025',
     readTime: '5 min read',
     author: {
       name: 'Mathz AI Educational Team',
@@ -1315,7 +1315,7 @@ export const rawBlogsData = [
   `,
     coverImage:
       '/images/blogs/best-free-online-algebra-solvers/best-free-online-algebra-solvers_1.webp',
-    publishedDate: 'April 12, 2025',
+    publishedDate: 'May 30, 2025',
     readTime: '4 min read',
     author: {
       name: 'Mathz AI Educational Team',
@@ -1582,7 +1582,7 @@ export const rawBlogsData = [
       </div>
       <h2 id="why-mathzai" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Why Mathz AI is a Great Choice for Calculus</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        When you’re struggling with a complex calculus problem, <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a> steps in as a smart, supportive tool that not only solves but teaches.
+        When you’re struggling with a complex calculus problem, <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a> steps in as a smart, supportive tool that not only solves but teaches.
       </p>
       <figure class="my-10">
         <img 
@@ -1782,7 +1782,7 @@ export const rawBlogsData = [
        </div>
       <h2 id="conclusion" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Conclusion: Transform Your Math Skills Today</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        A tool like <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a> streamlines the step-by-step process by providing clear explanations, guiding you through each stage, and ensuring your solutions are accurate and well-understood. It’s like having a personal math tutor available anytime, making math less intimidating and more accessible for everyone.
+        A tool like <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a> streamlines the step-by-step process by providing clear explanations, guiding you through each stage, and ensuring your solutions are accurate and well-understood. It’s like having a personal math tutor available anytime, making math less intimidating and more accessible for everyone.
       </p>
     </div>
   `,
@@ -1884,7 +1884,7 @@ export const rawBlogsData = [
       </p>
       <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
         <h3 class="font-semibold text-xl mb-4">What Makes These AI Tools So Powerful?</h3>
-        <p class="mb-4">Take <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a> as a prime example of the magic behind these digital math wizards. This sophisticated platform demonstrates the incredible potential of AI in education through:</p>
+        <p class="mb-4">Take <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a> as a prime example of the magic behind these digital math wizards. This sophisticated platform demonstrates the incredible potential of AI in education through:</p>
         <ul class="list-disc pl-6 mt-2 space-y-2">
           <li><strong>Instant Problem Solving:</strong> Get step-by-step solutions almost instantaneously, breaking down problems with remarkable precision.</li>
           <li><strong>Comprehensive Learning:</strong> From basic arithmetic to advanced calculus, the best platforms cover a huge range of mathematical challenges.</li>
@@ -1902,7 +1902,7 @@ export const rawBlogsData = [
       </ul>
       <h2 id="top-free-tools" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Top Free Math Solving AI Tools to Transform Your Learning</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        One standout in the world of free online math solvers is <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a>. This powerful platform offers:
+        One standout in the world of free online math solvers is <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a>. This powerful platform offers:
       </p>
       <figure class="my-10">
         <img 
@@ -2091,7 +2091,7 @@ export const rawBlogsData = [
       
       <h2 id="introducing-mathzai" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Introducing Mathz AI: Your Round-the-Clock Math Genius</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a> gives students a powerful math assistant available 24/7, with an easy-to-use interface and tools designed for a wide range of needs.
+        <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a> gives students a powerful math assistant available 24/7, with an easy-to-use interface and tools designed for a wide range of needs.
       </p>
       <figure class="my-10">
         <img 
@@ -2225,7 +2225,8 @@ export const rawBlogsData = [
         />
       </figure>
       <p class="leading-relaxed mb-6 text-xl">
-        <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold">Mathz AI</a> offers a comprehensive AI math tutoring system that provides step-by-step guidance and verifies solutions, helping you grasp complex concepts and build confidence for test day.
+        <a href="https://www.mathzai.com" class="text-blue-600 hover:underline font-semibold inline">Mathz AI</a>
+        offers a comprehensive AI math tutoring system that provides step-by-step guidance and verifies solutions, helping you grasp complex concepts and build confidence for test day.
       </p>
 
       <div class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500 my-10">
@@ -2257,7 +2258,7 @@ export const rawBlogsData = [
 
       <h2 id="tip-1-algebra" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Expert Tip #1: Master Algebra Fundamentals with AI Support</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        Algebra is a huge component of the SAT Math test. Mathz AI helps you grasp critical concepts like linear equations, quadratic equations, and functions through personalized learning and real-time feedback. Use the <a href="https://www.mathzai.com/homeworkAssistant" class="text-blue-600 hover:underline font-semibold">Homework Assistant</a> to get step-by-step solutions and identify weak points.
+        Algebra is a huge component of the SAT Math test. Mathz AI helps you grasp critical concepts like linear equations, quadratic equations, and functions through personalized learning and real-time feedback. Use the <a href="https://www.mathzai.com/homeworkAssistant" class="text-blue-600 hover:underline font-semibold inline">Homework Assistant</a> to get step-by-step solutions and identify weak points.
       </p>
 
       <h2 id="tip-2-geometry" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Expert Tip #2: Conquer Geometry Through Visual Learning</h2>
@@ -2289,12 +2290,12 @@ export const rawBlogsData = [
 
       <h2 id="tip-3-smart-check" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Expert Tip #3: Utilize the Smart Solution Check for Rapid Improvement</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        The <a href="https://www.mathzai.com/smartSolutionCheck" class="text-blue-600 hover:underline font-semibold">Smart Solution Check</a> is a powerful tool for rapid improvement. Upload your practice questions and answers (via PDF or image) to get instant verification. This helps you learn from mistakes by showing you optimized solutions, accelerating your learning.
+        The <a href="https://www.mathzai.com/smartSolutionCheck" class="text-blue-600 hover:underline font-semibold inline">Smart Solution Check</a> is a powerful tool for rapid improvement. Upload your practice questions and answers (via PDF or image) to get instant verification. This helps you learn from mistakes by showing you optimized solutions, accelerating your learning.
       </p>
 
       <h2 id="tip-4-homework-assistant" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Expert Tip #4: Leverage the Homework Assistant for Comprehensive Practice</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        The <a href="https://www.mathzai.com/homeworkAssistant" class="text-blue-600 hover:underline font-semibold">Homework Assistant</a> lets you submit multiple math problems at once for comprehensive practice. It filters for SAT-relevant questions and explains the underlying concepts in each solution, ensuring you understand the 'why' behind the answer.
+        The <a href="https://www.mathzai.com/homeworkAssistant" class="text-blue-600 hover:underline font-semibold inline">Homework Assistant</a> lets you submit multiple math problems at once for comprehensive practice. It filters for SAT-relevant questions and explains the underlying concepts in each solution, ensuring you understand the 'why' behind the answer.
       </p>
       <figure class="my-10">
         <img 
@@ -2306,7 +2307,7 @@ export const rawBlogsData = [
 
       <h2 id="tip-5-simulate-test" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Expert Tip #5: Simulate Test Conditions with an AI Math Tutor</h2>
       <p class="leading-relaxed mb-6 text-xl">
-        To maximize your score, practice under realistic test conditions. Use the <a href="https://www.mathzai.com/realTimeTutor" class="text-blue-600 hover:underline font-semibold">AI Math Tutor</a> to set timers for practice sessions. This helps you manage time effectively, build endurance, and improve both speed and accuracy.
+        To maximize your score, practice under realistic test conditions. Use the <a href="https://www.mathzai.com/realTimeTutor" class="text-blue-600 hover:underline font-semibold inline">AI Math Tutor</a> to set timers for practice sessions. This helps you manage time effectively, build endurance, and improve both speed and accuracy.
       </p>
       
       <h2 id="advanced-techniques" class="scroll-mt-20 text-2xl font-bold mt-12 mb-6">Advanced Problem-Solving Techniques</h2>

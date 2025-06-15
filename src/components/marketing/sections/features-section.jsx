@@ -113,14 +113,7 @@ export default function FeaturesSection() {
                   </video>
                 </div>
 
-                <div className="absolute bottom-[-3%] sm:bottom-[-3%] left-1/2 -translate-x-1/2 w-[45%] sm:w-[40%] z-20 flex flex-col items-center">
-                  <Image
-                    src="/images/features/AMT/computer-base-1.png"
-                    alt="Computer Base"
-                    width={63}
-                    height={12}
-                    className='mx-auto object-contain w-[30%] h-auto'
-                  />
+                <div className="absolute bottom-[-1%] sm:bottom-[-1%] left-1/2 -translate-x-1/2 w-[45%] sm:w-[40%] z-20 flex flex-col items-center">
                   <Image
                     src="/images/features/AMT/computer-base-2.png"
                     alt="Computer Base"
@@ -128,7 +121,7 @@ export default function FeaturesSection() {
                     height={50}
                     layout="responsive"
                     objectFit="contain"
-                    className="mt-2 sm:mt-10"
+                    className=""
                   />
                 </div>
               </div>
@@ -151,6 +144,7 @@ export default function FeaturesSection() {
                 width={257}
                 height={469}
                 className="absolute z-10 w-[60%]"
+                quality={98}
               />
 
               <div className="absolute -top-[40px] left-0 sm:-top-[20px] sm:-left-14 z-0 opacity-80 w-[50%] h-auto">
@@ -163,9 +157,10 @@ export default function FeaturesSection() {
               <Image
                 src="/images/features/HA/ha_math-equation.png"
                 alt="Math equation snippet"
-                width={100}
-                height={100}
-                className="absolute top-0 left-8 object-contain z-20 h-auto w-[50%]"
+                width={269}
+                height={38}
+                className="absolute top-0 left-8 object-contain z-20 h-auto"
+                quality={98}
               />
 
               <Image
@@ -173,15 +168,17 @@ export default function FeaturesSection() {
                 alt="Plus icon"
                 width={24}
                 height={24}
-                className="absolute top-3 sm:top-6 right-[37%] sm:right-[42%] w-6 h-6 z-20 object-contain"
+                className="absolute top-3 sm:top-6 right-[37%] sm:right-[42%] z-20 object-contain"
+                quality={98}
               />
 
               <Image
                 src="/images/features/HA/ha_book.png"
                 alt="Open book"
-                width={150}
-                height={150}
-                className="absolute top-[50px] left-[10%] sm:left-8 -translate-x-1/2 w-[30%] sm:w-[40%] object-contain z-20 h-auto"
+                width={221}
+                height={159}
+                className="absolute top-[50px] left-[10%] sm:left-4 -translate-x-1/2 object-contain z-20 h-auto"
+                quality={98}
               />
 
               <div className="absolute top-[150px] left-[10%] sm:top-[280px] sm:left-16 md:left-12 md:top-[240px] -translate-x-1/2 w-[10%] sm:w-[10%] object-contain z-10 h-auto">
@@ -194,9 +191,10 @@ export default function FeaturesSection() {
               <Image
                 src="/images/features/HA/ha_camera.png"
                 alt="Camera icon"
-                width={60}
-                height={60}
-                className="absolute top-[20px] left-[5%] sm:left-0 -translate-x-1/2 w-[22%] object-contain z-10 h-auto"
+                width={115}
+                height={115}
+                className="absolute top-[10px] left-[5%] sm:left-0 -translate-x-1/2 object-contain z-10 h-auto"
+                quality={98}
               />
 
               <div className="absolute top-12 sm:top-14 z-10 flex flex-col justify-center gap-4 sm:gap-10 w-2/3 items-center px-4">
@@ -225,7 +223,7 @@ export default function FeaturesSection() {
                 alt="Smartphone"
                 width={100}
                 height={12}
-                className="absolute object-contain z-20 -top-[55px] sm:-top-[70px] 2xl:-top-[78px] h-auto"
+                className="absolute object-contain z-20 -top-[55px] sm:-top-[70px] lg:-top-[78px] h-auto"
               />
 
               <Image
@@ -241,7 +239,7 @@ export default function FeaturesSection() {
                 alt="Smartphone"
                 width={8}
                 height={37}
-                className="absolute top-0 right-[18%] sm:right-[90px] 2xl:right-[105px] object-contain z-20"
+                className="absolute top-0 right-[18%] sm:right-[90px] lg:right-[90px] 2xl:right-[103px] object-contain z-20"
               />
 
               <Image
@@ -249,7 +247,7 @@ export default function FeaturesSection() {
                 alt="Smartphone"
                 width={8}
                 height={54}
-                className="absolute top-10 right-[18%] sm:right-[90px] 2xl:right-[105px] object-contain z-20"
+                className="absolute top-10 right-[18%] sm:right-[90px] lg:right-[90px] xl:right-[95px] 2xl:right-[103px] object-contain z-20"
               />
             </div>
           </div>
@@ -317,7 +315,7 @@ export default function FeaturesSection() {
                 alt="Open book"
                 width={100}
                 height={100}
-                className="absolute -top-[17%] left-[15%] object-contain z-30 w-[20%] h-auto max-w-[100px]"
+                className="absolute -top-[17%] left-[15%] object-contain z-30 h-auto"
               />
 
               <Image
@@ -402,11 +400,11 @@ export default function FeaturesSection() {
                 />
 
                 <Image
-                  src="/images/features/SSC/ai_tutor.png"
+                  src="/images/icons/img_ellipse_35.png"
                   alt="AI Tutor character"
                   width={130}
                   height={179}
-                  className="absolute object-contain h-auto pointer-events-none select-none bottom-20 sm:bottom-36 right-[25%] md:bottom-32 2xl:bottom-36 z-30"
+                  className="absolute bottom-20 sm:bottom-36 right-[25%] md:bottom-32 2xl:bottom-36 z-30"
                 />
 
                 <div className="absolute top-10 sm:top-[15%] left-12 sm:left-24 sm:right-0 md:left-20 z-30 w-full sm:w-auto">

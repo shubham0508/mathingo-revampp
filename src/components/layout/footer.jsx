@@ -36,7 +36,7 @@ function Footer() {
         <div className="mt-32 md:mt-0 mb-6 md:mb-8 flex flex-col items-center space-y-3 gap-3 md:gap-5">
           <div className='flex flex-col justify-center items-center text-center'>
             <div className="flex gap-1.5 align-middle justify-center">
-              <Link href="/">
+              <Link href="/" target="_blank" rel="noopener noreferrer">
                 <Image
                   src="/images/icons/2.png"
                   width={44}
@@ -64,7 +64,11 @@ function Footer() {
               initial="initial"
               whileHover="hover"
             >
-              <Link href="/contact-us" className="text-gray-400 hover:text-white transition-colors hover:cursor-pointer text-sm sm:text-base"
+              <Link
+                href="/contact-us"
+                className="text-gray-400 hover:text-white transition-colors hover:cursor-pointer text-sm sm:text-base"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 support@mathzai.com
               </Link>
@@ -88,6 +92,8 @@ function Footer() {
                   <Link
                     href={link.href}
                     className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {link.label}
                   </Link>
@@ -113,6 +119,8 @@ function Footer() {
                   <Link
                     href={link.href}
                     className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {link.label}
                   </Link>
@@ -161,7 +169,6 @@ function Footer() {
           </div>
         </div>
 
-        {/* Copyright section */}
         <div className="mt-10 md:mt-16 text-gray-500 text-xs sm:text-sm text-center">
           © {new Date().getFullYear()} Mathz AI. All Rights Reserved.
         </div>

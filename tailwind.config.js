@@ -281,7 +281,6 @@ module.exports = {
         'main-circle': '0 8px 20px rgba(0,0,0,0.15)',
       },
       backgroundImage: {
-        'hero-pattern': "url('/images/icons/img_group_4.png')",
         'gradient-primary': 'linear-gradient(180deg, #05a3e3, #3481dc)',
         'gradient-secondary': 'linear-gradient(90deg, #1588e9, #31cdae)',
         'gradient-button': 'linear-gradient(180deg, #05A3E4, #3482DD)',

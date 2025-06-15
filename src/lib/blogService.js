@@ -15,10 +15,12 @@ function extractHeadingsFromHtml(htmlContent) {
   return headings;
 }
 
-export const allBlogs = rawBlogsData.map((blog) => ({
-  ...blog,
-  headings: extractHeadingsFromHtml(blog.contentHTML),
-}));
+export const allBlogs = rawBlogsData
+  .map((blog) => ({
+    ...blog,
+    headings: extractHeadingsFromHtml(blog.contentHTML),
+  }))
+  .sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
 
 export function getAllBlogs(page = 1, limit = 9) {
   const start = (page - 1) * limit;
@@ -36,9 +38,7 @@ export function getBlogBySlug(slug) {
 }
 
 export function getRecentBlogs(count = 3) {
-  return allBlogs
-    .slice(0, count)
-    .sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+  return allBlogs.slice(0, count);
 }
 
 export function getRelatedBlogs(currentBlogSlug, tags, limit = 3) {
@@ -54,7 +54,7 @@ export function getRelatedBlogs(currentBlogSlug, tags, limit = 3) {
       if (b.commonTagsCount !== a.commonTagsCount) {
         return b.commonTagsCount - a.commonTagsCount;
       }
-      return new Date(b.publishedDate) - new Date(a.publishedDate);
+      return 0;
     })
     .slice(0, limit);
   return related;

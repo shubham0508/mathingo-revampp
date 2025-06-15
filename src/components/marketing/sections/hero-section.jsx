@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Img } from '@/components/ui/img';
 import Header from '@/components/layout/header';
 import SuperInput from '@/components/shared/SuperInputBox';
+import Link from 'next/link';
 
 export function HeroSection() {
   const fullText = 'Anytime, Anywhere!';
@@ -119,16 +120,16 @@ export function HeroSection() {
             <SuperInput />
             <div className="w-full mt-3 md:mt-5 flex flex-wrap gap-2 justify-center md:justify-start">
               <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
-                Calculus
+                <Link href="/learn-calculus">Calculus</Link>
               </Button>
               <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
-                Algebra
+                <Link href="/learn-algebra">Algebra</Link>
               </Button>
               <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
-                Geometry
+                <Link href="/learn-geometry">Geometry</Link>
               </Button>
               <Button className="text-xs px-2 md:text-sm bg-white text-secondary-text rounded-lg border border-secondary-border hover:bg-gray-100">
-                More Topics
+                <Link href="/maths-learn-more-examples">More Topics</Link>
               </Button>
             </div>
           </div>

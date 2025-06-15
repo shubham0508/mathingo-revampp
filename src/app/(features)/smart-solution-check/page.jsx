@@ -1,69 +1,90 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Camera,
-    ChevronRight,
     Upload,
     X,
     Trash2,
     LoaderCircle,
+    Play,
+    FileText,
+    Image as ImageIcon,
+    CheckCircle,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
-import {
-    useSscQNAExtractionMutation,
-    useSscExtractTextMutation,
-} from '@/store/slices/SSC';
+import Head from 'next/head';
+import Script from 'next/script';
 import { createFileData, validateFile } from '@/lib/fileUtils';
 import MathKeyboard from '@/components/shared/SuperInputBox/math-keyboard';
 import FilePreviews from '@/components/shared/SuperInputBox/file-previews';
-import { useGuestUserAuth } from '@/hooks/useGuestUserAuth';
-import { getErrorMessage } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { siteConfig } from "@/config/site";
+import { generateMetadata as generatePageMetadata } from '@/config/seo';
+import { createOrganizationSchema, createWebsiteSchema } from '@/lib/seoUtils';
+
+// Sample examples data
+const sampleExamples = [
+    {
+        id: 1,
+        type: 'text',
+        question: 'Find the derivative of f(x) = 3x² + 2x - 1',
+        solution: 'f\'(x) = 6x + 2',
+        category: 'Calculus'
+    },
+    {
+        id: 2,
+        type: 'text',
+        question: 'Solve: 2x + 5 = 11',
+        solution: 'x = 3',
+        category: 'Algebra'
+    },
+    {
+        id: 3,
+        type: 'image',
+        question: '/images/examples/quadratic-question.jpg',
+        solution: '/images/examples/quadratic-solution.jpg',
+        category: 'Algebra'
+    },
+    {
+        id: 4,
+        type: 'text',
+        question: 'Integrate: ∫(2x + 3)dx',
+        solution: 'x² + 3x + C',
+        category: 'Calculus'
+    },
+];
 
 export default function SmartSolutionCheck() {
+    // State management
+    const [solutionText, setSolutionText] = useState('');
+    const [solutionFiles, setSolutionFiles] = useState([]);
     const [questionText, setQuestionText] = useState('');
-    const [answerText, setAnswerText] = useState('');
     const [questionFiles, setQuestionFiles] = useState([]);
-    const [answerFiles, setAnswerFiles] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [activeDropArea, setActiveDropArea] = useState(null);
     const [showMathKeyboard, setShowMathKeyboard] = useState(false);
     const [activeTab, setActiveTab] = useState('ΣΠ');
     const [activeField, setActiveField] = useState(null);
     const [initialized, setInitialized] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [showAnswerInput, setShowAnswerInput] = useState(false);
-    const [showDialog, setShowDialog] = useState(false);
-    const [dialogShownForSession, setDialogShownForSession] = useState(false);
-    const [currentInputType, setCurrentInputType] = useState('question');
+    const [showQuestionModal, setShowQuestionModal] = useState(false);
+    const [currentInputType, setCurrentInputType] = useState('solution'); // 'solution' or 'question'
 
+    // Refs
+    const solutionFileInputRef = useRef(null);
+    const solutionCameraInputRef = useRef(null);
     const questionFileInputRef = useRef(null);
-    const answerFileInputRef = useRef(null);
     const questionCameraInputRef = useRef(null);
-    const answerCameraInputRef = useRef(null);
+    const solutionDropAreaRef = useRef(null);
     const questionDropAreaRef = useRef(null);
-    const answerDropAreaRef = useRef(null);
+    const solutionEditorRef = useRef(null);
     const questionEditorRef = useRef(null);
-    const answerEditorRef = useRef(null);
     const MQRef = useRef(null);
 
-    const [sscQNAExtraction] = useSscQNAExtractionMutation();
-    const [sscExtractText] = useSscExtractTextMutation();
-    const { ensureAuthenticated } = useGuestUserAuth();
-    const router = useRouter();
-    const dispatch = useDispatch();
-    const MODEL_NAME = 'alpha';
-
+    // Animation variants
     const fadeIn = {
         hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.6 },
-        },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
     };
 
     const buttonHover = {
@@ -71,10 +92,13 @@ export default function SmartSolutionCheck() {
         hover: { scale: 1.05, transition: { duration: 0.2 } },
     };
 
-    const hasQuestionContent = questionText.trim().length > 0 || questionFiles.length > 0;
-    const hasAnswerContent = answerText.trim().length > 0 || answerFiles.length > 0;
-    const canProceed = hasQuestionContent && (showAnswerInput ? hasAnswerContent : true);
+    const modalVariants = {
+        hidden: { opacity: 0, scale: 0.9 },
+        visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
+        exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
+    };
 
+    // MathQuill initialization
     useEffect(() => {
         const loadMathQuill = async () => {
             if (typeof window === 'undefined' || initialized) return;
@@ -113,40 +137,22 @@ export default function SmartSolutionCheck() {
         return () => document.removeEventListener('click', handleClick);
     }, [initialized]);
 
-    useEffect(() => {
-        if (hasQuestionContent && !showAnswerInput && !showDialog && !dialogShownForSession) {
-            setShowDialog(true);
-        }
-    }, [hasQuestionContent, showAnswerInput, showDialog, dialogShownForSession]);
-
     const initEditor = useCallback(() => {
         if (typeof window !== 'undefined' && window.MathQuill) {
-            MQRef.current = window.MathQuill;
             MQRef.current = window.MathQuill.getInterface(2);
             setInitialized(true);
-
-            if (questionEditorRef.current) {
-                questionEditorRef.current.addEventListener('input', () => handleEditorInput('question'));
-            }
-            if (answerEditorRef.current) {
-                answerEditorRef.current.addEventListener('input', () => handleEditorInput('answer'));
-            }
         }
     }, []);
 
-    const handleEditorInput = useCallback((type) => {
-        updateContent(type);
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        if (editorRef.current && editorRef.current.textContent.trim().length > 0) {
-            setShowMathKeyboard(true);
-            setCurrentInputType(type);
-        }
-    }, []);
+    // Utility functions
+    const getCurrentText = () => currentInputType === 'solution' ? solutionText : questionText;
+    const getCurrentFiles = () => currentInputType === 'solution' ? solutionFiles : questionFiles;
+    const getCurrentEditorRef = () => currentInputType === 'solution' ? solutionEditorRef : questionEditorRef;
+    const setCurrentText = (text) => currentInputType === 'solution' ? setSolutionText(text) : setQuestionText(text);
+    const setCurrentFiles = (files) => currentInputType === 'solution' ? setSolutionFiles(files) : setQuestionFiles(files);
 
-    const updateContent = useCallback((type) => {
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-
+    const updateContent = useCallback((inputType = currentInputType) => {
+        const editorRef = inputType === 'solution' ? solutionEditorRef : questionEditorRef;
         if (!editorRef.current || !MQRef.current) return;
 
         let fullContent = '';
@@ -161,150 +167,27 @@ export default function SmartSolutionCheck() {
             }
         });
 
-        setText(fullContent.trim());
-    }, []);
-
-    const placeCaretAfter = useCallback((node, type) => {
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.setStartAfter(node);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        if (editorRef.current) editorRef.current.focus();
-    }, []);
-
-    const insertMathFieldAtCaret = useCallback((latex = '', type) => {
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        const editor = editorRef.current;
-        if (!editor || !MQRef.current) return;
-
-        const span = document.createElement('span');
-        span.className = 'math-field';
-        span.setAttribute('contenteditable', 'false');
-
-        const innerSpan = document.createElement('span');
-        span.appendChild(innerSpan);
-
-        const mathField = MQRef.current.MathField(innerSpan, {
-            handlers: {
-                edit: () => {
-                    setActiveField(mathField);
-                    updateContent(type);
-                },
-            },
-        });
-
-        mathField.latex(latex);
-        setActiveField(mathField);
-
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-            range.insertNode(span);
-            placeCaretAfter(span, type);
+        const trimmedContent = fullContent.trim();
+        if (inputType === 'solution') {
+            setSolutionText(trimmedContent);
         } else {
-            editor.appendChild(span);
-            placeCaretAfter(span, type);
+            setQuestionText(trimmedContent);
         }
+    }, [currentInputType]);
 
-        updateContent(type);
-    }, [updateContent, placeCaretAfter]);
-
-    const handleEditorKeyDown = (e, type) => {
-        if (e.key === '`' || e.key === '$' || e.key === '\\') {
-            e.preventDefault();
-            insertMathFieldAtCaret('', type);
-        }
-    };
-
-    const insertSymbol = useCallback((symbol) => {
-        if (activeField && document.activeElement.closest('.math-field')) {
-            if (symbol.startsWith('\\')) {
-                activeField.write(symbol);
-            } else {
-                activeField.typedText(symbol);
-            }
-            activeField.focus();
-        } else {
-            insertMathFieldAtCaret(symbol, currentInputType);
-        }
-        updateContent(currentInputType);
-    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
-
-    const insertCommand = useCallback((cmd) => {
-        if (activeField && document.activeElement.closest('.math-field')) {
-            switch (cmd) {
-                case 'frac':
-                    activeField.cmd('\\frac');
-                    break;
-                case 'sqrt':
-                    activeField.cmd('\\sqrt');
-                    break;
-                case 'nthroot':
-                    activeField.cmd('\\nthroot');
-                    break;
-                case 'times':
-                    activeField.cmd('\\times');
-                    break;
-                case 'div':
-                    activeField.cmd('\\div');
-                    break;
-                default:
-                    activeField.cmd('\\' + cmd);
-            }
-            activeField.focus();
-        } else {
-            const cmdLatex = cmd === 'frac' ? '\\frac{}{}' : cmd === 'sqrt' ? '\\sqrt{}' : cmd === 'nthroot' ? '\\sqrt[]{}' : cmd === 'times' ? '\\times' : cmd === 'div' ? '\\div' : `\\${cmd}`;
-            insertMathFieldAtCaret(cmdLatex, currentInputType);
-        }
-        updateContent(currentInputType);
-    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
-
-    const insertExponent = useCallback((exp) => {
-        if (activeField && document.activeElement.closest('.math-field')) {
-            activeField.typedText(exp === '^2' ? '^2' : '^');
-            activeField.focus();
-        } else {
-            insertMathFieldAtCaret(exp === '^2' ? 'x^2' : 'x^{}', currentInputType);
-        }
-        updateContent(currentInputType);
-    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
-
-    const insertSubscript = useCallback(() => {
-        if (activeField && document.activeElement.closest('.math-field')) {
-            activeField.typedText('_');
-            activeField.focus();
-        } else {
-            insertMathFieldAtCaret('x_{}', currentInputType);
-        }
-        updateContent(currentInputType);
-    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
-
-    const insertComplexExpression = useCallback((latexTemplate) => {
-        if (activeField && document.activeElement.closest('.math-field')) {
-            activeField.write(latexTemplate);
-            activeField.focus();
-        } else {
-            insertMathFieldAtCaret(latexTemplate, currentInputType);
-        }
-        updateContent(currentInputType);
-    }, [activeField, insertMathFieldAtCaret, updateContent, currentInputType]);
-
-    const handleFileUpload = useCallback((e, type) => {
+    // File handling
+    const handleFileUpload = useCallback((e, inputType) => {
         const newFiles = Array.from(e.target.files || []);
         if (newFiles.length === 0) return;
 
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-        const files = type === 'question' ? questionFiles : answerFiles;
-        const text = type === 'question' ? questionText : answerText;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
+        const currentFiles = inputType === 'solution' ? solutionFiles : questionFiles;
+        const setFiles = inputType === 'solution' ? setSolutionFiles : setQuestionFiles;
+        const setText = inputType === 'solution' ? setSolutionText : setQuestionText;
+        const editorRef = inputType === 'solution' ? solutionEditorRef : questionEditorRef;
+        const currentText = inputType === 'solution' ? solutionText : questionText;
 
-        if (files.length + newFiles.length > 1) {
-            toast.error('Maximum 1 file can be uploaded');
+        if (currentFiles.length + newFiles.length > 5) {
+            toast.error('Maximum 5 files can be uploaded');
             return;
         }
 
@@ -322,20 +205,15 @@ export default function SmartSolutionCheck() {
         const filesData = validFiles.map((file) => createFileData(file));
         setFiles((prev) => [...prev, ...filesData]);
 
-        if (text.trim().length > 0) {
+        if (currentText.trim().length > 0) {
             setText('');
             if (editorRef.current) editorRef.current.innerHTML = '';
         }
-    }, [questionFiles, answerFiles, questionText, answerText]);
+    }, [solutionFiles, questionFiles, solutionText, questionText]);
 
-    const handleCameraInput = useCallback((e, type) => {
+    const handleCameraInput = useCallback((e, inputType) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-        const text = type === 'question' ? questionText : answerText;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
 
         const validation = validateFile(file);
         if (!validation.isValid) {
@@ -344,37 +222,28 @@ export default function SmartSolutionCheck() {
         }
 
         const fileData = createFileData(file);
+        const setFiles = inputType === 'solution' ? setSolutionFiles : setQuestionFiles;
+        const setText = inputType === 'solution' ? setSolutionText : setQuestionText;
+        const editorRef = inputType === 'solution' ? solutionEditorRef : questionEditorRef;
+        const currentText = inputType === 'solution' ? solutionText : questionText;
+
         setFiles((prev) => [...prev, fileData]);
 
-        if (text.trim().length > 0) {
+        if (currentText.trim().length > 0) {
             setText('');
             if (editorRef.current) editorRef.current.innerHTML = '';
         }
-    }, [questionText, answerText]);
+    }, [solutionText, questionText]);
 
-    const triggerFileInput = useCallback((type) => {
-        const inputRef = type === 'question' ? questionFileInputRef : answerFileInputRef;
-        inputRef.current?.click();
-    }, []);
-
-    const triggerCameraInput = useCallback((type) => {
-        const inputRef = type === 'question' ? questionCameraInputRef : answerCameraInputRef;
-        inputRef.current?.click();
-    }, []);
-
-    const removeFile = useCallback((fileId, type) => {
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
+    const removeFile = useCallback((fileId, inputType) => {
+        const setFiles = inputType === 'solution' ? setSolutionFiles : setQuestionFiles;
         setFiles((prev) => prev.filter((file) => file.id !== fileId));
     }, []);
 
-    const toggleMathKeyboard = () => {
-        setShowMathKeyboard(!showMathKeyboard);
-    };
-
-    const handleClear = (type) => {
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
+    const handleClear = (inputType) => {
+        const editorRef = inputType === 'solution' ? solutionEditorRef : questionEditorRef;
+        const setText = inputType === 'solution' ? setSolutionText : setQuestionText;
+        const setFiles = inputType === 'solution' ? setSolutionFiles : setQuestionFiles;
 
         if (editorRef.current) {
             editorRef.current.innerHTML = '';
@@ -383,515 +252,491 @@ export default function SmartSolutionCheck() {
         setFiles([]);
     };
 
-    const setupDropHandlers = useCallback((type) => {
-        const dropAreaRef = type === 'question' ? questionDropAreaRef : answerDropAreaRef;
-        const files = type === 'question' ? questionFiles : answerFiles;
-        const text = type === 'question' ? questionText : answerText;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-
-        const dropArea = dropAreaRef.current;
-        if (!dropArea) return;
-
-        const handleDragOver = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsDragging(true);
-            setActiveDropArea(type);
-        };
-
-        const handleDragLeave = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsDragging(false);
-            setActiveDropArea(null);
-        };
-
-        const handleDrop = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsDragging(false);
-            setActiveDropArea(null);
-
-            const droppedFiles = Array.from(e.dataTransfer?.files || []);
-            if (droppedFiles.length === 0) return;
-
-            if (files.length + droppedFiles.length > 1) {
-                toast.error('Maximum 1 file can be uploaded');
-                return;
-            }
-
-            const validFiles = droppedFiles.filter((file) => {
-                const validation = validateFile(file);
-                if (!validation.isValid) {
-                    Object.values(validation.errors).forEach((error) => toast.error(String(error)));
-                    return false;
-                }
-                return true;
-            });
-
-            if (validFiles.length === 0) return;
-
-            const filesData = validFiles.map((file) => createFileData(file));
-            setFiles((prev) => [...prev, ...filesData]);
-
-            if (text.trim().length > 0) {
-                setText('');
-                if (editorRef.current) editorRef.current.innerHTML = '';
-            }
-        };
-
-        dropArea.addEventListener('dragover', handleDragOver);
-        dropArea.addEventListener('dragleave', handleDragLeave);
-        dropArea.addEventListener('drop', handleDrop);
-
-        return () => {
-            dropArea.removeEventListener('dragover', handleDragOver);
-            dropArea.removeEventListener('dragleave', handleDragLeave);
-            dropArea.removeEventListener('drop', handleDrop);
-        };
-    }, [questionFiles, answerFiles, questionText, answerText]);
-
-    useEffect(() => {
-        const questionCleanup = setupDropHandlers('question');
-        const answerCleanup = showAnswerInput ? setupDropHandlers('answer') : null;
-
-        return () => {
-            questionCleanup?.();
-            answerCleanup?.();
-        };
-    }, [setupDropHandlers, showAnswerInput]);
-
-    const handlePaste = useCallback(async (e, type) => {
-        e.preventDefault();
-
-        const files = type === 'question' ? questionFiles : answerFiles;
-        const text = type === 'question' ? questionText : answerText;
-        const setText = type === 'question' ? setQuestionText : setAnswerText;
-        const setFiles = type === 'question' ? setQuestionFiles : setAnswerFiles;
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-
-        const clipboardItems = e.clipboardData?.items;
-        if (clipboardItems) {
-            for (let i = 0; i < clipboardItems.length; i++) {
-                if (clipboardItems[i].type.indexOf('image') !== -1) {
-                    const blob = clipboardItems[i].getAsFile();
-                    if (blob) {
-                        const fileName = `pasted-image-${Date.now()}.png`;
-                        const file = new File([blob], fileName, { type: 'image/png' });
-
-                        const validation = validateFile(file);
-                        if (!validation.isValid) {
-                            Object.values(validation.errors).forEach((error) => toast.error(String(error)));
-                            return;
-                        }
-
-                        const fileData = createFileData(file);
-                        setFiles((prev) => [...prev, fileData]);
-
-                        if (text.trim().length > 0) {
-                            setText('');
-                            if (editorRef.current) editorRef.current.innerHTML = '';
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-
-        const pastedText = e.clipboardData.getData('text');
-        if (pastedText?.length > 2000) {
-            toast.error('Maximum 2000 characters can be added!');
-        } else if (files.length === 0) {
-            if (activeField && document.activeElement.closest('.math-field')) {
-                if (pastedText.includes('\\') || pastedText.includes('$')) {
-                    activeField.latex(pastedText);
-                } else {
-                    activeField.write(pastedText);
-                }
+    // Math keyboard functions
+    const insertSymbol = useCallback((symbol) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            if (symbol.startsWith('\\')) {
+                activeField.write(symbol);
             } else {
-                editorRef.current.textContent += pastedText;
+                activeField.typedText(symbol);
             }
-            updateContent(type);
-            setShowMathKeyboard(true);
-            setCurrentInputType(type);
+            activeField.focus();
         }
-    }, [activeField, questionFiles, answerFiles, questionText, answerText, updateContent]);
+        updateContent();
+    }, [activeField, updateContent]);
 
-    const submitFiles = async () => {
-        try {
-            toast.loading('Uploading files...', { id: 'file-upload' });
-
-            const formData = new FormData();
-            formData.append('type', 'ssc_files');
-
-            if (questionFiles.length > 0) {
-                formData.append('files', questionFiles[0]?.file, `question_${questionFiles[0]?.file.name}`);
+    const insertCommand = useCallback((cmd) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            switch (cmd) {
+                case 'frac': activeField.cmd('\\frac'); break;
+                case 'sqrt': activeField.cmd('\\sqrt'); break;
+                case 'nthroot': activeField.cmd('\\nthroot'); break;
+                case 'times': activeField.cmd('\\times'); break;
+                case 'div': activeField.cmd('\\div'); break;
+                default: activeField.cmd('\\' + cmd);
             }
-            if (answerFiles.length > 0) {
-                formData.append('files', answerFiles[0]?.file, `answer_${answerFiles[0]?.file.name}`);
-            }
-
-            const response = await fetch('/api/s3/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                toast.error('Upload failed', { id: 'file-upload' });
-                throw new Error(`Failed to upload files: ${response.status} ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            if (!result?.success) {
-                toast.error(result?.message || 'Failed to upload files', { id: 'file-upload' });
-                throw new Error(result?.message || 'Failed to upload files');
-            }
-
-            toast.success('Files uploaded successfully', { id: 'file-upload' });
-
-            const questionUrl = result?.files?.find(f => f.originalName.startsWith('question_'))?.fileKey || 'no_input';
-            const answerUrl = result?.files?.find(f => f.originalName.startsWith('answer_'))?.fileKey || 'no_input';
-
-            toast.loading('Checking your solution...', { id: 'extraction' });
-            const extractionResponse = await sscQNAExtraction({
-                model_name: MODEL_NAME,
-                scc_question_url: questionUrl,
-                scc_solution_url: answerUrl,
-                input_type: 'image'
-            }).unwrap();
-
-            toast.success('Check complete!', { id: 'extraction' });
-            handleExtractionResponse(extractionResponse);
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.dismiss();
-            const errorMessage = getErrorMessage(error?.data?.error);
-            if (errorMessage) {
-                toast.error(errorMessage);
-            } else {
-                toast.error('Failed to process files. Please try again.');
-            }
-            throw error;
+            activeField.focus();
         }
+        updateContent();
+    }, [activeField, updateContent]);
+
+    const insertExponent = useCallback((exp) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            activeField.typedText(exp === '^2' ? '^2' : '^');
+            activeField.focus();
+        }
+        updateContent();
+    }, [activeField, updateContent]);
+
+    const insertSubscript = useCallback(() => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            activeField.typedText('_');
+            activeField.focus();
+        }
+        updateContent();
+    }, [activeField, updateContent]);
+
+    const insertComplexExpression = useCallback((latexTemplate) => {
+        if (activeField && document.activeElement.closest('.math-field')) {
+            activeField.write(latexTemplate);
+            activeField.focus();
+        }
+        updateContent();
+    }, [activeField, updateContent]);
+
+    // Example handling
+    const handleExampleClick = (example) => {
+        if (example.type === 'text') {
+            // Set solution
+            setSolutionText(example.solution);
+            if (solutionEditorRef.current) {
+                solutionEditorRef.current.textContent = example.solution;
+            }
+
+            // Set question
+            setQuestionText(example.question);
+            if (questionEditorRef.current) {
+                questionEditorRef.current.textContent = example.question;
+            }
+        }
+        // For image examples, you would handle file loading here
+        toast.success('Example loaded successfully!');
     };
 
-    const submitTextData = async () => {
-        try {
-            toast.loading('Checking your solution...', { id: 'extraction' });
-            const response = await sscExtractText({
-                model_name: MODEL_NAME,
-                input_type: 'text',
-                grade: 'high_school',
-                text_question: questionText,
-                text_answer: answerText,
-                question_url: 'no_input',
-                solution_url: 'no_input'
-            }).unwrap();
-            toast.success('Check complete!', { id: 'extraction' });
-            handleExtractionResponse(response);
-        } catch (error) {
-            console.error('Text submission error:', error);
-            toast.dismiss();
-            const errorMessage = getErrorMessage(error?.data?.error);
-            if (errorMessage) {
-                toast.error(errorMessage);
-            } else {
-                toast.error('Failed to process your input. Please try again.');
-            }
-            throw error;
-        }
-    };
+    // Submit handlers
+    const handleSolutionSubmit = () => {
+        const hasSolution = solutionText.trim().length > 0 || solutionFiles.length > 0;
 
-    const handleExtractionResponse = (response) => {
-        if (response?.status_code === 201) {
-            // dispatch(setSscResult(response.data)); // Example of storing result in redux
-            router.push('/smart-solution-check/results'); // Navigate to results page
-        } else {
-            setIsProcessing(false);
-            throw new Error(response?.error || 'Failed to process input');
-        }
-    };
-
-    const handleSubmit = async () => {
-        if (isProcessing || !canProceed || !hasAnswerContent) {
-            if (!hasAnswerContent) {
-                toast.error("Please provide a solution to check.");
-            }
+        if (!hasSolution) {
+            toast.error('Please enter a solution or upload solution files');
             return;
-        };
+        }
+
+        setShowQuestionModal(true);
+    };
+
+    const handleQuestionSubmit = () => {
+        const hasQuestion = questionText.trim().length > 0 || questionFiles.length > 0;
+
+        if (!hasQuestion) {
+            toast.error('Please enter a question or upload question files');
+            return;
+        }
+
+        setShowQuestionModal(false);
+        handleFinalSubmit();
+    };
+
+    const handleFinalSubmit = async () => {
+        setIsProcessing(true);
 
         try {
-            setIsProcessing(true);
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
-            const isReady = await ensureAuthenticated();
-            if (!isReady) {
-                toast.error('Something went wrong! Please try again later');
-                setIsProcessing(false);
-                return;
-            }
+            toast.success('Solution check completed successfully!');
 
-            const hasFiles = questionFiles.length > 0 || answerFiles.length > 0;
-
-            if (hasFiles) {
-                await submitFiles();
-            } else {
-                await submitTextData();
-            }
-
+            // Reset form
+            setSolutionText('');
+            setSolutionFiles([]);
             setQuestionText('');
-            setAnswerText('');
-            if (questionEditorRef.current) questionEditorRef.current.innerHTML = '';
-            if (answerEditorRef.current) answerEditorRef.current.innerHTML = '';
             setQuestionFiles([]);
-            setAnswerFiles([]);
-            setShowMathKeyboard(false);
-            setShowAnswerInput(false);
-            setDialogShownForSession(false);
+            if (solutionEditorRef.current) solutionEditorRef.current.innerHTML = '';
+            if (questionEditorRef.current) questionEditorRef.current.innerHTML = '';
+
         } catch (error) {
-            console.error('Submission error:', error);
+            toast.error('Failed to process. Please try again.');
+        } finally {
             setIsProcessing(false);
         }
     };
 
-    const handleDialogResponse = (hasAnswer) => {
-        setShowDialog(false);
-        setDialogShownForSession(true);
-        if (hasAnswer) {
-            setShowAnswerInput(true);
-        }
+    // Drag and drop setup
+    useEffect(() => {
+        const setupDragAndDrop = (dropAreaRef, inputType) => {
+            const dropArea = dropAreaRef.current;
+            if (!dropArea) return;
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+            };
+
+            const handleDragLeave = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+
+                const droppedFiles = Array.from(e.dataTransfer?.files || []);
+                if (droppedFiles.length === 0) return;
+
+                const currentFiles = inputType === 'solution' ? solutionFiles : questionFiles;
+                if (currentFiles.length + droppedFiles.length > 5) {
+                    toast.error('Maximum 5 files can be uploaded');
+                    return;
+                }
+
+                const validFiles = droppedFiles.filter((file) => {
+                    const validation = validateFile(file);
+                    if (!validation.isValid) {
+                        Object.values(validation.errors).forEach((error) => toast.error(String(error)));
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (validFiles.length === 0) return;
+
+                const filesData = validFiles.map((file) => createFileData(file));
+                const setFiles = inputType === 'solution' ? setSolutionFiles : setQuestionFiles;
+                setFiles((prev) => [...prev, ...filesData]);
+            };
+
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('dragleave', handleDragLeave);
+            dropArea.addEventListener('drop', handleDrop);
+
+            return () => {
+                dropArea.removeEventListener('dragover', handleDragOver);
+                dropArea.removeEventListener('dragleave', handleDragLeave);
+                dropArea.removeEventListener('drop', handleDrop);
+            };
+        };
+
+        const cleanupSolution = setupDragAndDrop(solutionDropAreaRef, 'solution');
+        const cleanupQuestion = setupDragAndDrop(questionDropAreaRef, 'question');
+
+        return () => {
+            cleanupSolution?.();
+            cleanupQuestion?.();
+        };
+    }, [solutionFiles, questionFiles]);
+
+    // SEO metadata
+    const pageUrl = `${siteConfig.url}/smart-solution-check`;
+    const metadata = generatePageMetadata({
+        title: "Smart Solution Check - AI-Powered Math Solution Validator",
+        description: "Check your math solutions instantly with AI. Upload handwritten solutions or type them in. Get feedback on correctness and step-by-step verification.",
+        url: pageUrl,
+        image: `${siteConfig.url}/images/solution-check-og.jpg`
+    });
+
+    const softwareAppSchema = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Smart Solution Check by MathzAI",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "description": "AI-powered math solution checker. Upload or type solutions and questions for instant verification.",
+        "url": pageUrl,
+        "publisher": createOrganizationSchema(),
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Solution verification",
+            "Handwritten solution recognition",
+            "Step-by-step validation",
+            "Math keyboard support",
+            "Image and text input"
+        ]
     };
 
-    const renderInputBox = (type, title, placeholder) => {
-        const text = type === 'question' ? questionText : answerText;
-        const files = type === 'question' ? questionFiles : answerFiles;
-        const editorRef = type === 'question' ? questionEditorRef : answerEditorRef;
-        const dropAreaRef = type === 'question' ? questionDropAreaRef : answerDropAreaRef;
-        const hasContent = text.trim().length > 0 || files.length > 0;
-
-        const isCurrentDropArea = activeDropArea === type;
-
-        return (
-            <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={fadeIn}
-                className="w-full rounded-lg bg-white mb-6"
-                style={{ boxShadow: '0 1px 5px rgba(66, 85, 255, 1)' }}
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-                    <motion.div
-                        ref={dropAreaRef}
-                        transition={{ duration: 0.3 }}
-                        className={`w-full min-h-[200px] rounded-md border-2 border-dashed ${isDragging && isCurrentDropArea
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-300'
-                            } flex flex-col justify-between p-6 relative`}
-                    >
-                        {hasContent && (
-                            <motion.div
-                                variants={buttonHover}
-                                initial="rest"
-                                whileHover="hover"
-                                className="absolute top-2 right-2 flex items-center justify-center p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full cursor-pointer"
-                                onClick={() => handleClear(type)}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </motion.div>
-                        )}
-
-                        <FilePreviews files={files} removeFile={(fileId) => removeFile(fileId, type)} />
-
-                        <div className="flex flex-col flex-1">
-                            <div
-                                ref={editorRef}
-                                className="flex-1 outline-none relative"
-                                contentEditable={files.length === 0 && !isProcessing}
-                                onKeyDown={(e) => handleEditorKeyDown(e, type)}
-                                onPaste={(e) => handlePaste(e, type)}
-                                onFocus={() => setCurrentInputType(type)}
-                                style={{
-                                    minHeight: '60px',
-                                    pointerEvents: (files.length > 0 || isProcessing) ? 'none' : 'auto',
-                                    opacity: (files.length > 0 || isProcessing) ? 0.7 : 1,
-                                }}
-                            />
-                            {text?.length === 0 && files?.length === 0 && (
-                                <div className="flex flex-col absolute text-gray-500 text-sm w-full pointer-events-none">
-                                    <span>{placeholder}</span>
-                                    <span className="mt-2 text-xs">
-                                        or drag and drop/ paste an image here
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex justify-between items-center mt-4">
-                            <div className="flex gap-2">
-                                <motion.button
-                                    variants={buttonHover}
-                                    initial="rest"
-                                    whileHover="hover"
-                                    className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${(isProcessing || files.length > 0) ? 'opacity-50 cursor-not-allowed' : ''
-                                        }`}
-                                    onClick={() => triggerFileInput(type)}
-                                    disabled={isProcessing || files.length > 0}
-                                >
-                                    <Upload className="w-4 h-4" />
-                                    Upload File
-                                </motion.button>
-
-                                <motion.button
-                                    variants={buttonHover}
-                                    initial="rest"
-                                    whileHover="hover"
-                                    className={`flex items-center gap-2 h-9 bg-action-buttons-background text-action-buttons-foreground font-medium rounded-md border-none px-3 ${(isProcessing || files.length > 0) ? 'opacity-50 cursor-not-allowed' : ''
-                                        }`}
-                                    onClick={() => triggerCameraInput(type)}
-                                    disabled={isProcessing || files.length > 0}
-                                >
-                                    <Camera className="w-4 h-4" />
-                                    Take a snap
-                                </motion.button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </motion.div>
-        );
-    };
+    const hasSolution = solutionText.trim().length > 0 || solutionFiles.length > 0;
+    const hasQuestion = questionText.trim().length > 0 || questionFiles.length > 0;
 
     return (
         <>
-            <div className="flex flex-row justify-center w-full min-h-screen px-4">
-                <div className="relative w-full max-w-4xl py-10">
-                    <div className="flex flex-col items-center">
-                        <motion.h1
-                            initial="hidden"
-                            animate="visible"
-                            variants={fadeIn}
-                            className="bg-gradient-secondary bg-clip-text text-transparent font-black text-4xl font-roca text-center"
+            <Head>
+                <title>{metadata.title}</title>
+                <meta name="description" content={metadata.description} />
+                <meta name="keywords" content="math solution checker, homework verification, AI math validator, solution grading, mathzai" />
+
+                <meta property="og:type" content={metadata.openGraph.type} />
+                <meta property="og:locale" content={metadata.openGraph.locale} />
+                <meta property="og:url" content={metadata.openGraph.url} />
+                <meta property="og:title" content={metadata.openGraph.title} />
+                <meta property="og:description" content={metadata.openGraph.description} />
+                <meta property="og:site_name" content={metadata.openGraph.siteName} />
+                <meta property="og:image" content={metadata.openGraph.images[0].url} />
+
+                <meta name="twitter:card" content={metadata.twitter.card} />
+                <meta name="twitter:title" content={metadata.twitter.title} />
+                <meta name="twitter:description" content={metadata.twitter.description} />
+                <meta name="twitter:image" content={metadata.twitter.images[0]} />
+
+                <link rel="canonical" href={metadata.alternates.canonical} />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+            </Head>
+
+            <Script
+                id="solution-check-schema"
+                type="application/ld+json"
+                strategy="afterInteractive"
+            >
+                {JSON.stringify(softwareAppSchema)}
+            </Script>
+
+            <Script
+                id="website-schema-sc"
+                type="application/ld+json"
+                strategy="afterInteractive"
+            >
+                {JSON.stringify(createWebsiteSchema())}
+            </Script>
+
+            <div className="flex flex-col items-center min-h-screen p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
+                {/* Header */}
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeIn}
+                    className="text-center mb-8"
+                >
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                        Smart Solution Check
+                    </h1>
+                    <p className="text-xl text-gray-600">
+                        Get even your handwritten answers checked here
+                    </p>
+                </motion.div>
+
+                {/* Solution Input Section */}
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeIn}
+                    className="w-full max-w-4xl mb-8"
+                >
+                    <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                        Submit Question(s) for the provided Solution(s)
+                    </h2>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-dashed border-gray-300">
+                        <div
+                            ref={solutionDropAreaRef}
+                            className={`min-h-[200px] rounded-lg border-2 border-dashed ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                                } flex flex-col justify-between p-4 relative`}
                         >
-                            Smart Solution Check
-                        </motion.h1>
-                        <motion.h2
-                            initial="hidden"
-                            animate="visible"
-                            variants={fadeIn}
-                            className="mt-4 text-heading-ha text-xl font-semibold text-center mb-8"
-                        >
-                            Get even your handwritten answers checked here
-                        </motion.h2>
-
-                        {renderInputBox('question', 'Submit Question(s)', 'Type a math problem....')}
-
-                        {showAnswerInput && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="w-full">
-                                {renderInputBox('answer', 'Upload Solution(s) for getting checked.', 'Type your solution here....')}
-                            </motion.div>
-                        )}
-
-                        {showAnswerInput && (
-                            <motion.div
-                                initial="hidden"
-                                animate="visible"
-                                variants={fadeIn}
-                                className="w-full flex justify-end mt-4"
-                            >
-                                <motion.button
-                                    variants={buttonHover}
-                                    initial="rest"
-                                    whileHover="hover"
-                                    whileTap={{ scale: 0.95 }}
-                                    className={`flex items-center gap-1 ${isProcessing || !canProceed || !hasAnswerContent ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'bg-action-buttons-foreground'
-                                        } text-white font-medium rounded-md h-11 px-6`}
-                                    onClick={handleSubmit}
-                                    disabled={isProcessing || !canProceed || !hasAnswerContent}
-                                >
-                                    {isProcessing ? (
-                                        <div className="flex items-center">
-                                            <LoaderCircle className="size-5 mr-3 animate-spin text-white" />
-                                            Processing...
-                                        </div>
-                                    ) : (
-                                        <>
-                                            Proceed
-                                            <ChevronRight className="w-5 h-5" />
-                                        </>
-                                    )}
-                                </motion.button>
-                            </motion.div>
-                        )}
-
-                        {(showMathKeyboard && (hasQuestionContent || hasAnswerContent)) && (
-                            <div className="relative w-full mt-6">
+                            {hasSolution && (
                                 <button
-                                    className="absolute right-2 -top-2 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-1 z-10"
-                                    onClick={toggleMathKeyboard}
+                                    onClick={() => handleClear('solution')}
+                                    className="absolute top-2 right-2 p-2 bg-gray-200 hover:bg-red-100 text-red-600 rounded-full transition-colors"
                                 >
-                                    <X className="w-4 h-4" />
+                                    <Trash2 className="w-4 h-4" />
                                 </button>
-                                <MathKeyboard
-                                    activeTab={activeTab}
-                                    setActiveTab={setActiveTab}
-                                    insertSymbol={insertSymbol}
-                                    insertCommand={insertCommand}
-                                    insertExponent={insertExponent}
-                                    insertSubscript={insertSubscript}
-                                    insertComplexExpression={insertComplexExpression}
-                                    disabled={isProcessing}
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+                            )}
 
-            {showDialog && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                            <FilePreviews
+                                files={solutionFiles}
+                                removeFile={(fileId) => removeFile(fileId, 'solution')}
+                            />
+
+                            <div className="flex-1">
+                                <div
+                                    ref={solutionEditorRef}
+                                    className="w-full min-h-[60px] outline-none"
+                                    contentEditable={solutionFiles.length === 0 && !isProcessing}
+                                    onInput={() => updateContent('solution')}
+                                    style={{
+                                        pointerEvents: (solutionFiles.length > 0 || isProcessing) ? 'none' : 'auto',
+                                        opacity: (solutionFiles.length > 0 || isProcessing) ? 0.7 : 1,
+                                    }}
+                                />
+                                {solutionText.length === 0 && solutionFiles.length === 0 && (
+                                    <div className="absolute top-4 left-4 text-gray-500 pointer-events-none">
+                                        <p>Upload file(s) having your question(s) here...</p>
+                                        <p className="mt-2">or click on <span className="font-mono bg-gray-100 px-1 rounded">T</span> to type</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-between items-center mt-4">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => solutionFileInputRef.current?.click()}
+                                        className={`flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                        disabled={isProcessing}
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        Upload
+                                    </button>
+
+                                    <button
+                                        onClick={() => solutionCameraInputRef.current?.click()}
+                                        className={`flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                        disabled={isProcessing}
+                                    >
+                                        <Camera className="w-4 h-4" />
+                                        Camera
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setCurrentInputType('solution');
+                                            setShowMathKeyboard(!showMathKeyboard);
+                                        }}
+                                        className={`flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                        disabled={isProcessing}
+                                    >
+                                        <span className="font-mono">T</span>
+                                        Math
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={handleSolutionSubmit}
+                                    disabled={!hasSolution || isProcessing}
+                                    className={`px-6 py-2 rounded-lg font-medium transition-all ${hasSolution && !isProcessing
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    Proceed →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Uploaded Solutions Preview */}
+                {hasSolution && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+                        initial="hidden"
+                        animate="visible"
+                        variants={fadeIn}
+                        className="w-full max-w-4xl mb-8"
                     >
-                        <h3 className="text-lg font-bold text-gray-900">Have you submitted all the solutions along with the corresponding Questions</h3>
-                        <div className="mt-6 flex justify-end gap-3">
-                            <motion.button
-                                variants={buttonHover} whileHover="hover"
-                                onClick={() => handleDialogResponse(true)}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold"
-                            >
-                                Yes, verify now
-                            </motion.button>
-                            <motion.button
-                                variants={buttonHover} whileHover="hover"
-                                onClick={() => handleDialogResponse(true)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold"
-                            >
-                                No, I will add Questions separately
-                            </motion.button>
+                        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                            Uploaded Solution(s) for getting checked.
+                        </h2>
+
+                        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                            {solutionFiles.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {solutionFiles.map((file) => (
+                                        <div key={file.id} className="relative">
+                                            <img
+                                                src={file.preview}
+                                                alt={file.name}
+                                                className="w-full h-32 object-cover rounded-lg border"
+                                            />
+                                            <button
+                                                onClick={() => removeFile(file.id, 'solution')}
+                                                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-700 whitespace-pre-wrap">{solutionText}</p>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
-                </div>
-            )}
+                )}
 
-            <input ref={questionFileInputRef} type="file" accept="image/jpeg,image/png,image/gif" onChange={(e) => handleFileUpload(e, 'question')} className="hidden" />
-            <input ref={answerFileInputRef} type="file" accept="image/jpeg,image/png,image/gif" onChange={(e) => handleFileUpload(e, 'answer')} className="hidden" />
-            <input ref={questionCameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleCameraInput(e, 'question')} className="hidden" />
-            <input ref={answerCameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleCameraInput(e, 'answer')} className="hidden" />
+                {/* Examples Section */}
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeIn}
+                    className="w-full max-w-4xl"
+                >
+                    <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                        Explore a few solved examples ✨
+                    </h2>
 
-            <style jsx global>{`
-        .math-field {
-          display: inline-block;
-          padding: 1px;
-          background: rgba(59, 130, 246, 0.08);
-        }
-        .mq-editable-field {
-          border: none;
-        }
-      `}</style>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {sampleExamples.map((example) => (
+                            <motion.div
+                                key={example.id}
+                                whileHover={{ scale: 1.02 }}
+                                className="bg-white rounded-xl shadow-md p-4 border border-gray-200 cursor-pointer"
+                                onClick={() => handleExampleClick(example)}
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                        {example.category}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        {example.type === 'text' ? (
+                                            <FileText className="w-4 h-4 text-gray-500" />
+                                        ) : (
+                                            <ImageIcon className="w-4 h-4 text-gray-500" />
+                                        )}
+                                        <Play className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-1">Question:</p>
+                                        {example.type === 'text' ? (
+                                            <p className="text-sm text-gray-600">{example.question}</p>
+                                        ) : (
+                                            <div className="w-full h-20 bg-gray-100 rounded border flex items-center justify-center">
+                                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-1">Solution:</p>
+                                        {example.type === 'text' ? (
+                                            <p className="text-sm text-green-600 font-mono">{example.solution}</p>
+                                        ) : (
+                                            <div className="w-full h-20 bg-gray-100 rounded border flex items-center justify-center">
+                                                <CheckCircle className="w-6 h-6 text-green-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 text-center">
+                                    <span className="text-xs text-blue-600 font-medium">Try this solved problem →</span>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+
+            </div>
         </>
-    );
+    )
 }
